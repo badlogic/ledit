@@ -25,12 +25,10 @@ function renderHeader() {
   headerContainer.innerHTML = "";
   const header = dom(`
   <div class="header">
-    <span class="header-menu svg-icon"></span>
-    <div style="display: flex; flex-direction: row; flex: 1;">
-      <span class="header-subreddit"></span>
-      <input class="header-subreddit-input hidden" />
-    </div>
-    <select class="header-sorting">
+    <span class="header-menu svg-icon" style="padding-left: var(--ledit-padding);"></span>
+    <div class="header-subreddit" style="width: 100%";></div>
+    <div><input class="header-subreddit-input hidden" style="width: 100%"/></div>
+    <select class="header-sorting" style="padding-right: var(--ledit-padding);">
       <option value="hot">Hot</hot>
       <option value="new">New</hot>
       <option value="top-today">Top Today</hot>
@@ -39,7 +37,7 @@ function renderHeader() {
       <option value="top-year">Top Year</hot>
       <option value="top-alltime">Top All time</hot>
     </select>
-    <span class="header-subreddit-add svg-icon" style="margin-left: var(--ledit-padding)"></span>
+    <span class="header-subreddit-add svg-icon" style="padding-right: var(--ledit-padding);"></span>
   </div>
   `)[0];
   headerContainer.append(header);

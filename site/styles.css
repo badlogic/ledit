@@ -61,6 +61,16 @@ p {
   margin-top: 0;
 }
 
+select {
+  background: var(--ledit-background);
+  color: var(--ledit-color);
+  font-size: var(--ledit-font-size);
+  border: none;
+  appearance: none; /* This property removes default OS-specific styling */
+  padding: 0;
+  text-align: center;
+}
+
 pre {
   background: var(--ledit-background-dim);
   width: 100%;
@@ -112,7 +122,6 @@ blockquote {
   width: 600px;
   height: 100%;
   margin: auto;
-  padding: 0 var(--ledit-padding);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -221,7 +230,8 @@ blockquote {
 
 @media (max-width: 767px) {
   .posts,
-  .header-container {
+  .header,
+  .settings {
     width: 100%;
   }
 }
