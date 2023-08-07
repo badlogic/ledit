@@ -15,10 +15,21 @@ export interface Post {
     is_reddit_media_domain: boolean;
     is_video: boolean;
     is_self: boolean;
+    is_gallery: boolean;
     num_comments: number;
     over_18: boolean;
     permalink: string;
     selftext_html: string;
+    media_metadata: {
+      [key: string]: {
+        status: string;
+        p: {
+          x: number;
+          y: number;
+          u: string;
+        }[];
+      };
+    };
     preview: {
       enabled: boolean;
       images: {
@@ -30,7 +41,7 @@ export interface Post {
       }[];
       reddit_video_preview: {
         dash_url: string;
-        hls_url: string,
+        hls_url: string;
         fallback_url: string;
         is_gif: boolean;
         width: number;
@@ -45,10 +56,10 @@ export interface Post {
     secure_media: {
       reddit_video: {
         fallback_url: string;
-        width: number,
-        height: number,
-        dash_url: string,
-        hls_url: string
+        width: number;
+        height: number;
+        dash_url: string;
+        hls_url: string;
       };
     };
     secure_media_embed: {
@@ -143,18 +154,22 @@ export function getSubreddit() {
 
 export function onVisibleOnce(target: HTMLElement, callback: () => void) {
   let isTargetVisible = false;
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.target === target && entry.isIntersecting) {
-        if (!isTargetVisible) {
-          isTargetVisible = true;
-          callback();
-        }
-        observer.unobserve(target);
+
+  const checkVisibility = () => {
+    const rect = target.getBoundingClientRect();
+    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    if (rect.top <= windowHeight && rect.bottom >= 0) {
+      if (!isTargetVisible) {
+        isTargetVisible = true;
+        callback();
       }
-    });
-  });
-  observer.observe(target);
+      window.removeEventListener("scroll", checkVisibility);
+    }
+  };
+
+  checkVisibility();
+  window.addEventListener("scroll", checkVisibility);
 }
 
 export function htmlDecode(input) {
