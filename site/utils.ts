@@ -30,8 +30,11 @@ export interface Post {
       }[];
       reddit_video_preview: {
         dash_url: string;
+        hls_url: string,
         fallback_url: string;
         is_gif: boolean;
+        width: number;
+        height: number;
       } | null;
       source: {
         url: string;
@@ -42,8 +45,10 @@ export interface Post {
     secure_media: {
       reddit_video: {
         fallback_url: string;
-        width: number;
-        height: number;
+        width: number,
+        height: number,
+        dash_url: string,
+        hls_url: string
       };
     };
     secure_media_embed: {

@@ -1,4 +1,5 @@
 import { Post, Comment, Posts, dateToText, getComments, getSubreddit, htmlDecode, onVisibleOnce, queryReddit, scrollToElement } from "./utils";
+import "video.js";
 
 function renderHeader() {
   const header = document.querySelector("#header-subreddit")!;
@@ -57,21 +58,19 @@ function renderPosts(listing: Posts) {
 
 const missingThumbnailTags = new Set<String>(["self", "nsfw", "default", "image", "spoiler"]);
 function renderMedia(post: Post) {
+
+  const postsWidth = document.querySelector("#posts")!.clientWidth;
+
   if (post.data.is_self) {
     return `<div class="post-self-preview">${htmlDecode(post.data.selftext_html)}</div>`;
   }
 
   if (post.data.secure_media && post.data.secure_media.reddit_video) {
-    const embed = post.data.secure_media.reddit_video;
-    const postsWidth = document.querySelector("#posts")!.clientWidth;
-    const embedWidth = postsWidth;
-    const embedHeight = Math.floor((embed.height / embed.width) * postsWidth);
-    return `<div class="post-media"><video src="${embed.fallback_url}" controls loop></img></div>`;
+    return renderVideoTag(post.data.secure_media.reddit_video, postsWidth);
   }
 
   if (post.data.secure_media_embed && post.data.secure_media_embed.media_domain_url) {
     const embed = post.data.secure_media_embed;
-    const postsWidth = 600;
     const embedWidth = postsWidth;
     const embedHeight = Math.floor((embed.height / embed.width) * embedWidth) + "px";
     if (embed.content.includes("iframe")) {
@@ -92,7 +91,6 @@ function renderMedia(post: Post) {
   }
 
   if (post.data.preview && post.data.preview.images && post.data.preview.images.length > 0) {
-    const postsWidth = document.querySelector("#posts")!.clientWidth;
     let image: { url: string; width: number; height: number } | null = null;
     let bestWidth = 10000000;
     for (const img of post.data.preview.images[0].resolutions) {
@@ -109,13 +107,23 @@ function renderMedia(post: Post) {
     }
     if (!image) return "";
     if (!post.data.preview.reddit_video_preview?.fallback_url) return `<div class="post-media"><img src="${image.url}"></img></div>`;
-    return `<div class="post-media"><video src="${post.data.preview.reddit_video_preview.fallback_url}" controls loop></img></div>`;
+    return renderVideoTag(post.data.preview.reddit_video_preview, postsWidth);
   }
 
   if (post.data.thumbnail && !missingThumbnailTags.has(post.data.thumbnail)) {
     return `<div class="post-media"><img src="${post.data.thumbnail}"></img></div>`;
   }
   return "";
+}
+
+function renderVideoTag(embed: {width: number, height: number, dash_url: string | null, hls_url: string | null, fallback_url: string}, postsWidth) {
+    const embedWidth = postsWidth;
+    const embedHeight = Math.floor((embed.height / embed.width) * postsWidth);
+    return `<div class="post-media"><video controls style="width: ${embedWidth}px; height: ${embedHeight}px" loop data-setup="{}" class="video-js">
+        ${embed.dash_url ? `<source src="${embed.dash_url}"></source>` : ""}
+        ${embed.hls_url ? `<source src="${embed.hls_url}"></source>` : ""}
+        <source src="${embed.fallback_url}"></source>
+    </video></div>`;
 }
 
 async function renderComments(post: Post, container: HTMLElement) {
