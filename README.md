@@ -4,10 +4,13 @@ A read-only reddit client for people who don't like bells and whistles. Ideal fo
 [Try it](https://marioslab.io/projects/ledit)
 
 # Usage
-In the browser url bar, append the `#<sub-redit-name>` to visit a specific subreddit. By default, `r/all` is shown. E.g.
+By default, `r/all` is shown. Click on the subreddit name at the top and enter the name of another subreddit you want to visit.
 
 [https://marioslab.io/projects/ledit/#images](https://marioslab.io/projects/ledit/#images)
 [https://marioslab.io/projects/ledit/#aww](https://marioslab.io/projects/ledit/#aww)
+[https://marioslab.io/projects/ledit/#videos](https://marioslab.io/projects/ledit/#videos)
+
+You can expand all comments inline by clicking on the "Comments ()" link. You can collapse the comments by clicking `Comments ()` again.
 
 # Roadmap
 * Favorite subreddits and be able to select them from a list

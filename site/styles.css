@@ -42,7 +42,7 @@ code {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 .sticky {
@@ -66,6 +66,27 @@ code {
   font-size: 1.5em;
 }
 
+#header-subreddit {
+    display: inline-block;
+    max-width: 80%;
+    overflow: hidden;
+    white-space: pre;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.header input {
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgb(215, 215, 199);
+  font: inherit;
+  color: inherit;
+  line-height: inherit;
+  outline: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
 .main {
   width: 640px;
   margin: auto;
@@ -86,7 +107,7 @@ code {
 }
 
 #posts .post:first-child {
-    padding-top: 0;
+  padding-top: 0;
 }
 
 .post {
@@ -185,6 +206,6 @@ code {
 }
 
 .comment-reply {
-    padding-top: 0.5em;
-    font-size: 0.8em;
+  padding-top: 0.5em;
+  font-size: 0.8em;
 }

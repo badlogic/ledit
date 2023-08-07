@@ -1,12 +1,40 @@
 import { Post, Comment, Posts, dateToText, getComments, getSubreddit, htmlDecode, onVisibleOnce, queryReddit, scrollToElement } from "./utils";
 
 function renderHeader() {
-  const header = document.querySelector("#header")!;
-  header.querySelector("#header-subreddit")!.innerHTML = "/r/" + getSubreddit();
+  const header = document.querySelector("#header-subreddit")!;
+  header.innerHTML = "/r/" + getSubreddit();
+  const input = document.querySelector("#header-input") as HTMLInputElement;
+  header.addEventListener("click", () => {
+    header.classList.add("hidden");
+    input.classList.remove("hidden");
+    input.value = getSubreddit();
+    input.focus();
+    input.select();
+    input.addEventListener("keypress", function (event) {
+      if (event.keyCode === 13 || event.which === 13) {
+        event.preventDefault();
+        window.location.hash = input.value;
+        header.classList.remove("hidden");
+        input.classList.add("hidden");
+      }
+    });
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+      header.classList.remove("hidden");
+      input.classList.add("hidden");
+    }
+  });
 }
 
 function renderPosts(listing: Posts) {
   const posts = document.querySelector("#posts")! as HTMLElement;
+  if ((!listing || !listing.data || !listing.data.children) && posts.children.length == 0) {
+    const div = document.createElement("div");
+    div.innerHTML = `Subreddit ${getSubreddit()} doesn't exist.`
+    posts.append(div);
+    return;
+  }
 
   for (let i = 0; i < listing.data.children.length; i++) {
     const post = listing.data.children[i];
@@ -39,10 +67,12 @@ function renderMedia(post: Post) {
     const embedWidth = postsWidth;
     const embedHeight = Math.floor((embed.height / embed.width) * postsWidth);
     if (embed.content.includes("iframe")) {
-      const embedUrl = htmlDecode(embed.content
-        .replace(`width="${embed.width}"`, `width="${embedWidth}"`)
-        .replace(`height="${embed.height}"`, `height="${embedHeight}"`)
-        .replace("position:absolute;", ""));
+      const embedUrl = htmlDecode(
+        embed.content
+          .replace(`width="${embed.width}"`, `width="${embedWidth}"`)
+          .replace(`height="${embed.height}"`, `height="${embedHeight}"`)
+          .replace("position:absolute;", "")
+      );
       return `<div class="post-media" style="width: ${embedWidth}px; height: ${embedHeight}px;">${embedUrl}</div>`;
     } else {
       return `<div class="post-media" style="width: ${embedWidth}px; height: ${embedHeight}px;"><iframe width="${embedWidth}" height="${embedHeight}" src="${embed.media_domain_url}"></iframe></div>`;
@@ -81,26 +111,25 @@ function renderMedia(post: Post) {
 }
 
 async function renderComments(post: Post, container: HTMLElement) {
-    const loadingDiv = document.createElement("div");
-    loadingDiv.innerHTML = "Loading comments";
-    container.append(loadingDiv);
+  const loadingDiv = document.createElement("div");
+  loadingDiv.innerHTML = "Loading comments";
+  container.append(loadingDiv);
 
-    try {
-        const commentsData = await getComments(post);
-        if (!commentsData) return;
-        for (const comment of commentsData.data.children) {
-            renderComment(comment, 0, container);
-        }
-
-    } finally {
-        loadingDiv.remove();
+  try {
+    const commentsData = await getComments(post);
+    if (!commentsData) return;
+    for (const comment of commentsData.data.children) {
+      renderComment(comment, 0, container);
     }
+  } finally {
+    loadingDiv.remove();
+  }
 }
 
 function renderComment(comment: Comment, level: number, container: HTMLElement) {
-    if (comment.data.author == undefined) return;
-    const commentDiv = document.createElement("div");
-    commentDiv.innerHTML = `
+  if (comment.data.author == undefined) return;
+  const commentDiv = document.createElement("div");
+  commentDiv.innerHTML = `
         <div class="comment-meta">
             <span class="comment-author"><a href="https://www.reddit.com/u/${comment.data.author}">${comment.data.author}</a></span>
             <span class="comment-data">${dateToText(comment.data.created_utc * 1000)}</span>
@@ -111,14 +140,14 @@ function renderComment(comment: Comment, level: number, container: HTMLElement) 
         </div>
         <div class="comment-reply"><a href="https://www.reddit.com/${comment.data.permalink}" target="_blank">Reply</a></div>
     `;
-    commentDiv.classList.add("comment");
-    commentDiv.style.marginLeft = level * 0.5 + "em";
-    container.append(commentDiv);
-    if (comment.data.replies && (comment.data.replies as any) != "") {
-        for (const reply of comment.data.replies.data.children) {
-            renderComment(reply, level + 1, container);
-        }
+  commentDiv.classList.add("comment");
+  commentDiv.style.marginLeft = level * 0.5 + "em";
+  container.append(commentDiv);
+  if (comment.data.replies && (comment.data.replies as any) != "") {
+    for (const reply of comment.data.replies.data.children) {
+      renderComment(reply, level + 1, container);
     }
+  }
 }
 
 function renderPost(post: Post) {
@@ -130,9 +159,7 @@ function renderPost(post: Post) {
             <span class="post-points">${post.data.score} pts</span>
             <span class="post-date">${dateToText(post.data.created_utc * 1000)}</span>
             <span class="post-author">by <a href="https://www.reddit.com/u/${post.data.author}" target="_blank">${post.data.author}</a></span>
-            <span class="post-author">in <a href="https://www.reddit.com/r/${post.data.subreddit}" target="_blank">r/${
-    post.data.subreddit
-  }</a></span>
+            <span class="post-author">in <a href="https://www.reddit.com/r/${post.data.subreddit}" target="_blank">r/${post.data.subreddit}</a></span>
         </div>
         ${!post.data.is_self ? `<div class="post-url"><a href="">${new URL(post.data.url).host}</a></div>` : ""}
         ${renderMedia(post)}
@@ -144,20 +171,20 @@ function renderPost(post: Post) {
   comments.addEventListener("click", async (event) => {
     event.preventDefault();
     if (comments.classList.contains("sticky")) {
-        isLoading = false;
-        comments.classList.remove("sticky");
-        (entryDiv.querySelector(".post-comments-full")! as HTMLElement).innerHTML = "";
-        requestAnimationFrame(() => {
-            scrollToElement(comments, document.querySelector("#posts") as Element);
-        });
+      isLoading = false;
+      comments.classList.remove("sticky");
+      (entryDiv.querySelector(".post-comments-full")! as HTMLElement).innerHTML = "";
+      requestAnimationFrame(() => {
+        scrollToElement(comments, document.querySelector("#posts") as Element);
+      });
     } else {
-        if (isLoading) return;
-        isLoading = true;
-        if (entryDiv.querySelector(".post-self-preview")) {
-            (entryDiv.querySelector(".post-self-preview") as HTMLElement).style.maxHeight = "100%";
-        }
-        await renderComments(post, entryDiv.querySelector(".post-comments-full")! as HTMLElement);
-        comments.classList.add("sticky");
+      if (isLoading) return;
+      isLoading = true;
+      if (entryDiv.querySelector(".post-self-preview")) {
+        (entryDiv.querySelector(".post-self-preview") as HTMLElement).style.maxHeight = "100%";
+      }
+      await renderComments(post, entryDiv.querySelector(".post-comments-full")! as HTMLElement);
+      comments.classList.add("sticky");
     }
   });
   return entryDiv;
@@ -187,7 +214,7 @@ async function load() {
 }
 
 window.addEventListener("hashchange", () => {
-    document.querySelector("#posts")!.innerHTML = "";
+  document.querySelector("#posts")!.innerHTML = "";
   load();
 });
 
