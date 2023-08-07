@@ -163,41 +163,41 @@ blockquote {
 }
 
 .settings-row-close {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 0 var(--ledit-padding);
-    margin: 0 var(--ledit-padding);
-    margin-top: calc(2 * var(--ledit-padding));
-    font-size: var(--ledit-font-size);
-    height: 1em;
-    cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 var(--ledit-padding);
+  margin: 0 var(--ledit-padding);
+  margin-top: calc(2 * var(--ledit-padding));
+  font-size: var(--ledit-font-size);
+  height: 1em;
+  cursor: pointer;
 }
 
 .settings-row {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    padding: 0 var(--ledit-padding);
-    margin: 0 var(--ledit-padding);
-    font-size: var(--ledit-font-size);
-    height: 2em;
-    cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 var(--ledit-padding);
+  margin: 0 var(--ledit-padding);
+  font-size: var(--ledit-font-size);
+  height: 2em;
+  cursor: pointer;
 }
 
 .settings-row:hover {
-    background: var(--ledit-background-dim);
+  background: var(--ledit-background-dim);
 }
 
 .settings-row-header {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    padding: 0 var(--ledit-padding);
-    font-size: var(--ledit-font-size);
-    font-weight: 600;
-    height: 2em;
-    border-bottom: 0.5px solid var(--ledit-border-color);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 var(--ledit-padding);
+  font-size: var(--ledit-font-size);
+  font-weight: 600;
+  height: 2em;
+  border-bottom: 0.5px solid var(--ledit-border-color);
 }
 
 .posts {

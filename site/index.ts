@@ -1,4 +1,4 @@
-import { Post, Comment, Posts, dateToText, getComments, getSubreddit, htmlDecode, onVisibleOnce, queryReddit } from "./utils";
+import { Post, Comment, Posts, dateToText, getComments, getSubreddit, htmlDecode, onVisibleOnce, queryReddit, getSorting } from "./utils";
 import "video.js";
 // @ts-ignore
 import svgLoader from "./svg-loader.svg";
@@ -30,7 +30,16 @@ function renderHeader() {
       <span class="header-subreddit"></span>
       <input class="header-subreddit-input hidden" />
     </div>
-    <span class="header-subreddit-add svg-icon"></span>
+    <select class="header-sorting">
+      <option value="hot">Hot</hot>
+      <option value="new">New</hot>
+      <option value="top-today">Top Today</hot>
+      <option value="top-week">Top Week</hot>
+      <option value="top-month">Top Month</hot>
+      <option value="top-year">Top Year</hot>
+      <option value="top-alltime">Top All time</hot>
+    </select>
+    <span class="header-subreddit-add svg-icon" style="margin-left: var(--ledit-padding)"></span>
   </div>
   `)[0];
   headerContainer.append(header);
@@ -82,6 +91,19 @@ function renderHeader() {
       document.querySelector(".settings-container")?.classList.remove("hidden");
       renderSettings();
     }
+  });
+
+  const sorting = document.querySelector(".header-sorting") as HTMLSelectElement;
+  for (const option of sorting.children) {
+    if ((option as HTMLOptionElement).value == getSorting()) {
+      (option as HTMLOptionElement).selected = true;
+    }
+  }
+  sorting.value = getSorting();
+  sorting.addEventListener("change", () => {
+    window.location.hash = getSubreddit() + "/" + sorting.value;
+    headerSubreddit.classList.remove("hidden");
+    input.classList.add("hidden");
   });
 
   renderSettings();

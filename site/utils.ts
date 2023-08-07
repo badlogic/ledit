@@ -134,7 +134,9 @@ export function dateToText(utcTimestamp: number): string {
 let count = 0;
 export async function queryReddit(after: string | null = null): Promise<Posts> {
   console.log("Feching from Reddit " + ++count);
-  const hash = "/r/" + getSubreddit() + "/.json" + (after ? "?after=" + after : "");
+  const sortFrag = getSortingFragment();
+  const sortParam = getSortingParameter();
+  const hash = "/r/" + getSubreddit() + "/" + sortFrag + "/.json?" + sortParam + "&" + (after ? "after=" + after : "");
   const url = "https://www.reddit.com" + (!hash.startsWith("/") ? "/" : "") + hash;
   const response = await fetch(url);
   console.log("Response Headers:");
@@ -156,7 +158,33 @@ export function getSubreddit() {
   if (hash.length == 0) {
     return "all";
   }
-  return hash.substring(1, hash.indexOf("/") > 0 ? hash.indexOf("/") : hash.length);
+  const tokens = hash.substring(1).split("/");
+  if (tokens.length == 0) return "all";
+  return tokens[0];
+}
+
+export function getSorting() {
+  const hash = window.location.hash;
+  if (hash.length == 0) {
+    return "hot";
+  }
+  const tokens = hash.substring(1).split("/");
+  if (tokens.length < 2) return "hot";
+  if (["hot", "new", "top-today", "top-week", "top-month", "top-year", "top-alltime"].includes(tokens[1])) {
+    return tokens[1];
+  } else {
+    return "hot";
+  }
+}
+
+export function getSortingFragment() {
+    return getSorting().split("-")[0];
+}
+
+export function getSortingParameter() {
+    const tokens = getSorting().split("-");
+    if (tokens.length != 2) return "";
+    return "t=" + tokens[1];
 }
 
 export function onVisibleOnce(target: HTMLElement, callback: () => void) {
