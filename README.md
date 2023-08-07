@@ -12,6 +12,11 @@ By default, `r/all` is shown. Click on the subreddit name at the top and enter t
 
 You can expand all comments inline by clicking on the "Comments ()" link. You can collapse the comments by clicking `Comments ()` again.
 
+You can also collapse/expand comments and their child comments by clicking their text.
+
+If you absolutely need to reply to a comment, there's a tiny "reply" link in the header of each comment. It will open a new browser tab on
+"real" Reddit, where you can reply if you're logged in. Don't reply.
+
 # Roadmap
 * Favorite subreddits and be able to select them from a list
 * Optionally hide already seen posts
