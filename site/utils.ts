@@ -40,12 +40,12 @@ export interface Post {
       };
     };
     secure_media: {
-        reddit_video: {
-            fallback_url: string,
-            width: number,
-            height: number
-        }
-    }
+      reddit_video: {
+        fallback_url: string;
+        width: number;
+        height: number;
+      };
+    };
     secure_media_embed: {
       content: string;
       width: number;
@@ -63,15 +63,15 @@ export interface Post {
 }
 
 export interface Comment {
-    data: {
-        author: string,
-        created_utc: number,
-        body_html: string,
-        score: number,
-        permalink: string,
-        replies: Comments | "" | undefined
-    },
-    kind: "t1"
+  data: {
+    author: string;
+    created_utc: number;
+    body_html: string;
+    score: number;
+    permalink: string;
+    replies: Comments | "" | undefined;
+  };
+  kind: "t1";
 }
 
 export interface Comments {
@@ -156,11 +156,3 @@ export function htmlDecode(input) {
   var doc = new DOMParser().parseFromString(input, "text/html");
   return doc.documentElement.textContent;
 }
-
-export function scrollToElement(targetElement: Element, container: Element) {
-    const elementOffset = targetElement.getBoundingClientRect().top;
-    const containerOffset = container.getBoundingClientRect().top;
-
-    // Scroll to the element with an additional 2em offset, accounting for the parent container's scroll position
-    container.scrollTop = elementOffset - containerOffset + container.scrollTop;
-  }

@@ -31,7 +31,7 @@ function renderPosts(listing: Posts) {
   const posts = document.querySelector("#posts")! as HTMLElement;
   if ((!listing || !listing.data || !listing.data.children) && posts.children.length == 0) {
     const div = document.createElement("div");
-    div.innerHTML = `Subreddit ${getSubreddit()} doesn't exist.`
+    div.innerHTML = `Subreddit ${getSubreddit()} doesn't exist.`;
     posts.append(div);
     return;
   }
@@ -71,9 +71,9 @@ function renderMedia(post: Post) {
 
   if (post.data.secure_media_embed && post.data.secure_media_embed.media_domain_url) {
     const embed = post.data.secure_media_embed;
-    const postsWidth = document.querySelector("#posts")!.clientWidth;
+    const postsWidth = 600;
     const embedWidth = postsWidth;
-    const embedHeight = Math.floor((embed.height / embed.width) * postsWidth);
+    const embedHeight = Math.floor((embed.height / embed.width) * embedWidth) + "px";
     if (embed.content.includes("iframe")) {
       const embedUrl = htmlDecode(
         embed.content
@@ -142,19 +142,38 @@ function renderComment(comment: Comment, level: number, container: HTMLElement) 
             <span class="comment-author"><a href="https://www.reddit.com/u/${comment.data.author}">${comment.data.author}</a></span>
             <span class="comment-data">${dateToText(comment.data.created_utc * 1000)}</span>
             <span class="comment-points">${comment.data.score} pts</span>
+            <a class="comment-reply" href="https://www.reddit.com/${comment.data.permalink}" target="_blank">Reply</a>
         </div>
         <div class="comment-text">
             ${htmlDecode(comment.data.body_html)}
         </div>
-        <div class="comment-reply"><a href="https://www.reddit.com/${comment.data.permalink}" target="_blank">Reply</a></div>
+        <div class="comment-replies"></div>
+        <div class="comment-replies-count hidden"></div>
     `;
   commentDiv.classList.add("comment");
-  commentDiv.style.marginLeft = level * 0.5 + "em";
+  commentDiv.style.marginLeft = "0.5em";
   container.append(commentDiv);
+  const text = commentDiv.querySelector(".comment-text")! as HTMLElement;
+  const replies = commentDiv.querySelector(".comment-replies")! as HTMLElement;
+  const repliesCount = commentDiv.querySelector(".comment-replies-count") as HTMLElement;
   if (comment.data.replies && (comment.data.replies as any) != "") {
     for (const reply of comment.data.replies.data.children) {
-      renderComment(reply, level + 1, container);
+      renderComment(reply, level + 1, replies);
     }
+    const numReplies = comment.data.replies.data.children.length;
+    repliesCount.innerText = `${numReplies == 1 ? "1 reply" : numReplies + " replies"}, click to expand`;
+    text.addEventListener("click", (event) => {
+      // FIXME can't click on links in comments like that or select
+      event.stopPropagation();
+      event.preventDefault();
+      if (replies.classList.contains("hidden")) {
+        replies.classList.remove("hidden");
+        repliesCount.classList.add("hidden");
+      } else {
+        replies.classList.add("hidden");
+        repliesCount.classList.remove("hidden");
+      }
+    });
   }
 }
 
@@ -176,16 +195,16 @@ function renderPost(post: Post) {
     `;
   const comments = entryDiv.querySelector(".post-comments")!;
   let isLoading = false;
+  let savedTop = 0;
   comments.addEventListener("click", async (event) => {
     event.preventDefault();
     if (comments.classList.contains("sticky")) {
       isLoading = false;
       comments.classList.remove("sticky");
       (entryDiv.querySelector(".post-comments-full")! as HTMLElement).innerHTML = "";
-      requestAnimationFrame(() => {
-        scrollToElement(comments, document.querySelector("#posts") as Element);
-      });
+      window.scrollTo({ top: savedTop, behavior: "smooth" });
     } else {
+      savedTop = window.pageYOffset;
       if (isLoading) return;
       isLoading = true;
       if (entryDiv.querySelector(".post-self-preview")) {
