@@ -1,0 +1,190 @@
+body,
+html {
+  margin: 0;
+  padding: 0;
+  box-sizing: content-box;
+  font-family: "Noto Sans JP", "helvetica neue", helvetica, Ubuntu, roboto, noto, arial, sans-serif;
+  color: rgb(215, 215, 199);
+  background: #121b25;
+  font-size: 16px;
+}
+
+body {
+  width: 100vw;
+}
+
+a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+iframe {
+  border: none;
+  overflow: hidden;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+p {
+  margin-top: 0;
+}
+
+pre {
+  background: #111;
+  width: 100%;
+}
+
+code {
+  font-family: Menlo, monospace;
+  font-size: 0.75em;
+}
+
+.hidden {
+  display: none;
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+  background: #121b25;
+  padding-bottom: 0.5em;
+}
+
+.page {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.header {
+  height: 2rem;
+  background: #121b25;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.5em;
+  padding-left: 1em;
+  font-size: 1.5em;
+}
+
+.main {
+  width: 640px;
+  margin: auto;
+}
+
+.side {
+}
+
+@media (max-width: 767px) {
+  .page {
+    width: 100%;
+  }
+}
+
+#posts {
+  height: calc(100% - 3em);
+  overflow: auto;
+}
+
+#posts .post:first-child {
+    padding-top: 0;
+}
+
+.post {
+  padding: 1em;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+
+.post-loading {
+  text-align: center;
+  margin: 1em;
+}
+
+.post-title {
+  font-size: 1.2em;
+}
+
+.post-meta {
+  font-size: 0.75em;
+  gap: 0.3em;
+  color: rgb(130, 130, 123);
+  overflow: auto;
+}
+
+.post-meta a {
+  color: #007bffbc;
+}
+
+.post-self-preview {
+  max-height: 10em;
+  overflow: hidden;
+  position: relative;
+  color: rgb(130, 130, 123);
+}
+
+.post-self-preview::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1em; /* Adjust this value to control the height of the fade-out effect */
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), #121b25);
+  pointer-events: none;
+}
+
+.post-url {
+  overflow: hidden;
+  white-space: pre;
+  text-overflow: ellipsis;
+  font-size: 0.75em;
+}
+
+.post-points-comments {
+  display: flex;
+  flex-direction: row;
+  gap: 0.3em;
+}
+
+.post-points {
+}
+
+.post-comments {
+}
+
+.post-media > img {
+  width: 100%;
+}
+
+.post-media > video {
+  width: 100%;
+}
+
+.icon-class {
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>');
+}
+
+.comment {
+  padding-left: 0.8em;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  margin-bottom: 0.5em;
+  border-left: 1px dotted rgba(255, 255, 255, 0.3);
+}
+
+.comment-meta {
+  color: rgb(130, 130, 123);
+  margin-bottom: 0.5em;
+  font-size: 0.8em;
+}
+
+.comment-text > .md p:last-child {
+  margin-block-end: 0;
+}
+
+.comment-reply {
+    padding-top: 0.5em;
+    font-size: 0.8em;
+}
