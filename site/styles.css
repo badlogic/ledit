@@ -10,22 +10,22 @@
 
 .dark-theme {
   --ledit-background: #121b25;
+  --ledit-background-dim: #111;
   --ledit-header-border: #0b1117;
   --ledit-color: rgb(215, 215, 199);
   --ledit-color-dim: rgb(130, 130, 123);
   --ledit-border-color: rgba(255, 255, 255, 0.3);
   --ledit-link-color: #8db5e1;
-  --ledit-code-background: #111;
 }
 
 .light-theme {
   --ledit-background: white;
-  --ledit-header-border: #ccc;
+  --ledit-background-dim: #cccccc;
+  --ledit-header-border: #0000003e;
   --ledit-color: #111;
   --ledit-color-dim: #777;
-  --ledit-border-color: #111;
-  --ledit-link-color: #1377e3;
-  --ledit-code-background: #cccccc;
+  --ledit-border-color: #0000003e;
+  --ledit-link-color: #3a579b;
 }
 
 body,
@@ -62,7 +62,7 @@ p {
 }
 
 pre {
-  background: var(--ledit-code-background);
+  background: var(--ledit-background-dim);
   width: 100%;
   overflow: auto;
 }
@@ -73,7 +73,7 @@ code {
 }
 
 blockquote {
-  border-left: 1px solid var(--ledit-color-dim);
+  border-left: 0.5px solid var(--ledit-color-dim);
   font-style: italic;
   padding: var(--ledit-padding);
   margin-left: var(--ledit-padding);
@@ -87,20 +87,28 @@ blockquote {
   margin: auto;
 }
 
-.header {
+.svg-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--ledit-font-size);
+  padding-right: var(--ledit-padding);
+  cursor: pointer;
+}
+
+.header-container {
   height: 2rem;
   background: var(--ledit-background);
   padding: var(--ledit-padding) 0;
   font-size: var(--ledit-font-size-big);
   position: fixed;
   top: 0;
-  z-index: 10;
+  z-index: 20;
   width: 100%;
-  margin: auto;
-  border-bottom: 1px solid var(--ledit-header-border);
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
 }
 
-#header-container {
+.header {
   width: 600px;
   height: 100%;
   margin: auto;
@@ -110,34 +118,95 @@ blockquote {
   align-items: center;
 }
 
-#header-subreddit {
+.header-subreddit {
   display: inline-block;
   max-width: 80%;
   overflow: hidden;
   white-space: pre;
   text-overflow: ellipsis;
   cursor: pointer;
+  flex: 1;
+  user-select: none;
 }
 
-.header input {
+.header-subreddit-input {
   background: none;
   border: none;
-  border-bottom: 1px solid var(--ledit-color);
+  border-bottom: 0.5px solid var(--ledit-color);
   font: inherit;
   color: inherit;
   line-height: inherit;
   outline: none;
   box-shadow: none;
   border-radius: 0;
+  flex: 1;
 }
 
-#posts {
+.settings-container {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  overflow: auto;
+}
+
+.settings {
+  width: 600px;
+  margin: 0 auto;
+  background: var(--ledit-background);
+  padding: var(--ledit-padding) 0;
+  font-size: var(--ledit-font-size-big);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+.settings-row-close {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 var(--ledit-padding);
+    margin: 0 var(--ledit-padding);
+    margin-top: calc(2 * var(--ledit-padding));
+    font-size: var(--ledit-font-size);
+    height: 1em;
+    cursor: pointer;
+}
+
+.settings-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 var(--ledit-padding);
+    margin: 0 var(--ledit-padding);
+    font-size: var(--ledit-font-size);
+    height: 2em;
+    cursor: pointer;
+}
+
+.settings-row:hover {
+    background: var(--ledit-background-dim);
+}
+
+.settings-row-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 var(--ledit-padding);
+    font-size: var(--ledit-font-size);
+    font-weight: 600;
+    height: 2em;
+    border-bottom: 0.5px solid var(--ledit-border-color);
+}
+
+.posts {
   width: 600px;
   margin: auto;
   margin-top: calc(var(--ledit-font-size) * 3 + var(--ledit-font-size-big));
 }
 
-#posts .post:first-child {
+.posts .post:first-child {
   padding-top: 0;
 }
 
@@ -151,8 +220,8 @@ blockquote {
 }
 
 @media (max-width: 767px) {
-  #posts,
-  #header-container {
+  .posts,
+  .header-container {
     width: 100%;
   }
 }
@@ -160,6 +229,10 @@ blockquote {
 .post-loading {
   text-align: center;
   margin: var(--ledit-margin);
+  color: var(--ledit-link-color);
+  cursor: pointer;
+  margin: 0;
+  padding: var(--ledit-margin);
 }
 
 .post-error {
@@ -169,6 +242,11 @@ blockquote {
 
 .post-title {
   font-size: var(--ledit-font-size-big);
+  font-weight: 800;
+}
+
+.post-subreddit {
+  font-size: var(--ledit-font-size-small);
 }
 
 .post-meta {
@@ -248,8 +326,8 @@ blockquote {
 }
 
 .post-image-gallery-count {
-    cursor: pointer;
-    color: var(--ledit-link-color);
+  cursor: pointer;
+  color: var(--ledit-link-color);
 }
 
 .comment {

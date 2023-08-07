@@ -70,6 +70,7 @@ export interface Post {
     };
     score: number;
     subreddit: string;
+    subreddit_id: string;
     thumbnail: string;
     title: string;
     ups: number;
@@ -130,10 +131,16 @@ export function dateToText(utcTimestamp: number): string {
   return years == 1 ? `${years} years ago` : `${years} years ago`;
 }
 
+let count = 0;
 export async function queryReddit(after: string | null = null): Promise<Posts> {
+  console.log("Feching from Reddit " + ++count);
   const hash = "/r/" + getSubreddit() + "/.json" + (after ? "?after=" + after : "");
   const url = "https://www.reddit.com" + (!hash.startsWith("/") ? "/" : "") + hash;
   const response = await fetch(url);
+  console.log("Response Headers:");
+  response.headers.forEach((value, key) => {
+    console.log(`\t${key}: ${value}`);
+  });
   return (await response.json()) as Posts;
 }
 
@@ -153,23 +160,22 @@ export function getSubreddit() {
 }
 
 export function onVisibleOnce(target: HTMLElement, callback: () => void) {
-  let isTargetVisible = false;
-
-  const checkVisibility = () => {
-    const rect = target.getBoundingClientRect();
-    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-
-    if (rect.top <= windowHeight && rect.bottom >= 0) {
-      if (!isTargetVisible) {
-        isTargetVisible = true;
-        callback();
-      }
-      window.removeEventListener("scroll", checkVisibility);
-    }
+  const options = {
+    root: null, // Use the viewport as the root
+    rootMargin: "0px",
+    threshold: 0.1, // Trigger callback when 10% of the element is visible
   };
 
-  checkVisibility();
-  window.addEventListener("scroll", checkVisibility);
+  const observer = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        callback(); // Invoke the callback when the element is visible
+        observer.unobserve(entry.target); // Stop observing once visible
+      }
+    });
+  }, options);
+
+  observer.observe(target);
 }
 
 export function htmlDecode(input) {

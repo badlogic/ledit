@@ -1,35 +1,183 @@
 import { Post, Comment, Posts, dateToText, getComments, getSubreddit, htmlDecode, onVisibleOnce, queryReddit } from "./utils";
 import "video.js";
+// @ts-ignore
+import svgLoader from "./svg-loader.svg";
+// @ts-ignore
+import svgMenuCollapsed from "./svg-menu-collapsed.svg";
+// @ts-ignore
+import svgMenuExpanded from "./svg-menu-expanded.svg";
+// @ts-ignore
+import svgMenuMinus from "./svg-menu-minus.svg";
+// @ts-ignore
+import svgMenuPlus from "./svg-menu-plus.svg";
+// @ts-ignore
+import svgMenuCircle from "./svg-menu-circle.svg";
+
+document.addEventListener("keydown", function (event) {
+  if (event.key === "Escape") {
+    document.querySelector(".header-subreddit")!.classList.remove("hidden");
+    document.querySelector(".header-subreddit-input")!.classList.add("hidden");
+  }
+});
 
 function renderHeader() {
-  const header = document.querySelector("#header-subreddit")!;
-  header.innerHTML = "/r/" + getSubreddit();
-  const input = document.querySelector("#header-input") as HTMLInputElement;
-  header.addEventListener("click", () => {
-    header.classList.add("hidden");
+  const headerContainer = document.querySelector(".header-container")!;
+  headerContainer.innerHTML = "";
+  const header = dom(`
+  <div class="header">
+    <span class="header-menu svg-icon"></span>
+    <div style="display: flex; flex-direction: row; flex: 1;">
+      <span class="header-subreddit"></span>
+      <input class="header-subreddit-input hidden" />
+    </div>
+    <span class="header-subreddit-add svg-icon"></span>
+  </div>
+  `)[0];
+  headerContainer.append(header);
+
+  const subreddit = getSubreddit();
+  const settings = getSettings();
+
+  const addButton = headerContainer.querySelector(".header-subreddit-add")!;
+  if (!settings.subreddits.some((sub) => sub.toLowerCase() == subreddit.toLowerCase())) {
+    addButton.innerHTML = svgMenuPlus;
+    addButton.addEventListener("click", () => {
+      settings.subreddits.push(subreddit);
+      saveSettings(settings);
+      renderHeader();
+    });
+  }
+
+  const headerSubreddit = headerContainer.querySelector(".header-subreddit")!;
+  headerSubreddit.innerHTML = "/r/" + subreddit;
+  const input = headerContainer.querySelector(".header-subreddit-input") as HTMLInputElement;
+  headerSubreddit.addEventListener("click", () => {
+    headerSubreddit.classList.add("hidden");
     input.classList.remove("hidden");
-    input.value = getSubreddit();
+    input.value = subreddit;
     input.focus();
     input.select();
     input.addEventListener("keypress", function (event) {
       if (event.keyCode === 13 || event.which === 13) {
         event.preventDefault();
         window.location.hash = input.value;
-        header.classList.remove("hidden");
+        headerSubreddit.classList.remove("hidden");
         input.classList.add("hidden");
       }
     });
-  });
-  document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") {
-      header.classList.remove("hidden");
+    input.addEventListener("blur", function () {
+      headerSubreddit.classList.remove("hidden");
       input.classList.add("hidden");
+    });
+  });
+
+  const menuButton = document.querySelector(".header-menu")!;
+  menuButton.innerHTML = svgMenuCollapsed;
+  menuButton.addEventListener("click", () => {
+    if (!document.querySelector(".settings-container")!.classList.contains("hidden")) {
+      menuButton.innerHTML = svgMenuCollapsed;
+      document.querySelector(".settings-container")?.classList.add("hidden");
+    } else {
+      menuButton.innerHTML = svgMenuExpanded;
+      document.querySelector(".settings-container")?.classList.remove("hidden");
+      renderSettings();
     }
   });
+
+  renderSettings();
+}
+
+interface Settings {
+  subreddits: string[];
+  theme: string;
+}
+
+function getSettings(): Settings {
+  return localStorage.getItem("ledit")
+    ? JSON.parse(localStorage.getItem("ledit")!)
+    : {
+        subreddits: ["all", "pics", "videos", "worldnews", "science", "todayilearned"],
+        theme: "light",
+      };
+}
+
+function saveSettings(settings: Settings) {
+  localStorage.setItem("ledit", JSON.stringify(settings));
+}
+
+function renderSettings() {
+  const settingsContainer = document.querySelector(".settings-container")!;
+  settingsContainer.innerHTML = `
+    <div class="settings">
+    </div>
+  `;
+  const menuButton = document.querySelector(".header-menu")!;
+  settingsContainer.addEventListener("click", (event) => {
+    if (settingsContainer == event.target) {
+      menuButton.innerHTML = svgMenuCollapsed;
+      settingsContainer.classList.add("hidden");
+    }
+  });
+  const settingsDiv= settingsContainer.querySelector(".settings")!;
+  settingsContainer.addEventListener("click", (event) => {
+    if (settingsDiv == event.target) {
+      menuButton.innerHTML = svgMenuCollapsed;
+      settingsContainer.classList.add("hidden");
+    }
+  });
+
+  const render = () => {
+    settingsDiv.innerHTML = "";
+    const closeButton = dom(`<div class="settings-row-close">Close</div>`)[0];
+    closeButton.addEventListener("click", () => {
+      menuButton.innerHTML = svgMenuCollapsed;
+      settingsContainer.classList.add("hidden");
+    });
+    settingsDiv.append(closeButton);
+    settingsDiv.append(dom(`<div class="settings-row-header">Subreddits</div>`)[0]);
+    const settings = getSettings();
+    for (const subreddit of settings.subreddits) {
+      const subredditDiv = dom(`
+        <div class="settings-row">
+          <a href="#${subreddit}" style="flex: 1">${subreddit}</a><span class="svg-icon">${svgMenuMinus}</span>
+        </div>`)[0];
+      subredditDiv.querySelector("a")!.addEventListener("click", () => {
+        menuButton.innerHTML = svgMenuCollapsed;
+        settingsContainer.classList.add("hidden");
+      });
+      subredditDiv.querySelector("span")!.addEventListener("click", () => {
+        settings.subreddits = settings.subreddits.filter((sub) => sub != subreddit);
+        saveSettings(settings);
+        renderHeader();
+      });
+      settingsDiv.append(subredditDiv);
+    }
+
+    settingsDiv.append(dom(`<div class="settings-row-header">Theme</div>`)[0]);
+    for (const theme of ["Dark", "Light"]) {
+      const themeDiv = dom(`
+      <div class="settings-row">
+        <span style="flex: 1">${theme}</span><span class="svg-icon hidden">${svgMenuCircle}</span>
+      </div>`)[0];
+      if (settings.theme == theme.toLowerCase()) {
+        themeDiv.querySelector(".svg-icon")?.classList.remove("hidden");
+      }
+      themeDiv.addEventListener("click", () => {
+        document.body.classList.remove("dark-theme");
+        document.body.classList.remove("light-theme");
+        document.body.classList.add(theme.toLowerCase() + "-theme");
+        settings.theme = theme;
+        saveSettings(settings);
+        render();
+      });
+      settingsDiv.append(themeDiv);
+    }
+  };
+  render();
 }
 
 function renderPosts(listing: Posts) {
-  const posts = document.querySelector("#posts")! as HTMLElement;
+  const posts = document.querySelector(".posts")! as HTMLElement;
   if ((!listing || !listing.data || !listing.data.children) && posts.children.length == 0) {
     const div = document.createElement("div");
     div.innerHTML = `Subreddit ${getSubreddit()} doesn't exist.`;
@@ -44,14 +192,16 @@ function renderPosts(listing: Posts) {
   }
 
   const loadingDiv = showLoading();
+  loadingDiv.innerHTML = "Load more";
   onVisibleOnce(loadingDiv, async () => {
     try {
+      loadingDiv.innerHTML = svgLoader;
       const result = await queryReddit(listing.data.after);
       renderPosts(result);
     } catch (e) {
       showError("Could not load more posts in r/" + getSubreddit(), e);
     } finally {
-      hideLoading();
+      loadingDiv.remove();
     }
   });
 }
@@ -68,7 +218,7 @@ function dom(dom: string) {
 
 const missingThumbnailTags = new Set<String>(["self", "nsfw", "default", "image", "spoiler"]);
 function renderMedia(post: Post): HTMLElement[] {
-  const postsWidth = document.querySelector("#posts")!.clientWidth - 32; // account for padding in post
+  const postsWidth = document.querySelector(".posts")!.clientWidth - 32; // account for padding in post
 
   if (post.data.is_self) {
     return dom(`<div class="post-self-preview">${htmlDecode(post.data.selftext_html)}</div>`);
@@ -123,7 +273,7 @@ function renderMedia(post: Post): HTMLElement[] {
   if (post.data.secure_media_embed && post.data.secure_media_embed.media_domain_url) {
     const embed = post.data.secure_media_embed;
     const embedWidth = postsWidth;
-    const embedHeight = Math.floor((embed.height / embed.width) * embedWidth) + "px";
+    const embedHeight = Math.floor((embed.height / embed.width) * embedWidth);
     if (embed.content.includes("iframe")) {
       const embedUrl = htmlDecode(
         embed.content
@@ -172,7 +322,7 @@ function renderVideoTag(embed: { width: number; height: number; dash_url: string
 
 async function renderComments(post: Post, container: HTMLElement) {
   const loadingDiv = document.createElement("div");
-  loadingDiv.innerHTML = "Loading comments";
+  loadingDiv.innerHTML = svgLoader;
   container.append(loadingDiv);
 
   try {
@@ -239,11 +389,13 @@ function renderPost(post: Post) {
         <div class="post-title"><a href="${post.data.url}" target="_blank">${post.data.title}</a></div>
         <div class="post-meta">
             <span class="post-points">${post.data.score} pts</span>
+            ${
+              getSubreddit().toLowerCase() != post.data.subreddit.toLowerCase()
+                ? `<span class="post-subreddit"><a href="https://www.reddit.com/r/${post.data.subreddit}" target="_blank">r/${post.data.subreddit}</a></span>`
+                : ""
+            }
             <span class="post-date">${dateToText(post.data.created_utc * 1000)}</span>
             <span class="post-author">by <a href="https://www.reddit.com/u/${post.data.author}" target="_blank">${post.data.author}</a></span>
-            <span class="post-subreddit">in <a href="https://www.reddit.com/r/${post.data.subreddit}" target="_blank">r/${
-    post.data.subreddit
-  }</a></span>
         </div>
         ${
           !post.data.is_self &&
@@ -305,9 +457,8 @@ function showLoading() {
   const loadingDiv = document.createElement("div");
   loadingDiv.id = "loading";
   loadingDiv.classList.add("post-loading");
-  const subreddit = "/r/" + getSubreddit();
-  loadingDiv.innerText = `Loading ${subreddit}`;
-  const postsDiv = document.querySelector("#posts");
+  loadingDiv.innerHTML = svgLoader;
+  const postsDiv = document.querySelector(".posts");
   postsDiv?.appendChild(loadingDiv);
   return loadingDiv;
 }
@@ -317,33 +468,36 @@ function showError(error: string, e: any) {
   loadingDiv.id = "error";
   loadingDiv.classList.add("post-error");
   loadingDiv.innerText = error;
-  const postsDiv = document.querySelector("#posts");
+  const postsDiv = document.querySelector(".posts");
   postsDiv?.appendChild(loadingDiv);
   if (e.stack) console.log(e.stack);
   else if (e.toString) console.log(e.toString());
   return loadingDiv;
 }
 
-function hideLoading() {
-  document.querySelector("#loading")?.remove();
-}
-
 async function load() {
   renderHeader();
-  showLoading();
+  let loadingDiv = showLoading();
+  loadingDiv.innerHTML = svgLoader;
+  document.title = "ledit - r/" + getSubreddit();
   try {
     let result = await queryReddit();
     renderPosts(result);
   } catch (e) {
     showError("Could not load r/" + getSubreddit(), e);
   } finally {
-    hideLoading();
+    loadingDiv.remove();
   }
 }
 
 window.addEventListener("hashchange", () => {
-  document.querySelector("#posts")!.innerHTML = "";
+  document.querySelector(".posts")!.innerHTML = "";
+  renderHeader();
   load();
 });
 
+let settings = getSettings();
+document.body.classList.remove("dark-theme");
+document.body.classList.remove("light-theme");
+document.body.classList.add(settings.theme.toLowerCase() + "-theme");
 load();

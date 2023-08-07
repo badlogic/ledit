@@ -14,6 +14,7 @@ const config = {
   loader: {
     ".ttf": "dataurl",
     ".html": "text",
+    ".svg": "text",
   },
   logLevel: "info",
   minify: !watch,
