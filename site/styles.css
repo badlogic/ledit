@@ -14,8 +14,8 @@ body {
 }
 
 a {
-  color: #007bff;
   text-decoration: none;
+  color: rgb(215, 215, 199);
 }
 
 iframe {
@@ -60,14 +60,19 @@ code {
   height: 2rem;
   background: #121b25;
   color: rgba(255, 255, 255, 0.7);
-  padding: 0.5em;
-  padding-left: 1em;
+  padding: 0.5em 0;
   font-size: 1.5em;
-  position: sticky;
+  position: fixed;
   top: 0;
   z-index: 10;
-  width: 600px;
+  width: 100%;
   margin: auto;
+  border-bottom: 0.5px solid #000000;
+}
+
+#header-container {
+    width: 600px;
+    margin: auto;
 }
 
 #header-subreddit {
@@ -92,7 +97,10 @@ code {
 }
 
 #posts {
-  height: calc(100% - 3em);
+    width: 600px;
+    margin: auto;
+    /* 2em for header + 2 * 0.5 for header padding at 1.5 font size + 1 em*/
+    margin-top: 72px;
 }
 
 #posts .post:first-child {
@@ -105,15 +113,15 @@ code {
   display: flex;
   flex-direction: column;
   gap: 0.4em;
-  width: 600px;
   margin: auto;
 }
 
 @media (max-width: 767px) {
-    .post, .header {
-      width: 100%;
-    }
+  .posts,
+  .header-container {
+    width: 100%;
   }
+}
 
 .post-loading {
   text-align: center;
@@ -125,14 +133,8 @@ code {
 }
 
 .post-meta {
-  font-size: 0.75em;
-  gap: 0.3em;
   color: rgb(130, 130, 123);
-  overflow: auto;
-}
-
-.post-meta a {
-  color: #007bffbc;
+  font-size: 0.75em;
 }
 
 .post-self-preview {
@@ -177,7 +179,7 @@ code {
 }
 
 .post-media > video {
-  width: 100%;
+
 }
 
 .icon-class {
@@ -188,7 +190,17 @@ code {
   padding-left: 0.8em;
   padding-top: 0.2em;
   margin-bottom: 0.5em;
+  margin-left: 0.5em;
   border-left: 1px dotted rgba(255, 255, 255, 0.3);
+}
+
+.comment a {
+  overflow-wrap: anywhere;
+}
+
+.comment img {
+  max-width: 100%;
+  height: auto;
 }
 
 .comment-meta {
@@ -199,6 +211,10 @@ code {
 
 .comment-text {
   cursor: pointer;
+}
+
+.comment-text a {
+  color: #007bff;
 }
 
 .comment-text > .md p:last-child {

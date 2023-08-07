@@ -59,7 +59,7 @@ function renderPosts(listing: Posts) {
 const missingThumbnailTags = new Set<String>(["self", "nsfw", "default", "image", "spoiler"]);
 function renderMedia(post: Post) {
 
-  const postsWidth = document.querySelector("#posts")!.clientWidth;
+  const postsWidth = document.querySelector("#posts")!.clientWidth - 32; // account for padding in post
 
   if (post.data.is_self) {
     return `<div class="post-self-preview">${htmlDecode(post.data.selftext_html)}</div>`;
@@ -159,7 +159,6 @@ function renderComment(comment: Comment, level: number, container: HTMLElement) 
         <div class="comment-replies-count hidden"></div>
     `;
   commentDiv.classList.add("comment");
-  commentDiv.style.marginLeft = "0.5em";
   container.append(commentDiv);
   const text = commentDiv.querySelector(".comment-text")! as HTMLElement;
   const replies = commentDiv.querySelector(".comment-replies")! as HTMLElement;
