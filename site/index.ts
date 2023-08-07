@@ -61,6 +61,14 @@ function renderMedia(post: Post) {
     return `<div class="post-self-preview">${htmlDecode(post.data.selftext_html)}</div>`;
   }
 
+  if (post.data.secure_media && post.data.secure_media.reddit_video) {
+    const embed = post.data.secure_media.reddit_video;
+    const postsWidth = document.querySelector("#posts")!.clientWidth;
+    const embedWidth = postsWidth;
+    const embedHeight = Math.floor((embed.height / embed.width) * postsWidth);
+    return `<div class="post-media"><video src="${embed.fallback_url}" controls loop></img></div>`;
+  }
+
   if (post.data.secure_media_embed && post.data.secure_media_embed.media_domain_url) {
     const embed = post.data.secure_media_embed;
     const postsWidth = document.querySelector("#posts")!.clientWidth;

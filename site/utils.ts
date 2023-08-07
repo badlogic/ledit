@@ -39,6 +39,13 @@ export interface Post {
         height: number;
       };
     };
+    secure_media: {
+        reddit_video: {
+            fallback_url: string,
+            width: number,
+            height: number
+        }
+    }
     secure_media_embed: {
       content: string;
       width: number;
