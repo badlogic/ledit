@@ -178,13 +178,13 @@ export function getSorting() {
 }
 
 export function getSortingFragment() {
-    return getSorting().split("-")[0];
+  return getSorting().split("-")[0];
 }
 
 export function getSortingParameter() {
-    const tokens = getSorting().split("-");
-    if (tokens.length != 2) return "";
-    return "t=" + tokens[1];
+  const tokens = getSorting().split("-");
+  if (tokens.length != 2) return "";
+  return "t=" + tokens[1];
 }
 
 export function onVisibleOnce(target: HTMLElement, callback: () => void) {
@@ -209,4 +209,14 @@ export function onVisibleOnce(target: HTMLElement, callback: () => void) {
 export function htmlDecode(input) {
   var doc = new DOMParser().parseFromString(input, "text/html");
   return doc.documentElement.textContent;
+}
+
+export function intersectsViewport(element: Element | null) {
+  if (element == null) return false;
+  var rect = element.getBoundingClientRect();
+  var windowHeight = window.innerHeight || document.documentElement.clientHeight;
+  var windowWidth = window.innerWidth || document.documentElement.clientWidth;
+  var verticalVisible = rect.top <= windowHeight && rect.bottom >= 0;
+  var horizontalVisible = rect.left <= windowWidth && rect.right >= 0;
+  return verticalVisible && horizontalVisible;
 }

@@ -30,10 +30,10 @@
     "prettier": "^2.8.8",
     "pretty-quick": "^3.1.3",
     "rimraf": "^5.0.1",
-    "typescript": "^5.1.6",
-    "video.js": "^8.3.0"
+    "typescript": "^5.1.6"
   },
   "dependencies": {
-    "intersection-observer": "^0.12.2"
+    "intersection-observer": "^0.12.2",
+    "video.js": "^8.3.0"
   }
 }

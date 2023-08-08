@@ -1,5 +1,16 @@
-import { Post, Comment, Posts, dateToText, getComments, getSubreddit, htmlDecode, onVisibleOnce, queryReddit, getSorting } from "./utils";
-import "video.js";
+import {
+  Post,
+  Comment,
+  Posts,
+  dateToText,
+  getComments,
+  getSubreddit,
+  htmlDecode,
+  onVisibleOnce,
+  queryReddit,
+  getSorting,
+  intersectsViewport,
+} from "./utils";
 // @ts-ignore
 import svgLoader from "./svg-loader.svg";
 // @ts-ignore
@@ -10,6 +21,8 @@ import svgMenuMinus from "./svg-menu-minus.svg";
 import svgMenuPlus from "./svg-menu-plus.svg";
 // @ts-ignore
 import svgMenuCircle from "./svg-menu-circle.svg";
+import videojs from "video.js";
+import Player from "video.js/dist/types/player";
 
 document.addEventListener("keydown", function (event) {
   if (event.key === "Escape") {
@@ -68,7 +81,7 @@ function renderHeader() {
     input.value = subreddit;
     input.select();
     input.addEventListener("keydown", function (event) {
-      if (event.key === 'Enter' || event.key === 'Go' || event.keyCode === 13) {
+      if (event.key === "Enter" || event.key === "Go" || event.keyCode === 13) {
         event.preventDefault();
         setURL(input.value);
         headerSubreddit.classList.remove("hidden");
@@ -138,7 +151,7 @@ function renderSettings() {
       settingsContainer.classList.add("hidden");
     }
   });
-  const settingsDiv= settingsContainer.querySelector(".settings")!;
+  const settingsDiv = settingsContainer.querySelector(".settings")!;
   settingsContainer.addEventListener("click", (event) => {
     if (settingsDiv == event.target) {
       settingsContainer.classList.add("hidden");
@@ -202,15 +215,43 @@ function renderPosts(listing: Posts) {
     return;
   }
 
+  const videos: Player[] = [];
   for (let i = 0; i < listing.data.children.length; i++) {
     const post = listing.data.children[i];
     const postDiv = renderPost(post);
     posts.append(postDiv);
+    const videoDiv = postDiv.querySelector("video-js");
+    if (videoDiv) {
+      const video = videojs(videoDiv);
+      videos.push(video);
+      var videoElement = video.el().querySelector("video")!;
+
+      // Add a click event listener to the video element
+      videoElement.addEventListener("touchend", function () {
+        if (video.paused()) {
+          video.play();
+        } else {
+          video.pause();
+        }
+      });
+    }
   }
+
+  document.addEventListener("scroll", () => {
+    for (const video of videos) {
+      const videoElement = video.el().querySelector("video");
+      if (videoElement && videoElement === document.pictureInPictureElement) {
+        continue;
+      }
+      if (!video.paused() && !intersectsViewport(videoElement)) {
+        video.pause();
+      }
+    }
+  });
 
   const loadingDiv = showLoading();
   loadingDiv.innerHTML = "Load more";
-  onVisibleOnce(loadingDiv, async () => {
+  const loadNext = async () => {
     try {
       loadingDiv.innerHTML = svgLoader;
       const result = await queryReddit(listing.data.after);
@@ -220,7 +261,9 @@ function renderPosts(listing: Posts) {
     } finally {
       loadingDiv.remove();
     }
-  });
+  };
+  onVisibleOnce(loadingDiv, loadNext);
+  loadingDiv.addEventListener("click", loadNext);
 }
 
 function dom(dom: string) {
@@ -236,6 +279,7 @@ function dom(dom: string) {
 const missingThumbnailTags = new Set<String>(["self", "nsfw", "default", "image", "spoiler"]);
 function renderMedia(post: Post): HTMLElement[] {
   const postsWidth = document.querySelector(".posts")!.clientWidth - 32; // account for padding in post
+  const thumbnailUrl = ""; // post.data.thumbnail.includes("://") ? post.data.thumbnail : "";
 
   if (post.data.is_self) {
     return dom(`<div class="post-self-preview">${htmlDecode(post.data.selftext_html)}</div>`);
@@ -284,7 +328,7 @@ function renderMedia(post: Post): HTMLElement[] {
   }
 
   if (post.data.secure_media && post.data.secure_media.reddit_video) {
-    return dom(renderVideoTag(post.data.secure_media.reddit_video, postsWidth));
+    return dom(renderVideoTag(post.data.secure_media.reddit_video, postsWidth, thumbnailUrl));
   }
 
   if (post.data.secure_media_embed && post.data.secure_media_embed.media_domain_url) {
@@ -318,7 +362,7 @@ function renderMedia(post: Post): HTMLElement[] {
     }
     if (!image) return [document.createElement("div")];
     if (!post.data.preview.reddit_video_preview?.fallback_url) return dom(`<div class="post-media"><img src="${image.url}"></img></div>`);
-    return dom(renderVideoTag(post.data.preview.reddit_video_preview, postsWidth));
+    return dom(renderVideoTag(post.data.preview.reddit_video_preview, postsWidth, thumbnailUrl));
   }
 
   if (post.data.thumbnail && !missingThumbnailTags.has(post.data.thumbnail)) {
@@ -327,14 +371,20 @@ function renderMedia(post: Post): HTMLElement[] {
   return [document.createElement("div")];
 }
 
-function renderVideoTag(embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string }, postsWidth) {
+function renderVideoTag(
+  embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string },
+  postsWidth: number,
+  thumbnail: string
+) {
   const embedWidth = postsWidth;
   const embedHeight = Math.floor((embed.height / embed.width) * postsWidth);
-  return `<div class="post-media"><video controls style="width: ${embedWidth}px; height: ${embedHeight}px" loop data-setup="{}" class="video-js">
-        ${embed.dash_url ? `<source src="${embed.dash_url}"></source>` : ""}
-        ${embed.hls_url ? `<source src="${embed.hls_url}"></source>` : ""}
-        <source src="${embed.fallback_url}"></source>
-    </video></div>`;
+  return `<div class="post-media">
+      <video-js controls fluid class="video-js" style="width: 100%;" loop data-setup="{}">
+          ${embed.dash_url ? `<source src="${embed.dash_url}"></source>` : ""}
+          ${embed.hls_url ? `<source src="${embed.hls_url}"></source>` : ""}
+          <source src="${embed.fallback_url}"></source>
+      </video-js>
+    </div>`;
 }
 
 async function renderComments(post: Post, container: HTMLElement) {
@@ -507,9 +557,7 @@ async function load() {
 }
 
 window.addEventListener("hashchange", () => {
-  document.querySelector(".posts")!.innerHTML = "";
-  renderHeader();
-  load();
+  window.location.reload();
 });
 
 let settings = getSettings();
