@@ -20,6 +20,10 @@ document.addEventListener("keydown", function (event) {
   }
 });
 
+function setURL(hash: string) {
+  window.location.hash = hash;
+}
+
 function renderHeader() {
   const headerContainer = document.querySelector(".header-container")!;
   headerContainer.innerHTML = "";
@@ -67,7 +71,7 @@ function renderHeader() {
     input.addEventListener("keypress", function (event) {
       if (event.keyCode === 13 || event.which === 13) {
         event.preventDefault();
-        window.location.hash = input.value;
+        setURL(input.value);
         headerSubreddit.classList.remove("hidden");
         input.classList.add("hidden");
       }
@@ -99,7 +103,7 @@ function renderHeader() {
   }
   sorting.value = getSorting();
   sorting.addEventListener("change", () => {
-    window.location.hash = getSubreddit() + "/" + sorting.value;
+    setURL(getSubreddit() + "/" + sorting.value);
     headerSubreddit.classList.remove("hidden");
     input.classList.add("hidden");
   });
@@ -499,7 +503,6 @@ async function load() {
   renderHeader();
   let loadingDiv = showLoading();
   loadingDiv.innerHTML = svgLoader;
-  document.title = "ledit - r/" + getSubreddit();
   try {
     let result = await queryReddit();
     renderPosts(result);
