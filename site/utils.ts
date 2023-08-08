@@ -170,7 +170,7 @@ export function getSorting() {
   }
   const tokens = hash.substring(1).split("/");
   if (tokens.length < 2) return "hot";
-  if (["hot", "new", "top-today", "top-week", "top-month", "top-year", "top-alltime"].includes(tokens[1])) {
+  if (["hot", "new", "rising", "top-today", "top-week", "top-month", "top-year", "top-alltime"].includes(tokens[1])) {
     return tokens[1];
   } else {
     return "hot";

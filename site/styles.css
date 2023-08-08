@@ -93,6 +93,10 @@ blockquote {
   display: none !important;
 }
 
+.no-user-select {
+    user-select: none;
+}
+
 .main {
   margin: auto;
 }
@@ -110,7 +114,7 @@ blockquote {
   height: 2rem;
   background: var(--ledit-background);
   padding: var(--ledit-padding) 0;
-  font-size: var(--ledit-font-size-big);
+  font-size: var(--ledit-font-size);
   position: fixed;
   top: 0;
   z-index: 20;
@@ -136,6 +140,7 @@ blockquote {
   cursor: pointer;
   flex: 1;
   user-select: none;
+  margin-left: var(--ledit-padding);
 }
 
 .header-subreddit-input {
@@ -149,6 +154,7 @@ blockquote {
   box-shadow: none;
   border-radius: 0;
   flex: 1;
+  margin-left: var(--ledit-padding);
 }
 
 .settings-container {

@@ -3,8 +3,6 @@ import "video.js";
 // @ts-ignore
 import svgLoader from "./svg-loader.svg";
 // @ts-ignore
-import svgMenuCollapsed from "./svg-menu-collapsed.svg";
-// @ts-ignore
 import svgMenuExpanded from "./svg-menu-expanded.svg";
 // @ts-ignore
 import svgMenuMinus from "./svg-menu-minus.svg";
@@ -17,6 +15,7 @@ document.addEventListener("keydown", function (event) {
   if (event.key === "Escape") {
     document.querySelector(".header-subreddit")!.classList.remove("hidden");
     document.querySelector(".header-subreddit-input")!.classList.add("hidden");
+    document.querySelector(".settings-container")?.classList.add("hidden");
   }
 });
 
@@ -29,17 +28,18 @@ function renderHeader() {
   headerContainer.innerHTML = "";
   const header = dom(`
   <div class="header">
-    <span class="header-menu svg-icon" style="padding-left: var(--ledit-padding);"></span>
-    <div class="header-subreddit" style="width: 100%";></div>
-    <div><input class="header-subreddit-input hidden" style="width: 100%"/></div>
-    <select class="header-sorting" style="padding-right: var(--ledit-padding);">
-      <option value="hot">Hot</hot>
-      <option value="new">New</hot>
-      <option value="top-today">Top Today</hot>
-      <option value="top-week">Top Week</hot>
-      <option value="top-month">Top Month</hot>
-      <option value="top-year">Top Year</hot>
-      <option value="top-alltime">Top All time</hot>
+    <div class="header-menu svg-icon no-user-select"" style="padding-left: var(--ledit-padding);"></div>
+    <div class="header-subreddit"></div>
+    <input class="header-subreddit-input hidden"/>
+    <select class="header-sorting" tabindex="-1" style="padding-right: var(--ledit-padding);">
+      <option value="hot">Hot</option>
+      <option value="new">New</option>
+      <option value="rising">Rising</option>
+      <option value="top-today">Top Today</option>
+      <option value="top-week">Top Week</option>
+      <option value="top-month">Top Month</option>
+      <option value="top-year">Top Year</option>
+      <option value="top-alltime">Top All time</option>
     </select>
     <span class="header-subreddit-add svg-icon" style="padding-right: var(--ledit-padding);"></span>
   </div>
@@ -66,10 +66,9 @@ function renderHeader() {
     headerSubreddit.classList.add("hidden");
     input.classList.remove("hidden");
     input.value = subreddit;
-    input.focus();
     input.select();
-    input.addEventListener("keypress", function (event) {
-      if (event.keyCode === 13 || event.which === 13) {
+    input.addEventListener("keydown", function (event) {
+      if (event.key === 'Enter' || event.key === 'Go' || event.keyCode === 13) {
         event.preventDefault();
         setURL(input.value);
         headerSubreddit.classList.remove("hidden");
@@ -83,13 +82,11 @@ function renderHeader() {
   });
 
   const menuButton = document.querySelector(".header-menu")!;
-  menuButton.innerHTML = svgMenuCollapsed;
+  menuButton.innerHTML = svgMenuExpanded;
   menuButton.addEventListener("click", () => {
     if (!document.querySelector(".settings-container")!.classList.contains("hidden")) {
-      menuButton.innerHTML = svgMenuCollapsed;
       document.querySelector(".settings-container")?.classList.add("hidden");
     } else {
-      menuButton.innerHTML = svgMenuExpanded;
       document.querySelector(".settings-container")?.classList.remove("hidden");
       renderSettings();
     }
@@ -138,14 +135,12 @@ function renderSettings() {
   const menuButton = document.querySelector(".header-menu")!;
   settingsContainer.addEventListener("click", (event) => {
     if (settingsContainer == event.target) {
-      menuButton.innerHTML = svgMenuCollapsed;
       settingsContainer.classList.add("hidden");
     }
   });
   const settingsDiv= settingsContainer.querySelector(".settings")!;
   settingsContainer.addEventListener("click", (event) => {
     if (settingsDiv == event.target) {
-      menuButton.innerHTML = svgMenuCollapsed;
       settingsContainer.classList.add("hidden");
     }
   });
@@ -154,7 +149,6 @@ function renderSettings() {
     settingsDiv.innerHTML = "";
     const closeButton = dom(`<div class="settings-row-close">Close</div>`)[0];
     closeButton.addEventListener("click", () => {
-      menuButton.innerHTML = svgMenuCollapsed;
       settingsContainer.classList.add("hidden");
     });
     settingsDiv.append(closeButton);
@@ -166,7 +160,6 @@ function renderSettings() {
           <a href="#${subreddit}" style="flex: 1">${subreddit}</a><span class="svg-icon">${svgMenuMinus}</span>
         </div>`)[0];
       subredditDiv.querySelector("a")!.addEventListener("click", () => {
-        menuButton.innerHTML = svgMenuCollapsed;
         settingsContainer.classList.add("hidden");
       });
       subredditDiv.querySelector("span")!.addEventListener("click", () => {
