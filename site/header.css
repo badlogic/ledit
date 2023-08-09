@@ -60,4 +60,5 @@
     padding: 0;
     text-align: right;
     cursor: pointer;
+    outline-style: none;
   }

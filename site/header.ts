@@ -17,7 +17,7 @@ export class HeaderView extends View {
             <div x-id="showMenu" class="header-menu svg-icon no-user-select" style="padding-left: var(--ledit-padding);">${svgBurger}</div>
             <div x-id="subreddit" class="header-subreddit">r/${getSubreddit()}</div>
             <input x-id="subredditInput" class="header-subreddit-input hidden" value="${getSubreddit()}"/>
-            <select x-id="sorting" class="header-sorting" tabindex="-1" style="padding-right: var(--ledit-padding);">
+            <select x-id="sorting" class="header-sorting" tabindex="-1" style="padding-right: var(--ledit-margin);">
                <option value="hot">Hot</option>
                <option value="new">New</option>
                <option value="rising">Rising</option>

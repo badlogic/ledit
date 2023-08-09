@@ -1,110 +1,117 @@
 :root {
-  --ledit-font-size: 16px;
-  --ledit-font-size-big: calc(var(--ledit-font-size) * 1.2);
-  --ledit-font-size-mid: calc(var(--ledit-font-size) * 1);
-  --ledit-font-size-small: calc(var(--ledit-font-size) * 0.75);
-  --ledit-font-family: "Noto Sans JP", "helvetica neue", helvetica, Ubuntu, roboto, noto, arial, sans-serif;
-  --ledit-padding: calc(var(--ledit-font-size) * 0.5);
-  --ledit-margin: var(--ledit-font-size);
-  --ledit-code-font-family: Menlo, monospace;
-  line-height: 1.25em;
+   --ledit-font-size: 16px;
+   --ledit-font-size-big: calc(var(--ledit-font-size) * 1.2);
+   --ledit-font-size-mid: calc(var(--ledit-font-size) * 1);
+   --ledit-font-size-small: calc(var(--ledit-font-size) * 0.75);
+   --ledit-font-family: "Noto Sans JP", "helvetica neue", helvetica, Ubuntu, roboto, noto, arial, sans-serif;
+   --ledit-padding: calc(var(--ledit-font-size) * 0.5);
+   --ledit-margin: var(--ledit-font-size);
+   --ledit-code-font-family: Menlo, monospace;
+   line-height: 1.25em;
 }
 
 .dark-theme {
-  --ledit-background: #121b25;
-  --ledit-background-dim: #0b1117;
-  --ledit-background-buttons: ##52585f;
-  --ledit-header-border: #0b1117;
-  --ledit-color: #ccc;
-  --ledit-color-dim: rgb(130, 130, 123);
-  --ledit-border-color: rgba(255, 255, 255, 0.3);
-  --ledit-link-color: #8db5e1;
+   --ledit-background: #121b25;
+   --ledit-background-dim: #0b1117;
+   --ledit-background-buttons: ##52585f;
+   --ledit-header-border: #0b1117;
+   --ledit-color: #ccc;
+   --ledit-color-dim: rgb(130, 130, 123);
+   --ledit-border-color: rgba(255, 255, 255, 0.3);
+   --ledit-link-color: #8db5e1;
 }
 
 .light-theme {
-  --ledit-background: #fcf8fc;
-  --ledit-background-dim: #efedf1;
-  --ledit-background-buttons: #cccccc57;
-  --ledit-header-border: #0000003e;
-  --ledit-color: #111;
-  --ledit-color-dim: #777;
-  --ledit-border-color: #ddd;
-  --ledit-link-color: #3a579b;
+   --ledit-background: #fcf8fc;
+   --ledit-background-dim: #efedf1;
+   --ledit-background-buttons: #cccccc57;
+   --ledit-header-border: #0000003e;
+   --ledit-color: #111;
+   --ledit-color-dim: #777;
+   --ledit-border-color: #ddd;
+   --ledit-link-color: #3a579b;
 }
 
 body,
 html {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: var(--ledit-font-family);
-  color: var(--ledit-color);
-  background: var(--ledit-background-dim);
-  font-size: var(--ledit-font-size);
+   margin: 0;
+   padding: 0;
+   box-sizing: border-box;
+   font-family: var(--ledit-font-family);
+   color: var(--ledit-color);
+   background: var(--ledit-background-dim);
+   font-size: var(--ledit-font-size);
 }
 
 a {
-  text-decoration: none;
-  color: var(--ledit-link-color);
+   text-decoration: none;
+   color: var(--ledit-link-color);
 }
 
 p a {
-  text-decoration: underline;
-  overflow-wrap: anywhere;
+   text-decoration: underline;
+   overflow-wrap: anywhere;
 }
 
 iframe {
-  border: none;
-  overflow: hidden;
+   border: none;
+   overflow: hidden;
 }
 
 p {
-  margin-top: 0;
+   margin-top: 0;
 }
 
 pre {
-  background: var(--ledit-background-dim);
-  width: 100%;
-  overflow: auto;
+   background: var(--ledit-background-dim);
+   width: 100%;
+   overflow: auto;
 }
 
 code {
-  font-family: var(--ledit-code-font-family);
-  font-size: var(--ledit-font-size-small);
+   font-family: var(--ledit-code-font-family);
+   font-size: var(--ledit-font-size-small);
 }
 
 blockquote {
-  border-left: 0.5px solid var(--ledit-color-dim);
-  font-style: italic;
-  padding: var(--ledit-padding);
-  margin-left: var(--ledit-padding);
+   border-left: 0.5px solid var(--ledit-color-dim);
+   font-style: italic;
+   padding: var(--ledit-padding);
+   margin-left: var(--ledit-padding);
 }
 
 .hidden {
-  display: none !important;
+   display: none !important;
 }
 
 .no-user-select {
-  user-select: none;
+   user-select: none;
 }
 
 .main {
-  margin: auto;
+   margin: auto;
 }
 
 .svg-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: var(--ledit-font-size);
-  padding: 0;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   height: var(--ledit-font-size);
+   padding: 0;
 }
 
 @media (max-width: 767px) {
-  .posts,
-  .comments,
-  .header,
-  .settings {
-    width: 100% !important;
-  }
+   .posts,
+   .comments,
+   .header,
+   .settings {
+      width: 100% !important;
+   }
+
+   .comments > .comment, .post-buttons-sticky {
+      padding: var(--ledit-margin) !important;
+      margin: calc(var(--ledit-padding) * -1.9) !important;
+      margin-bottom: 0 !important;
+      margin-top: 0 !important;
+   }
 }

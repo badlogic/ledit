@@ -124,13 +124,13 @@ export class PostView extends View {
 
       const elements = this.elements<{
          media: Element;
-         toggleComments: Element;
+         buttonsRow: Element;
          comments: Element;
       }>();
 
       elements.media.append(new MediaView(this.post));
 
-      elements.toggleComments.addEventListener("click", () => {
+      elements.buttonsRow.addEventListener("click", () => {
          this.toggleComments();
       })
    }
