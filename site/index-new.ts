@@ -6,3 +6,7 @@ import "./comments";
 import { applySettings } from "./settings";
 
 applySettings();
+
+window.addEventListener("hashchange", () => {
+   window.location.reload();
+ });
