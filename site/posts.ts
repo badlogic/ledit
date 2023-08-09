@@ -12,7 +12,7 @@ export class PostsView extends View {
    public static seenPosts = new Set<string>();
    private loadedPages = 1;
    static {
-      getSettings().seen.forEach((seen) => PostsView.seenPosts.add(seen));
+      getSettings().seenIds.forEach((seen) => PostsView.seenPosts.add(seen));
    }
    constructor() {
       super();
@@ -49,7 +49,7 @@ export class PostsView extends View {
       for (let i = 0; i < posts.data.children.length; i++) {
          const post = posts.data.children[i];
          const postDiv = new PostView(post);
-         if (PostsView.seenPosts.has(post.data.id) && !getSettings().showSeen) {
+         if (PostsView.seenPosts.has(post.data.id) && getSettings().hideSeen) {
             postDiv.classList.add("hidden");
             hiddenPosts++;
          }
@@ -58,7 +58,7 @@ export class PostsView extends View {
          onVisibleOnce(postDiv, () => {
             if (!PostsView.seenPosts.has(post.data.id)) {
                PostsView.seenPosts.add(post.data.id);
-               getSettings().seen.push(post.data.id);
+               getSettings().seenIds.push(post.data.id);
                saveSettings();
                console.log("Seen " + post.data.id);
             }

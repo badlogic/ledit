@@ -5,9 +5,9 @@ import { View } from "./view";
 
 interface Settings {
    subreddits: string[];
-   showSeen: boolean,
+   hideSeen: boolean,
+   seenIds: string[];
    theme: string;
-   seen: string[];
 }
 
 let settings: Settings | null = null;
@@ -16,9 +16,9 @@ export function getSettings(): Settings {
    if (settings) return settings;
    settings = {
       subreddits: ["all", "pics", "videos", "worldnews", "science", "todayilearned"],
-      showSeen: true,
+      hideSeen: false,
+      seenIds: [],
       theme: "light",
-      seen: [],
    };
 
    if (localStorage.getItem("ledit")) {
@@ -54,8 +54,8 @@ export class SettingsView extends View {
                     <div x-id="close" class="settings-row-close"><span class="svg-icon">${svgClose}</span></div>
                     <div class="settings-row-header">Subreddits</div>
                     <div x-id="subreddits"></div>
-                    <div x-id="showSeen" class="settings-row">
-                     <span style="flex: 1">Hide seen posts</span><span class="svg-icon">${settings.showSeen ? "" : svgCheck}</span>
+                    <div x-id="hideSeen" class="settings-row">
+                     <span style="flex: 1">Hide seen posts</span><span class="svg-icon">${settings.hideSeen ? svgCheck : ""}</span>
                     </div>
                     <div class="settings-row-header">Theme</div>
                     <div x-id="themes"></div>
@@ -70,7 +70,7 @@ export class SettingsView extends View {
          container: Element;
          close: Element;
          subreddits: Element;
-         showSeen: Element;
+         hideSeen: Element;
          themes: Element;
       }>();
 
@@ -104,15 +104,15 @@ export class SettingsView extends View {
       }
 
       // Setup show seen toggle
-      elements.showSeen.addEventListener("click", (event) => {
+      elements.hideSeen.addEventListener("click", (event) => {
          event.stopPropagation();
-         settings.showSeen = !settings.showSeen;
+         settings.hideSeen = !settings.hideSeen;
          saveSettings();
          const seenPostDivs = document.querySelectorAll(".post-seen");
          for (let i = 0; i < seenPostDivs.length; i++) {
             const postDiv = seenPostDivs[i];
-            if (settings.showSeen) postDiv.classList.remove("hidden");
-            else postDiv.classList.add("hidden");
+            if (settings.hideSeen) postDiv.classList.add("hidden");
+            else postDiv.classList.remove("hidden");
          }
          this.render();
       })
