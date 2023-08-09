@@ -1,0 +1,126 @@
+.posts {
+  width: 600px;
+  margin: auto;
+  margin-top: calc(var(--ledit-font-size) * 2.5 + var(--ledit-font-size-big));
+  display: flex;
+  flex-direction: column;
+  gap: var(--ledit-padding);
+}
+
+.post {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ledit-padding);
+  padding: var(--ledit-margin);
+  padding-bottom: 0;
+  border-radius: 8px;
+  background: var(--ledit-background);;
+  margin: auto;
+}
+
+.post-loading {
+  text-align: center;
+  margin: var(--ledit-margin);
+  color: var(--ledit-link-color);
+  cursor: pointer;
+  margin: 0;
+  padding: var(--ledit-margin);
+}
+
+.post-error {
+  text-align: center;
+  margin: var(--ledit-margin);
+}
+
+.post-title {
+  font-size: var(--ledit-font-size);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.post-subreddit {
+  font-size: var(--ledit-font-size-small);
+}
+
+.post-meta {
+  color: var(--ledit-color-dim);
+  font-size: var(--ledit-font-size-small);
+  padding: calc(var(--ledit-padding) * 0.5) 0;
+}
+
+.post-self-preview {
+  max-height: calc(var(--ledit-font-size) * 10);
+  overflow: hidden;
+  position: relative;
+  color: var(--ledit-color-dim);
+  cursor: pointer;
+}
+
+.post-self-preview::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--ledit-padding) * 2); /* Adjust this value to control the height of the fade-out effect */
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), var(--ledit-background));
+  pointer-events: none;
+}
+
+.post-url {
+  overflow: hidden;
+  white-space: pre;
+  text-overflow: ellipsis;
+  font-size: var(--ledit-font-size-small);
+  color: var(--ledit-color-dim);
+  padding-bottom: calc(var(--ledit-padding) * 0.5);
+}
+
+.post-url a {
+  color: var(--ledit-color-dim);
+}
+
+.post-points-comments {
+  display: flex;
+  flex-direction: row;
+  gap: 0.3em;
+}
+
+.post-author > a {
+  font-weight: 800;
+  color: var(--ledit-color);
+}
+
+.post-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: var(--ledit-padding);
+  font-size: var(--ledit-font-size-mid);
+}
+
+.post-buttons * {
+  display: flex;
+  padding: calc(var(--ledit-padding) * 0.25) calc(var(--ledit-padding) * 0.5);
+  border-radius: 5px;
+  font-weight: 500;
+  cursor: pointer;
+  justify-content: center;
+}
+
+.post-gallery-toggle, .post-comments-toggle, .post-points {
+  min-width: 3em;
+}
+
+.post-comments-sticky {
+  position: sticky;
+  background: var(--ledit-background);
+  padding-bottom: 0.5em;
+  top: calc(var(--ledit-font-size) * 2 + var(--ledit-padding) * 2);
+}
+
+.post-comments > .comment {
+  border-left: none;
+  padding-left: 0;
+  margin-left: 0;
+  border-bottom: 1px solid var(--ledit-border-color);
+}

@@ -1,30 +1,14 @@
-import {
-  Post,
-  Comment,
-  Posts,
-  dateToText,
-  getComments,
-  getSubreddit,
-  htmlDecode,
-  onVisibleOnce,
-  queryReddit,
-  getSorting,
-  intersectsViewport,
-} from "./utils";
-// @ts-ignore
-import svgLoader from "./svg-loader.svg";
-// @ts-ignore
-import svgMenuExpanded from "./svg-menu-expanded.svg";
-// @ts-ignore
-import svgMenuMinus from "./svg-menu-minus.svg";
-// @ts-ignore
-import svgMenuPlus from "./svg-menu-plus.svg";
-// @ts-ignore
-import svgMenuCircle from "./svg-menu-circle.svg";
+import "video.js/dist/video-js.min.css"
 import videojs from "video.js";
 import Player from "video.js/dist/types/player";
 
-document.addEventListener("keydown", function (event) {
+import "./styles.css"
+import { svgBurger, svgCircle, svgLoader, svgMinus, svgPlus } from "./svg";
+
+import { dateToText, htmlDecode, onVisibleOnce, intersectsViewport, dom } from "./utils";
+import { Post, Posts, getComments, getPosts, getSorting, getSubreddit, Comment } from "./reddit";
+
+document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     document.querySelector(".header-subreddit")!.classList.remove("hidden");
     document.querySelector(".header-subreddit-input")!.classList.add("hidden");
@@ -32,94 +16,7 @@ document.addEventListener("keydown", function (event) {
   }
 });
 
-function setURL(hash: string) {
-  window.location.hash = hash;
-}
-
-function renderHeader() {
-  const headerContainer = document.querySelector(".header-container")!;
-  headerContainer.innerHTML = "";
-  const header = dom(`
-  <div class="header">
-    <div class="header-menu svg-icon no-user-select"" style="padding-left: var(--ledit-padding);"></div>
-    <div class="header-subreddit"></div>
-    <input class="header-subreddit-input hidden"/>
-    <select class="header-sorting" tabindex="-1" style="padding-right: var(--ledit-padding);">
-      <option value="hot">Hot</option>
-      <option value="new">New</option>
-      <option value="rising">Rising</option>
-      <option value="top-today">Top Today</option>
-      <option value="top-week">Top Week</option>
-      <option value="top-month">Top Month</option>
-      <option value="top-year">Top Year</option>
-      <option value="top-alltime">Top All time</option>
-    </select>
-    <span class="header-subreddit-add svg-icon" style="padding-right: var(--ledit-padding);"></span>
-  </div>
-  `)[0];
-  headerContainer.append(header);
-
-  const subreddit = getSubreddit();
-  const settings = getSettings();
-
-  const addButton = headerContainer.querySelector(".header-subreddit-add")!;
-  if (!settings.subreddits.some((sub) => sub.toLowerCase() == subreddit.toLowerCase())) {
-    addButton.innerHTML = svgMenuPlus;
-    addButton.addEventListener("click", () => {
-      settings.subreddits.push(subreddit);
-      saveSettings(settings);
-      renderHeader();
-    });
-  }
-
-  const headerSubreddit = headerContainer.querySelector(".header-subreddit")!;
-  headerSubreddit.innerHTML = "/r/" + subreddit;
-  const input = headerContainer.querySelector(".header-subreddit-input") as HTMLInputElement;
-  headerSubreddit.addEventListener("click", () => {
-    headerSubreddit.classList.add("hidden");
-    input.classList.remove("hidden");
-    input.value = subreddit;
-    input.select();
-    input.addEventListener("keydown", function (event) {
-      if (event.key === "Enter" || event.key === "Go" || event.keyCode === 13) {
-        event.preventDefault();
-        setURL(input.value);
-        headerSubreddit.classList.remove("hidden");
-        input.classList.add("hidden");
-      }
-    });
-    input.addEventListener("blur", function () {
-      headerSubreddit.classList.remove("hidden");
-      input.classList.add("hidden");
-    });
-  });
-
-  const menuButton = document.querySelector(".header-menu")!;
-  menuButton.innerHTML = svgMenuExpanded;
-  menuButton.addEventListener("click", () => {
-    if (!document.querySelector(".settings-container")!.classList.contains("hidden")) {
-      document.querySelector(".settings-container")?.classList.add("hidden");
-    } else {
-      document.querySelector(".settings-container")?.classList.remove("hidden");
-      renderSettings();
-    }
-  });
-
-  const sorting = document.querySelector(".header-sorting") as HTMLSelectElement;
-  for (const option of sorting.children) {
-    if ((option as HTMLOptionElement).value == getSorting()) {
-      (option as HTMLOptionElement).selected = true;
-    }
-  }
-  sorting.value = getSorting();
-  sorting.addEventListener("change", () => {
-    setURL(getSubreddit() + "/" + sorting.value);
-    headerSubreddit.classList.remove("hidden");
-    input.classList.add("hidden");
-  });
-
-  renderSettings();
-}
+let pushedState = false;
 
 interface Settings {
   subreddits: string[];
@@ -170,7 +67,7 @@ function renderSettings() {
     for (const subreddit of settings.subreddits) {
       const subredditDiv = dom(`
         <div class="settings-row">
-          <a href="#${subreddit}" style="flex: 1">${subreddit}</a><span class="svg-icon">${svgMenuMinus}</span>
+          <a href="#${subreddit}" style="flex: 1">${subreddit}</a><span class="svg-icon">${svgMinus}</span>
         </div>`)[0];
       subredditDiv.querySelector("a")!.addEventListener("click", () => {
         settingsContainer.classList.add("hidden");
@@ -187,7 +84,7 @@ function renderSettings() {
     for (const theme of ["Dark", "Light"]) {
       const themeDiv = dom(`
       <div class="settings-row">
-        <span style="flex: 1">${theme}</span><span class="svg-icon hidden">${svgMenuCircle}</span>
+        <span style="flex: 1">${theme}</span><span class="svg-icon hidden">${svgCircle}</span>
       </div>`)[0];
       if (settings.theme == theme.toLowerCase()) {
         themeDiv.querySelector(".svg-icon")?.classList.remove("hidden");
@@ -254,7 +151,7 @@ function renderPosts(listing: Posts) {
   const loadNext = async () => {
     try {
       loadingDiv.innerHTML = svgLoader;
-      const result = await queryReddit(listing.data.after);
+      const result = await getPosts(listing.data.after);
       renderPosts(result);
     } catch (e) {
       showError("Could not load more posts in r/" + getSubreddit(), e);
@@ -266,18 +163,8 @@ function renderPosts(listing: Posts) {
   loadingDiv.addEventListener("click", loadNext);
 }
 
-function dom(dom: string) {
-  const div = document.createElement("div");
-  div.innerHTML = dom;
-  const children: HTMLElement[] = [];
-  for (const child of div.children) {
-    children.push(child as HTMLElement);
-  }
-  return children;
-}
-
 const missingThumbnailTags = new Set<String>(["self", "nsfw", "default", "image", "spoiler"]);
-function renderMedia(post: Post): HTMLElement[] {
+function renderMedia(post: Post): Element[] {
   const postsWidth = document.querySelector(".posts")!.clientWidth - 32; // account for padding in post
   const thumbnailUrl = ""; // post.data.thumbnail.includes("://") ? post.data.thumbnail : "";
 
@@ -495,18 +382,21 @@ function renderPost(post: Post) {
 
   // Render comments on click
   let isLoading = false;
-  let savedTop = 0;
   comments.addEventListener("click", async (event) => {
+    const hideComments = () => {
+      isLoading = false;
+        comments.classList.remove("post-comments-sticky");
+        (postDiv.querySelector(".post-comments-full")! as HTMLElement).innerHTML = "";
+        if (comments.getBoundingClientRect().top < 16 * 4) {
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: comments.getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
+          })
+        }
+    }
     event.preventDefault();
     if (comments.classList.contains("post-comments-sticky")) {
-      isLoading = false;
-      comments.classList.remove("post-comments-sticky");
-      (postDiv.querySelector(".post-comments-full")! as HTMLElement).innerHTML = "";
-      if (comments.getBoundingClientRect().top < 16 * 4) {
-        window.scrollTo({ top: comments.getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
-      }
+      hideComments();
     } else {
-      savedTop = window.pageYOffset;
       if (isLoading) return;
       isLoading = true;
       if (postDiv.querySelector(".post-self-preview")) {
@@ -515,6 +405,18 @@ function renderPost(post: Post) {
       }
       await renderComments(post, postDiv.querySelector(".post-comments-full")! as HTMLElement);
       comments.classList.add("post-comments-sticky");
+
+      if (!pushedState) {
+        history.pushState({}, "", '');
+        pushedState = true;
+      }
+      const popState = (event) => {
+        pushedState = false;
+        event.preventDefault();
+        hideComments();
+        window.removeEventListener("popstate", popState);
+      };
+      window.addEventListener("popstate", popState);
     }
   });
   return postDiv;
@@ -547,7 +449,7 @@ async function load() {
   let loadingDiv = showLoading();
   loadingDiv.innerHTML = svgLoader;
   try {
-    let result = await queryReddit();
+    let result = await getPosts();
     renderPosts(result);
   } catch (e) {
     showError("Could not load r/" + getSubreddit(), e);

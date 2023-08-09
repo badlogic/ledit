@@ -1,0 +1,57 @@
+.header-container {
+    height: 2rem;
+    background: var(--ledit-background);
+    padding: var(--ledit-padding) 0;
+    font-size: var(--ledit-font-size);
+    position: fixed;
+    top: 0;
+    z-index: 20;
+    width: 100%;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+  }
+
+  .header {
+    width: 600px;
+    height: 100%;
+    margin: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-weight: 500;
+  }
+
+  .header-subreddit {
+    display: inline-block;
+    max-width: 80%;
+    overflow: hidden;
+    white-space: pre;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    flex: 1;
+    user-select: none;
+    margin-left: var(--ledit-padding);
+  }
+
+  .header-subreddit-input {
+    background: none;
+    border: none;
+    border-bottom: 0.5px solid var(--ledit-color);
+    font: inherit;
+    color: inherit;
+    line-height: inherit;
+    outline: none;
+    box-shadow: none;
+    border-radius: 0;
+    flex: 1;
+    margin-left: var(--ledit-padding);
+  }
+
+  .header select {
+    background: var(--ledit-background);
+    color: var(--ledit-color);
+    font-size: var(--ledit-font-size);
+    border: none;
+    appearance: none;
+    padding: 0;
+    text-align: right;
+  }

@@ -1,0 +1,51 @@
+.comment {
+  padding-left: var(--ledit-padding);
+  padding-top: calc(var(--ledit-padding) / 2);
+  margin-bottom: var(--ledit-padding);
+  margin-left: var(--ledit-padding);
+  border-left: 1px dotted var(--ledit-border-color);
+}
+
+.comment a {
+  overflow-wrap: anywhere;
+}
+
+.comment img {
+  max-width: 100%;
+  height: auto;
+}
+
+.comment-meta {
+  color: var(--ledit-color-dim);
+  margin-bottom: 0.5em;
+  font-size: 0.8em;
+}
+
+.comment-text {
+  cursor: pointer;
+  overflow-wrap: break-word;
+}
+
+.comment-author > a {
+  font-weight: 800;
+  color: var(--ledit-color);
+}
+
+.comment-text > .md p:last-child {
+  margin-block-end: 0;
+}
+
+.comment-reply {
+  padding-top: 0.5em;
+}
+
+.comment-replies {
+  padding-top: 0.5em;
+}
+
+.comment-replies-count {
+  padding-top: 0.5em;
+  color: var(--ledit-color-dim);
+  margin-bottom: 0.5em;
+  font-size: 0.8em;
+}

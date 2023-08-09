@@ -1,0 +1,16 @@
+
+.media {
+}
+
+.media > img {
+  width: 100%;
+  border-radius: 5px;
+}
+
+.media > video {
+  border-radius: 5px;
+}
+
+.media-image-gallery > img {
+   width: 100%;
+}
