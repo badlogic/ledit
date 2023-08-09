@@ -40,7 +40,7 @@ export function onVisibleOnce(target: Element, callback: () => void) {
          callbackTriggered = true;
          window.removeEventListener("scroll", checkVisibility);
       }
-   }
+   };
 
    window.addEventListener("scroll", checkVisibility);
 }
@@ -110,5 +110,5 @@ export function onTapped(element: HTMLElement, callback: () => void) {
 }
 
 export function insertAfter(newNode: HTMLElement, referenceNode: HTMLElement) {
-  referenceNode.parentNode?.insertBefore(newNode, referenceNode.nextSibling);
+   referenceNode.parentNode?.insertBefore(newNode, referenceNode.nextSibling);
 }

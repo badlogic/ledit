@@ -10,7 +10,7 @@ export class CommentsView extends View {
    private comments: Comment[] | null = null;
    private opName: string;
 
-   constructor(post: Post) {
+   constructor(post: Post, public readonly postView: Element) {
       super();
       this.render();
       this.classList.add("comments");

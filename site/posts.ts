@@ -1,7 +1,7 @@
 import "./posts.css";
 import { Post, Posts, getPosts, getSubreddit } from "./reddit";
 import { svgDownArrow, svgImages, svgLoader, svgSpeeBubble, svgUpArrow } from "./svg/index";
-import { addCommasToNumber, dateToText, dom, onVisibleOnce } from "./utils";
+import { addCommasToNumber, dateToText, dom, intersectsViewport, onVisibleOnce, removeFixScroll } from "./utils";
 import { View } from "./view";
 import { MediaView } from "./media";
 import { CommentsView } from "./comments";
@@ -130,12 +130,13 @@ export class PostView extends View {
 
       elements.media.append(new MediaView(this.post));
 
-      elements.buttonsRow.addEventListener("click", () => {
+      elements.buttonsRow.addEventListener("click", () => {
          this.toggleComments();
-      })
+      });
    }
 
    commentsView: CommentsView | null = null;
+
    toggleComments() {
       const elements = this.elements<{
          comments: Element;
@@ -143,18 +144,84 @@ export class PostView extends View {
       }>();
 
       if (elements.comments.children.length == 0) {
-         if (!this.commentsView) this.commentsView = new CommentsView(this.post)
+         // Show the comments
+         if (!this.commentsView) this.commentsView = new CommentsView(this.post, this);
          elements.comments.append(this.commentsView);
          elements.buttonsRow.classList.add("post-buttons-sticky");
+
+         // If we haven't pushed a history state yet, push one
+         // This will prevent the user from going back via the
+         // back button or back swiping.
+         //
+         // Also push the view onto the list of currently open
+         // views.
+         if (!statePushed) {
+            history.pushState({}, "", "");
+            statePushed = true;
+         }
+         openCommentsViews.push(this.commentsView);
       } else {
+         // Hide the comments, triggered by a click on the comments button
          this.commentsView?.remove();
+
+         // Manually remove the view from the list of open views.
+         openCommentsViews = openCommentsViews.filter((view) => view != this.commentsView);
+
          elements.buttonsRow.classList.remove("post-buttons-sticky");
          if (elements.buttonsRow.getBoundingClientRect().top < 16 * 4) {
             requestAnimationFrame(() => {
-              window.scrollTo({ top: elements.buttonsRow.getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
+               window.scrollTo({ top: elements.buttonsRow.getBoundingClientRect().top + window.pageYOffset - 16 * 4 });
             })
-          }
+         }
       }
    }
 }
 customElements.define("ledit-post", PostView);
+
+let statePushed = false;
+let openCommentsViews: CommentsView[] = [];
+function popStateCallback(event: PopStateEvent) {
+   console.log("In popstate callback");
+   // Otherwise, if a state is pushed, at least one view is
+   // open. Remove any visible views.
+   if (statePushed) {
+      let scrollTo = -1;
+      let removedViews = 0;
+
+      for (let i = 0; i < openCommentsViews.length; i++) {
+         const commentsView = openCommentsViews[i];
+         const postView = commentsView.postView as PostView;
+         const buttonsRow = postView.elements<{ buttonsRow: Element }>().buttonsRow;
+
+         // Is the toggle button for the view visible? Then remove the
+         // view and optionally scroll to its toggle button, if its
+         // at the top of the page.
+         if (intersectsViewport(buttonsRow)) {
+            commentsView.remove();
+            removedViews++;
+            openCommentsViews.splice(i, 1);
+            buttonsRow.classList.remove("post-buttons-sticky");
+            if (buttonsRow.getBoundingClientRect().top < 16 * 4) {
+               scrollTo = buttonsRow.getBoundingClientRect().top + window.pageYOffset - 16 * 4;
+            }
+         }
+      }
+
+      if (scrollTo != -1) {
+         requestAnimationFrame(() => window.scrollTo({ top:  scrollTo }));
+      }
+
+      if (removedViews == 0) {
+         // If no views were removed, non were visible. Do a proper back navigation.
+         window.removeEventListener("popstate", popStateCallback);
+         history.back();
+      } else {
+         // Else, prevent back navigation
+         event.preventDefault();
+         event.stopPropagation();
+         statePushed = false;
+         // history.pushState({}, "", "");
+      }
+   }
+}
+window.addEventListener("popstate", popStateCallback);

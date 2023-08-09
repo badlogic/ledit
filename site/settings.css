@@ -40,6 +40,12 @@
   cursor: pointer;
 }
 
+.settings-row > * {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
 .settings-row a {
   overflow: hidden;
   white-space: pre;
