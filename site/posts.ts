@@ -1,13 +1,19 @@
 import "./posts.css";
 import { Post, Posts, getPosts, getSubreddit } from "./reddit";
 import { svgDownArrow, svgImages, svgLoader, svgSpeeBubble, svgUpArrow } from "./svg/index";
-import { addCommasToNumber, dateToText, dom, intersectsViewport, onVisibleOnce, removeFixScroll } from "./utils";
+import { addCommasToNumber, dateToText, dom, intersectsViewport, onVisibleOnce } from "./utils";
 import { View } from "./view";
 import { MediaView } from "./media";
 import { CommentsView } from "./comments";
+import { getSettings, saveSettings } from "./settings";
 
 export class PostsView extends View {
    private readonly postsDiv: Element;
+   public static seenPosts = new Set<string>();
+   private loadedPages = 1;
+   static {
+      getSettings().seen.forEach((seen) => PostsView.seenPosts.add(seen));
+   }
    constructor() {
       super();
       this.append((this.postsDiv = dom(`<div x-id="posts" class="posts"></div>`)[0]));
@@ -20,7 +26,11 @@ export class PostsView extends View {
       try {
          let result = await getPosts(after);
          console.log(`Loaded more posts for ${getSubreddit()}.`);
-         this.renderPosts(result);
+         await this.renderPosts(result);
+         if (after) {
+            this.loadedPages++;
+            this.postsDiv.append(dom(`<div class="post-loading">Page ${this.loadedPages}</div>`)[0]);
+         }
       } catch (e) {
          this.showError("Could not load r/" + getSubreddit(), e);
       } finally {
@@ -28,17 +38,31 @@ export class PostsView extends View {
       }
    }
 
-   renderPosts(posts: Posts) {
+   async renderPosts(posts: Posts) {
       if ((!posts || !posts.data || !posts.data.children) && this.postsDiv.children.length == 1) {
          this.showError(`Subreddit ${getSubreddit()} does not exist.`);
          return;
       }
 
       // Render posts
+      let hiddenPosts = 0;
       for (let i = 0; i < posts.data.children.length; i++) {
          const post = posts.data.children[i];
          const postDiv = new PostView(post);
+         if (PostsView.seenPosts.has(post.data.id) && !getSettings().showSeen) {
+            postDiv.classList.add("hidden");
+            hiddenPosts++;
+         }
          this.postsDiv.append(postDiv);
+
+         onVisibleOnce(postDiv, () => {
+            if (!PostsView.seenPosts.has(post.data.id)) {
+               PostsView.seenPosts.add(post.data.id);
+               getSettings().seen.push(post.data.id);
+               saveSettings();
+               console.log("Seen " + post.data.id);
+            }
+         });
       }
 
       // Setup infinite scroll
@@ -48,8 +72,17 @@ export class PostsView extends View {
          loadMoreDiv.remove();
          await this.loadPosts(posts.data.after);
       };
-      onVisibleOnce(loadMoreDiv, loadMore);
-      loadMoreDiv.addEventListener("click", loadMore);
+
+      if (hiddenPosts == posts.data.children.length) {
+         // Load more if all posts where hidden.
+         requestAnimationFrame(() => {
+            loadMore();
+         })
+      } else {
+         // Otherwise the user will have to scroll.
+         onVisibleOnce(loadMoreDiv, loadMore);
+         loadMoreDiv.addEventListener("click", loadMore);
+      }
    }
 
    showError(message: string, e: any | null = null) {
@@ -78,7 +111,7 @@ export class PostView extends View {
          }
       }
       this.innerHTML = /*html*/ `
-      <div class="post">
+      <div class="post ${PostsView.seenPosts.has(post.id) ? "post-seen" : ""}">
          <div class="post-title"><a href="${post.url}" target="_blank">${post.title}</a></div>
          <div class="post-meta">
             ${
@@ -96,6 +129,7 @@ export class PostView extends View {
                     }</span>`
                   : ""
             }
+            <span>${PostsView.seenPosts.has(post.id) ? "• seen" : ""}</span>
          </div>
          <div x-id="media"></div>
          <div x-id="buttonsRow" class="post-buttons">
@@ -171,7 +205,7 @@ export class PostView extends View {
          if (elements.buttonsRow.getBoundingClientRect().top < 16 * 4) {
             requestAnimationFrame(() => {
                window.scrollTo({ top: elements.buttonsRow.getBoundingClientRect().top + window.pageYOffset - 16 * 4 });
-            })
+            });
          }
       }
    }
@@ -208,7 +242,7 @@ function popStateCallback(event: PopStateEvent) {
       }
 
       if (scrollTo != -1) {
-         requestAnimationFrame(() => window.scrollTo({ top:  scrollTo }));
+         requestAnimationFrame(() => window.scrollTo({ top: scrollTo }));
       }
 
       if (removedViews == 0) {

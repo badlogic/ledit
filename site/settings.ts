@@ -1,30 +1,39 @@
 import "./settings.css";
-import { svgCheck, svgCircle, svgClose, svgGithub, svgHeart, svgMinus } from "./svg/index";
+import { svgCheck, svgClose, svgGithub, svgHeart, svgMinus } from "./svg/index";
 import { dom, navigate } from "./utils";
 import { View } from "./view";
 
 interface Settings {
    subreddits: string[];
+   showSeen: boolean,
    theme: string;
+   seen: string[];
 }
 
 let settings: Settings | null = null;
 
 export function getSettings(): Settings {
    if (settings) return settings;
-   settings = localStorage.getItem("ledit")
-      ? JSON.parse(localStorage.getItem("ledit")!)
-      : {
-           subreddits: ["all", "pics", "videos", "worldnews", "science", "todayilearned"],
-           theme: "light",
-        };
+   settings = {
+      subreddits: ["all", "pics", "videos", "worldnews", "science", "todayilearned"],
+      showSeen: true,
+      theme: "light",
+      seen: [],
+   };
+
+   if (localStorage.getItem("ledit")) {
+      const stored = JSON.parse(localStorage.getItem("ledit")!);
+      for (const key of Object.keys(stored)) {
+         (settings as any)[key] = stored[key];
+      }
+   }
    return settings!;
 }
 
 export function applySettings() {
    document.body.classList.remove("dark-theme");
-document.body.classList.remove("light-theme");
-document.body.classList.add(getSettings().theme.toLowerCase() + "-theme");
+   document.body.classList.remove("light-theme");
+   document.body.classList.add(getSettings().theme.toLowerCase() + "-theme");
 }
 
 export function saveSettings() {
@@ -45,6 +54,9 @@ export class SettingsView extends View {
                     <div x-id="close" class="settings-row-close"><span class="svg-icon">${svgClose}</span></div>
                     <div class="settings-row-header">Subreddits</div>
                     <div x-id="subreddits"></div>
+                    <div x-id="showSeen" class="settings-row">
+                     <span style="flex: 1">Hide seen posts</span><span class="svg-icon">${settings.showSeen ? "" : svgCheck}</span>
+                    </div>
                     <div class="settings-row-header">Theme</div>
                     <div x-id="themes"></div>
                     <div class="settings-row-header">About</div>
@@ -58,6 +70,7 @@ export class SettingsView extends View {
          container: Element;
          close: Element;
          subreddits: Element;
+         showSeen: Element;
          themes: Element;
       }>();
 
@@ -89,6 +102,20 @@ export class SettingsView extends View {
          });
          elements.subreddits.append(subredditDiv);
       }
+
+      // Setup show seen toggle
+      elements.showSeen.addEventListener("click", (event) => {
+         event.stopPropagation();
+         settings.showSeen = !settings.showSeen;
+         saveSettings();
+         const seenPostDivs = document.querySelectorAll(".post-seen");
+         for (let i = 0; i < seenPostDivs.length; i++) {
+            const postDiv = seenPostDivs[i];
+            if (settings.showSeen) postDiv.classList.remove("hidden");
+            else postDiv.classList.add("hidden");
+         }
+         this.render();
+      })
 
       // Populate themes
       for (const theme of ["Dark", "Light"]) {

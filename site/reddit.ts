@@ -17,6 +17,7 @@ export interface Post {
     is_video: boolean;
     is_self: boolean;
     is_gallery: boolean;
+    id: string,
     num_comments: number;
     over_18: boolean;
     permalink: string;
