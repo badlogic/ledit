@@ -4,7 +4,7 @@
   margin-top: calc(var(--ledit-font-size) * 2.5 + var(--ledit-font-size-big));
   display: flex;
   flex-direction: column;
-  gap: var(--ledit-padding);
+  gap: calc(var(--ledit-padding) * 1.5);
 }
 
 .post {
@@ -21,7 +21,6 @@
 .post-loading {
   text-align: center;
   margin: var(--ledit-margin);
-  color: var(--ledit-link-color);
   cursor: pointer;
   margin: 0;
   padding: var(--ledit-margin);
@@ -34,8 +33,12 @@
 
 .post-title {
   font-size: var(--ledit-font-size);
-  font-weight: 600;
+  font-weight: 400;
   overflow-wrap: anywhere;
+}
+
+.post-title a {
+  color: var(--ledit-color)
 }
 
 .post-subreddit {
@@ -46,6 +49,7 @@
   color: var(--ledit-color-dim);
   font-size: var(--ledit-font-size-small);
   padding: calc(var(--ledit-padding) * 0.5) 0;
+  margin-top: -4px;
 }
 
 .post-self-preview {
@@ -87,28 +91,37 @@
 }
 
 .post-author > a {
-  font-weight: 800;
-  color: var(--ledit-color);
+  font-weight: 400;
+  color: var(--ledit-color-dim);
 }
 
 .post-buttons {
   display: flex;
-  flex-direction: row;
-  gap: var(--ledit-padding);
   font-size: var(--ledit-font-size-mid);
+  gap: var(--ledit-padding);
 }
 
 .post-buttons * {
   display: flex;
   padding: calc(var(--ledit-padding) * 0.25) calc(var(--ledit-padding) * 0.5);
   border-radius: 5px;
-  font-weight: 500;
+  font-weight: 400;
   cursor: pointer;
   justify-content: center;
 }
 
+.post-comments-toggle {
+  margin: -1em;
+  padding: 1em;
+}
+
 .post-gallery-toggle, .post-comments-toggle, .post-points {
-  min-width: 3em;
+  display: flex;
+  align-items: center;
+}
+
+.post-points {
+  margin-left: auto;
 }
 
 .post-comments-sticky {

@@ -1,7 +1,7 @@
 import "./posts.css";
 import { Post, Posts, getPosts, getSubreddit } from "./reddit";
 import { svgDownArrow, svgImages, svgLoader, svgSpeeBubble, svgUpArrow } from "./svg/index";
-import { dateToText, dom, onVisibleOnce } from "./utils";
+import { addCommasToNumber, dateToText, dom, onVisibleOnce } from "./utils";
 import { View } from "./view";
 import { MediaView } from "./media";
 
@@ -83,9 +83,9 @@ export class PostView extends View {
                   ? /*html*/ `<span class="post-subreddit"><a href="https://www.reddit.com/r/${post.subreddit}" target="_blank">r/${post.subreddit}</a></span><span> •</span>`
                   : ""
             }
-            <span class="post-author"><a href="https://www.reddit.com/u/${post.author}" target="_blank">${post.author}</a></span>
-            <span>•</span>
             <span class="post-date">${dateToText(post.created_utc * 1000)}</span>
+            <span>•</span>
+            <span class="post-author"><a href="https://www.reddit.com/u/${post.author}" target="_blank">${post.author}</a></span>
             ${
                showUrl
                   ? `<span>• </span><span class="post-url">${
@@ -96,9 +96,9 @@ export class PostView extends View {
          </div>
          <div x-id="media"></div>
          <div class="post-buttons">
-            <div class="post-points">${svgUpArrow} ${post.score}${svgDownArrow}</div>
+            <div x-id="toggleComments" class="post-comments-toggle">${svgSpeeBubble} ${addCommasToNumber(post.num_comments)}</div>
             ${post.is_gallery ? `<div class="post-gallery-toggle">${svgImages} ${numGalleryImages}</div>` : ""}
-            <div x-id="toggleComments" class="post-comments-toggle">${svgSpeeBubble} ${post.num_comments}</div>
+            <div class="post-points">${svgUpArrow} ${addCommasToNumber(post.score)}${svgDownArrow}</div>
          </div>
          <div x-id="comments" class="post-comments"></div>
       </div>

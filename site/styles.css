@@ -7,6 +7,7 @@
   --ledit-padding: calc(var(--ledit-font-size) * 0.5);
   --ledit-margin: var(--ledit-font-size);
   --ledit-code-font-family: Menlo, monospace;
+  line-height: 1.25em;
 }
 
 .dark-theme {
@@ -14,7 +15,7 @@
   --ledit-background-dim: #0b1117;
   --ledit-background-buttons: ##52585f;
   --ledit-header-border: #0b1117;
-  --ledit-color: rgb(215, 215, 199);
+  --ledit-color: #ccc;
   --ledit-color-dim: rgb(130, 130, 123);
   --ledit-border-color: rgba(255, 255, 255, 0.3);
   --ledit-link-color: #8db5e1;
@@ -22,7 +23,7 @@
 
 .light-theme {
   --ledit-background: #fcf8fc;
-  --ledit-background-dim: #cccccc;
+  --ledit-background-dim: #efedf1;
   --ledit-background-buttons: #cccccc57;
   --ledit-header-border: #0000003e;
   --ledit-color: #111;

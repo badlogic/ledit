@@ -95,3 +95,7 @@ export function navigate(subreddit: string) {
   window.location.hash = subreddit;
   window.location.reload();
 }
+
+export function addCommasToNumber(number: number) {
+  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
