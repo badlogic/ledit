@@ -33,7 +33,7 @@ export class MediaView extends View {
             }
          });
          // Ensure links in self text open a new tab
-         let links = selfPost.querySelector(".comment-text")!.querySelectorAll("a")!;
+         let links = selfPost.querySelectorAll("a")!;
          for (let i = 0; i < links.length; i++) {
             let link = links[i];
             link.setAttribute("target", "_blank");
