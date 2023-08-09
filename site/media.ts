@@ -28,11 +28,17 @@ export class MediaView extends View {
          let selfPost = dom(`<div class="post-self-preview">${htmlDecode(post.data.selftext_html)}</div>`)[0];
          selfPost.addEventListener("click", (event) => {
             if ((event.target as HTMLElement).tagName != "A") {
-              selfPost.style.maxHeight = "100%";
-              selfPost.style.color = "var(--ledit-color)";
+               selfPost.style.maxHeight = "100%";
+               selfPost.style.color = "var(--ledit-color)";
             }
-          });
-          return [selfPost];
+         });
+         // Ensure links in self text open a new tab
+         let links = selfPost.querySelector(".comment-text")!.querySelectorAll("a")!;
+         for (let i = 0; i < links.length; i++) {
+            let link = links[i];
+            link.setAttribute("target", "_blank");
+         }
+         return [selfPost];
       }
 
       // Gallery
@@ -101,10 +107,10 @@ export class MediaView extends View {
                document.addEventListener("scroll", () => {
                   const videoElement = embedDom.querySelector("iframe");
                   if (videoElement && !intersectsViewport(videoElement)) {
-                     videoElement.contentWindow?.postMessage('{"event":"command","func":"' + 'pauseVideo' + '","args":""}', '*')
+                     videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
                   }
-            });
-            return [embedDom];
+               });
+               return [embedDom];
             }
          } else {
             return dom(
@@ -167,13 +173,13 @@ export class MediaView extends View {
 
             // Pause when out of view
             document.addEventListener("scroll", () => {
-                 if (videoElement && videoElement === document.pictureInPictureElement) {
-                   return;
-                 }
-                 if (!video.paused() && !intersectsViewport(videoElement)) {
-                   video.pause();
-                 }
-             });
+               if (videoElement && videoElement === document.pictureInPictureElement) {
+                  return;
+               }
+               if (!video.paused() && !intersectsViewport(videoElement)) {
+                  video.pause();
+               }
+            });
          }
       });
       return videoDom;
@@ -181,5 +187,3 @@ export class MediaView extends View {
 }
 
 customElements.define("ledit-media", MediaView);
-
-
