@@ -1,23 +1,20 @@
 .media {
-}
-
-.media > img {
-   width: 100%;
-   max-height: 60vh;
-   object-fit: contain;
-   border-radius: 5px;
+   margin: calc(var(--ledit-padding) * -2);
+   margin-bottom: 0;
+   margin-top: 0;
 }
 
 .media > video-js {
-   border-radius: 5px;
 }
 
 .media-image-gallery {
+   left: calc(var(--ledit-margin) * -1);
+   position: relative;
+   width: calc(100% + var(--ledit-margin) * 2);
 }
 
-.media-image-gallery > img {
+.media-image-gallery > img, .media > img {
    width: 100%;
-   max-height: 60vh;
+   max-height: 75vh;
    object-fit: contain;
-   border-radius: 5px;
 }

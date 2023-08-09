@@ -14,8 +14,9 @@
   padding: var(--ledit-margin);
   padding-bottom: 0;
   border-radius: 8px;
-  background: var(--ledit-background);;
+  background: var(--ledit-background);
   margin: auto;
+  border: 1px solid var(--leddit-border-color);
 }
 
 .post-loading {
