@@ -24,7 +24,7 @@
   margin: var(--ledit-margin);
   cursor: pointer;
   margin: 0;
-  padding: var(--ledit-margin);
+  padding: var(--ledit-padding);
 }
 
 .post-error {
@@ -104,17 +104,27 @@
 
 .post-buttons * {
   display: flex;
-  padding: calc(var(--ledit-padding) * 0.25) calc(var(--ledit-padding) * 0.5);
+  padding: calc(var(--ledit-padding) * 0.25) calc(var(--ledit-padding) * 0.25);
   border-radius: 5px;
   font-weight: 400;
-  cursor: pointer;
   justify-content: center;
+  user-select: none;
 }
 
 .post-comments-toggle {
   margin: -1em;
   padding: 1em;
+  cursor: pointer;
 }
+
+.post-buttons-sticky {
+  position: sticky;
+  background: var(--ledit-background);
+  padding-bottom: 0.5em;
+  padding-top: 0.5em;
+  top: calc(var(--ledit-font-size) * 2 + var(--ledit-padding) * 2);
+}
+
 
 .post-gallery-toggle, .post-comments-toggle, .post-points {
   display: flex;
@@ -123,18 +133,4 @@
 
 .post-points {
   margin-left: auto;
-}
-
-.post-comments-sticky {
-  position: sticky;
-  background: var(--ledit-background);
-  padding-bottom: 0.5em;
-  top: calc(var(--ledit-font-size) * 2 + var(--ledit-padding) * 2);
-}
-
-.post-comments > .comment {
-  border-left: none;
-  padding-left: 0;
-  margin-left: 0;
-  border-bottom: 1px solid var(--ledit-border-color);
 }

@@ -5,6 +5,7 @@
 }
 
 .media > video-js {
+   cursor: pointer;
 }
 
 .media-image-gallery {

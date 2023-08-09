@@ -4,13 +4,14 @@ import { svgDownArrow, svgImages, svgLoader, svgSpeeBubble, svgUpArrow } from ".
 import { addCommasToNumber, dateToText, dom, onVisibleOnce } from "./utils";
 import { View } from "./view";
 import { MediaView } from "./media";
+import { CommentsView } from "./comments";
 
 export class PostsView extends View {
    private readonly postsDiv: Element;
    constructor() {
       super();
       this.append((this.postsDiv = dom(`<div x-id="posts" class="posts"></div>`)[0]));
-      (async () => this.loadPosts(null))();
+      (async () => await this.loadPosts(null))();
    }
 
    async loadPosts(after: string | null) {
@@ -18,6 +19,7 @@ export class PostsView extends View {
       this.postsDiv.append(loadingDiv);
       try {
          let result = await getPosts(after);
+         console.log(`Loaded more posts for ${getSubreddit()}.`);
          this.renderPosts(result);
       } catch (e) {
          this.showError("Could not load r/" + getSubreddit(), e);
@@ -29,13 +31,14 @@ export class PostsView extends View {
    renderPosts(posts: Posts) {
       if ((!posts || !posts.data || !posts.data.children) && this.postsDiv.children.length == 1) {
          this.showError(`Subreddit ${getSubreddit()} does not exist.`);
+         return;
       }
 
       // Render posts
       for (let i = 0; i < posts.data.children.length; i++) {
          const post = posts.data.children[i];
          const postDiv = new PostView(post);
-         this.postsDiv.append(new PostView(post));
+         this.postsDiv.append(postDiv);
       }
 
       // Setup infinite scroll
@@ -51,7 +54,7 @@ export class PostsView extends View {
 
    showError(message: string, e: any | null = null) {
       this.postsDiv.append(dom(`<div class="post-loading">${message}</div>`)[0]);
-      console.error("An error occured: ", e);
+      if (e) console.error("An error occured: ", e);
    }
 }
 customElements.define("ledit-posts", PostsView);
@@ -95,12 +98,27 @@ export class PostView extends View {
             }
          </div>
          <div x-id="media"></div>
-         <div class="post-buttons">
-            <div x-id="toggleComments" class="post-comments-toggle">${svgSpeeBubble} ${addCommasToNumber(post.num_comments)}</div>
-            ${post.is_gallery ? `<div class="post-gallery-toggle">${svgImages} ${numGalleryImages}</div>` : ""}
-            <div class="post-points">${svgUpArrow} ${addCommasToNumber(post.score)}${svgDownArrow}</div>
+         <div x-id="buttonsRow" class="post-buttons">
+            <div x-id="toggleComments" class="post-comments-toggle">
+               <span class="svg-icon">${svgSpeeBubble}</span>
+               <span>${addCommasToNumber(post.num_comments)}</span>
+            </div>
+            ${
+               post.is_gallery
+                  ? /*html*/ `
+            <div class="post-gallery-toggle">
+               <span class="svg-icon">${svgImages}</span>
+               <span>${numGalleryImages}</span>
+            </div>`
+                  : ""
+            }
+            <div class="post-points">
+               <span class="svgIcon">${svgUpArrow}</span>
+               <span>${addCommasToNumber(post.score)}</span>
+               <span class="svg-icon">${svgDownArrow}</span>
+            </div>
          </div>
-         <div x-id="comments" class="post-comments"></div>
+         <div x-id="comments"></div>
       </div>
       `;
 
@@ -111,6 +129,32 @@ export class PostView extends View {
       }>();
 
       elements.media.append(new MediaView(this.post));
+
+      elements.toggleComments.addEventListener("click", () => {
+         this.toggleComments();
+      })
+   }
+
+   commentsView: CommentsView | null = null;
+   toggleComments() {
+      const elements = this.elements<{
+         comments: Element;
+         buttonsRow: Element;
+      }>();
+
+      if (elements.comments.children.length == 0) {
+         if (!this.commentsView) this.commentsView = new CommentsView(this.post)
+         elements.comments.append(this.commentsView);
+         elements.buttonsRow.classList.add("post-buttons-sticky");
+      } else {
+         this.commentsView?.remove();
+         elements.buttonsRow.classList.remove("post-buttons-sticky");
+         if (elements.buttonsRow.getBoundingClientRect().top < 16 * 4) {
+            requestAnimationFrame(() => {
+              window.scrollTo({ top: elements.buttonsRow.getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
+            })
+          }
+      }
    }
 }
 customElements.define("ledit-post", PostView);

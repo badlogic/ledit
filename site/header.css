@@ -14,6 +14,7 @@
     width: 600px;
     height: 100%;
     margin: auto;
+    padding-right: var(--ledit-padding);
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -46,6 +47,10 @@
     margin-left: var(--ledit-padding);
   }
 
+  .header-subreddit-add {
+    cursor: pointer;
+  }
+
   .header select {
     background: var(--ledit-background);
     color: var(--ledit-color);
@@ -54,4 +59,5 @@
     appearance: none;
     padding: 0;
     text-align: right;
+    cursor: pointer;
   }

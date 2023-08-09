@@ -97,12 +97,12 @@ blockquote {
   align-items: center;
   justify-content: center;
   height: var(--ledit-font-size);
-  padding-right: var(--ledit-padding);
-  cursor: pointer;
+  padding: 0;
 }
 
 @media (max-width: 767px) {
   .posts,
+  .comments,
   .header,
   .settings {
     width: 100% !important;

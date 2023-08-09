@@ -1,5 +1,5 @@
 import "./settings.css";
-import { svgCircle, svgGithub, svgMinus } from "./svg/index";
+import { svgCheck, svgCircle, svgClose, svgGithub, svgMinus } from "./svg/index";
 import { dom, navigate } from "./utils";
 import { View } from "./view";
 
@@ -42,7 +42,7 @@ export class SettingsView extends View {
       this.innerHTML = /*html*/ `
             <div x-id="container" class="settings-container">
                 <div class="settings">
-                    <div x-id="close" class="settings-row-close">Close</div>
+                    <div x-id="close" class="settings-row-close"><span class="svg-icon">${svgClose}</span></div>
                     <div class="settings-row-header">Subreddits</div>
                     <div x-id="subreddits"></div>
                     <div class="settings-row-header">Theme</div>
@@ -93,7 +93,7 @@ export class SettingsView extends View {
       for (const theme of ["Dark", "Light"]) {
          const themeDiv = dom(`
          <div class="settings-row">
-           <span style="flex: 1">${theme}</span><span class="svg-icon hidden">${svgCircle}</span>
+           <span style="flex: 1">${theme}</span><span class="svg-icon hidden">${svgCheck}</span>
          </div>`)[0];
          if (settings.theme == theme) {
             themeDiv.querySelector(".svg-icon")?.classList.remove("hidden");

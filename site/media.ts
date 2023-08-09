@@ -4,7 +4,7 @@ import Player from "video.js/dist/types/player";
 
 import "./media.css";
 import { Post } from "./reddit";
-import { dom, htmlDecode, onAddedToDOM } from "./utils";
+import { dom, htmlDecode, intersectsViewport, onAddedToDOM, onTapped } from "./utils";
 import { View } from "./view";
 
 export class MediaView extends View {
@@ -21,19 +21,21 @@ export class MediaView extends View {
    }
 
    static renderMedia(post: Post): Element[] {
-      const postsWidth = document.querySelector(".posts")!.clientWidth - 32; // account for padding in post
+      const postsWidth = document.querySelector(".posts")!.clientWidth; // account for padding in post
 
+      // Self post, show text, dim it, cap vertical size, and make it expand on click.
       if (post.data.is_self) {
          let selfPost = dom(`<div class="post-self-preview">${htmlDecode(post.data.selftext_html)}</div>`)[0];
          selfPost.addEventListener("click", (event) => {
             if ((event.target as HTMLElement).tagName != "A") {
-              (selfPost as HTMLElement).style.maxHeight = "100%";
-              (selfPost as HTMLElement).style.color = "var(--ledit-color)";
+              selfPost.style.maxHeight = "100%";
+              selfPost.style.color = "var(--ledit-color)";
             }
           });
           return [selfPost];
       }
 
+      // Gallery
       if (post.data.is_gallery && post.data.media_metadata) {
          type image = { x: number; y: number; u: string };
          const images: image[] = [];
@@ -75,10 +77,12 @@ export class MediaView extends View {
          return galleryDom;
       }
 
+      // Reddit hosted video
       if (post.data.secure_media && post.data.secure_media.reddit_video) {
          return [MediaView.renderVideo(post.data.secure_media.reddit_video)];
       }
 
+      // External embed like YouTube Vimeo
       if (post.data.secure_media_embed && post.data.secure_media_embed.media_domain_url) {
          const embed = post.data.secure_media_embed;
          const embedWidth = postsWidth;
@@ -90,7 +94,18 @@ export class MediaView extends View {
                   .replace(`height="${embed.height}"`, `height="${embedHeight}"`)
                   .replace("position:absolute;", "")
             );
-            return dom(`<div class="media" style="width: ${embedWidth}px; height: ${embedHeight}px;">${embedUrl}</div>`);
+            let embedDom = dom(`<div class="media" style="width: ${embedWidth}px; height: ${embedHeight}px;">${embedUrl}</div>`)[0];
+            // Make YouTube videos stop if they scroll out of frame.
+            if (embed.content.includes("youtube")) {
+               // Pause when out of view
+               document.addEventListener("scroll", () => {
+                  const videoElement = embedDom.querySelector("iframe");
+                  if (videoElement && !intersectsViewport(videoElement)) {
+                     videoElement.contentWindow?.postMessage('{"event":"command","func":"' + 'pauseVideo' + '","args":""}', '*')
+                  }
+            });
+            return [embedDom];
+            }
          } else {
             return dom(
                `<div class="media" style="width: ${embedWidth}px; height: ${embedHeight}px;"><iframe width="${embedWidth}" height="${embedHeight}" src="${embed.media_domain_url}"></iframe></div>`
@@ -98,10 +113,13 @@ export class MediaView extends View {
          }
       }
 
+      // Plain old .gif
       if (post.data.url.endsWith(".gif")) {
          return dom(`<div class="media"><img src="${post.data.url}"></img></div>`);
       }
 
+      // Image, pick the one that's one size above the current posts width so pinch zooming
+      // in shows more pixels.
       if (post.data.preview && post.data.preview.images && post.data.preview.images.length > 0) {
          let image: { url: string; width: number; height: number } | null = null;
          for (const img of post.data.preview.images[0].resolutions) {
@@ -113,6 +131,7 @@ export class MediaView extends View {
          return [MediaView.renderVideo(post.data.preview.reddit_video_preview)];
       }
 
+      // Fallback to thumbnail which is super low-res.
       const missingThumbnailTags = new Set<String>(["self", "nsfw", "default", "image", "spoiler"]);
       const thumbnailUrl = post.data.thumbnail.includes("://") ? post.data.thumbnail : "";
       if (post.data.thumbnail && !missingThumbnailTags.has(post.data.thumbnail)) {
@@ -135,14 +154,26 @@ export class MediaView extends View {
             const video = videojs(videoDiv);
             var videoElement = video.el().querySelector("video")!;
 
-            // Add a click event listener to the video element
-            videoElement.addEventListener("touchend", function () {
+            // Toggle pause/play on click
+            const togglePlay = function () {
                if (video.paused()) {
                   video.play();
                } else {
                   video.pause();
                }
-            });
+            };
+            videoElement.addEventListener("clicked", togglePlay);
+            onTapped(videoElement, togglePlay);
+
+            // Pause when out of view
+            document.addEventListener("scroll", () => {
+                 if (videoElement && videoElement === document.pictureInPictureElement) {
+                   return;
+                 }
+                 if (!video.paused() && !intersectsViewport(videoElement)) {
+                   video.pause();
+                 }
+             });
          }
       });
       return videoDom;
@@ -150,3 +181,5 @@ export class MediaView extends View {
 }
 
 customElements.define("ledit-media", MediaView);
+
+

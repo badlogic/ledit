@@ -18,6 +18,10 @@ import speeBubble from "./speechbubble.svg"
 import images from "./images.svg"
 // @ts-ignore
 import github from "./github.svg"
+// @ts-ignore
+import close from "./close.svg"
+// @ts-ignore
+import check from "./check.svg"
 
 export const svgBurger = burger;
 export const svgCircle = circle;
@@ -29,3 +33,5 @@ export const svgDownArrow = downArrow;
 export const svgSpeeBubble = speeBubble;
 export const svgImages = images;
 export const svgGithub = github;
+export const svgClose = close;
+export const svgCheck = check;

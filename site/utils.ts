@@ -1,101 +1,114 @@
 export function dateToText(utcTimestamp: number): string {
-  const now = Date.now();
-  const timeDifference = now - utcTimestamp;
+   const now = Date.now();
+   const timeDifference = now - utcTimestamp;
 
-  const seconds = Math.floor(timeDifference / 1000);
-  if (seconds < 60) {
-    return seconds + "s";
-  }
+   const seconds = Math.floor(timeDifference / 1000);
+   if (seconds < 60) {
+      return seconds + "s";
+   }
 
-  const minutes = Math.floor(timeDifference / (1000 * 60));
-  if (minutes < 60) {
-    return minutes + "m";
-  }
+   const minutes = Math.floor(timeDifference / (1000 * 60));
+   if (minutes < 60) {
+      return minutes + "m";
+   }
 
-  const hours = Math.floor(timeDifference / (1000 * 60 * 60));
-  if (hours < 24) {
-    return hours + "h";
-  }
+   const hours = Math.floor(timeDifference / (1000 * 60 * 60));
+   if (hours < 24) {
+      return hours + "h";
+   }
 
-  const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-  if (days < 30) {
-    return days + "d";
-  }
+   const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+   if (days < 30) {
+      return days + "d";
+   }
 
-  const months = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 30));
-  if (months < 12) {
-    return months + "m";
-  }
+   const months = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 30));
+   if (months < 12) {
+      return months + "m";
+   }
 
-  const years = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 365));
-  return years + "y";
+   const years = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 365));
+   return years + "y";
 }
 
 export function onVisibleOnce(target: Element, callback: () => void) {
-  const options = {
-    root: null,
-    rootMargin: "0px",
-    threshold: 0.1,
-  };
+   let callbackTriggered = false;
 
-  const observer = new IntersectionObserver((entries, observer) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        callback();
-        observer.unobserve(entry.target);
+   const checkVisibility = () => {
+      if (!callbackTriggered && intersectsViewport(target)) {
+         callback();
+         callbackTriggered = true;
+         window.removeEventListener("scroll", checkVisibility);
       }
-    });
-  }, options);
+   }
 
-  observer.observe(target);
+   window.addEventListener("scroll", checkVisibility);
 }
 
 export function onAddedToDOM(element: Element, callback: () => void) {
-  const checkForInsertion = () => {
-    if (element.isConnected) {
-      callback();
-    } else {
-      requestAnimationFrame(checkForInsertion);
-    }
-  };
+   const checkForInsertion = () => {
+      if (element.isConnected) {
+         callback();
+      } else {
+         requestAnimationFrame(checkForInsertion);
+      }
+   };
 
-  checkForInsertion();
+   checkForInsertion();
 }
 
 export function htmlDecode(input: string) {
-  var doc = new DOMParser().parseFromString(input, "text/html");
-  return doc.documentElement.textContent;
+   var doc = new DOMParser().parseFromString(input, "text/html");
+   return doc.documentElement.textContent;
 }
 
 export function intersectsViewport(element: Element | null) {
-  if (element == null) return false;
-  var rect = element.getBoundingClientRect();
-  var windowHeight = window.innerHeight || document.documentElement.clientHeight;
-  var windowWidth = window.innerWidth || document.documentElement.clientWidth;
-  var verticalVisible = rect.top <= windowHeight && rect.bottom >= 0;
-  var horizontalVisible = rect.left <= windowWidth && rect.right >= 0;
-  return verticalVisible && horizontalVisible;
+   if (element == null) return false;
+   var rect = element.getBoundingClientRect();
+   var windowHeight = window.innerHeight || document.documentElement.clientHeight;
+   var windowWidth = window.innerWidth || document.documentElement.clientWidth;
+   var verticalVisible = rect.top <= windowHeight && rect.bottom >= 0;
+   var horizontalVisible = rect.left <= windowWidth && rect.right >= 0;
+   return verticalVisible && horizontalVisible;
 }
 
 /**
  * Converts the HTML string to DOM nodes.
  */
-export function dom(html: string): Element[] {
-  const div = document.createElement("div");
-  div.innerHTML = html;
-  const children: Element[] = [];
-  for (let i = 0; i < div.children.length; i++) {
-    children.push(div.children[i]);
-  }
-  return children;
+export function dom(html: string): HTMLElement[] {
+   const div = document.createElement("div");
+   div.innerHTML = html;
+   const children: Element[] = [];
+   for (let i = 0; i < div.children.length; i++) {
+      children.push(div.children[i]);
+   }
+   return children as HTMLElement[];
 }
 
 /** Navigate to the given subreddit. */
 export function navigate(subreddit: string) {
-  window.location.hash = subreddit;
-  window.location.reload();
+   window.location.hash = subreddit;
+   window.location.reload();
 }
 
 export function addCommasToNumber(number: number) {
-  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+export function onTapped(element: HTMLElement, callback: () => void) {
+   let touchStartY = 0;
+
+   element.addEventListener("touchstart", (event) => {
+      touchStartY = event.touches[0].clientY;
+   });
+
+   element.addEventListener("touchend", (event) => {
+      if (Math.abs(event.changedTouches[0].clientY - touchStartY) < 16) {
+         callback();
+      }
+   });
+}
+
+export function insertAfter(newNode: HTMLElement, referenceNode: HTMLElement) {
+  referenceNode.parentNode?.insertBefore(newNode, referenceNode.nextSibling);
 }
