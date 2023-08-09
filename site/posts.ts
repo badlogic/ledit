@@ -220,7 +220,6 @@ function popStateCallback(event: PopStateEvent) {
          event.preventDefault();
          event.stopPropagation();
          statePushed = false;
-         // history.pushState({}, "", "");
       }
    }
 }
