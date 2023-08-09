@@ -1,5 +1,5 @@
 import "./settings.css";
-import { svgCheck, svgCircle, svgClose, svgGithub, svgMinus } from "./svg/index";
+import { svgCheck, svgCircle, svgClose, svgGithub, svgHeart, svgMinus } from "./svg/index";
 import { dom, navigate } from "./utils";
 import { View } from "./view";
 
@@ -49,6 +49,7 @@ export class SettingsView extends View {
                     <div x-id="themes"></div>
                     <div class="settings-row-header">About</div>
                     <div class="settings-row"><a href="https://github.com/badlogic/ledit" class="svg-icon">${svgGithub} GitHub</a></div>
+                    <div class="settings-row"><a href="https://github.com/sponsors/badlogic" class="svg-icon">${svgHeart} Buy me a coffee</a></div>
                 </div>
             </div>
         `;
