@@ -108,14 +108,8 @@ export class SettingsView extends View {
          event.stopPropagation();
          settings.hideSeen = !settings.hideSeen;
          saveSettings();
-         const seenPostDivs = document.querySelectorAll(".post-seen");
-         for (let i = 0; i < seenPostDivs.length; i++) {
-            const postDiv = seenPostDivs[i];
-            if (settings.hideSeen) postDiv.classList.add("hidden");
-            else postDiv.classList.remove("hidden");
-         }
-         this.render();
-      })
+         window.location.reload();
+      });
 
       // Populate themes
       for (const theme of ["Dark", "Light"]) {
