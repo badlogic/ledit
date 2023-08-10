@@ -33,7 +33,7 @@
    --ledit-border-color: #ddd;
    --ledit-link-color: #3a579b;
    --ledit-default-check-color: #ddd;
-   --ledit-shadow-color: rgba(0, 0, 0, 0.3);
+   --ledit-shadow-color: rgba(0, 0, 0, 0.1);
 }
 
 body,
