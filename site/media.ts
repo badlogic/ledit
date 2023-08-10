@@ -85,7 +85,7 @@ export class MediaView extends View {
 
       // Reddit hosted video
       if (post.data.secure_media && post.data.secure_media.reddit_video) {
-         return [MediaView.renderVideo(post.data.secure_media.reddit_video)];
+         return [MediaView.renderVideo(post.data.secure_media.reddit_video, false)];
       }
 
       // External embed like YouTube Vimeo
@@ -134,7 +134,7 @@ export class MediaView extends View {
          }
          if (!image) return [document.createElement("div")];
          if (!post.data.preview.reddit_video_preview?.fallback_url) return dom(`<div class="media"><img src="${image.url}"></img></div>`);
-         return [MediaView.renderVideo(post.data.preview.reddit_video_preview)];
+         return [MediaView.renderVideo(post.data.preview.reddit_video_preview, post.data.preview.reddit_video_preview.is_gif)];
       }
 
       // Fallback to thumbnail which is super low-res.
@@ -146,9 +146,9 @@ export class MediaView extends View {
       return [document.createElement("div")];
    }
 
-   static renderVideo(embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string }): Element {
+   static renderVideo(embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string }, loop: boolean): Element {
       let videoDom = dom(/*html*/ `<div class="media">
-          <video-js controls fluid class="video-js" style="width: 100%;" loop data-setup="{}">
+          <video-js controls fluid class="video-js" style="width: 100%;" ${loop ? "loop" :""} data-setup="{}">
               <source src="${embed.dash_url}">
               <source src="${embed.hls_url}">
               <source src="${embed.fallback_url}">
