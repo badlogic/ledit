@@ -10,9 +10,13 @@ import { getSettings, saveSettings } from "./settings";
 export class PostsView extends View {
    private readonly postsDiv: Element;
    public static seenPosts = new Set<string>();
+   public static hideSeen = false;
    private loadedPages = 1;
    static {
       getSettings().seenIds.forEach((seen) => PostsView.seenPosts.add(seen));
+      PostsView.hideSeen = getSettings().hideSeen
+      getSettings().hideSeen = false;
+      saveSettings();
    }
    constructor() {
       super();
@@ -49,7 +53,7 @@ export class PostsView extends View {
       for (let i = 0; i < posts.data.children.length; i++) {
          const post = posts.data.children[i];
          const postDiv = new PostView(post);
-         if (PostsView.seenPosts.has(post.data.id) && getSettings().hideSeen) {
+         if (PostsView.seenPosts.has(post.data.id) && PostsView.hideSeen) {
             postDiv.classList.add("hidden");
             hiddenPosts++;
          }

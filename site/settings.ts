@@ -55,7 +55,7 @@ export class SettingsView extends View {
                     <div class="settings-row-header">Subreddits</div>
                     <div x-id="subreddits"></div>
                     <div x-id="hideSeen" class="settings-row">
-                     <span style="flex: 1">Hide seen posts</span><span class="svg-icon">${settings.hideSeen ? svgCheck : ""}</span>
+                     <span style="flex: 1">Hide seen posts</span>
                     </div>
                     <div class="settings-row-header">Theme</div>
                     <div x-id="themes"></div>
@@ -106,7 +106,7 @@ export class SettingsView extends View {
       // Setup show seen toggle
       elements.hideSeen.addEventListener("click", (event) => {
          event.stopPropagation();
-         settings.hideSeen = !settings.hideSeen;
+         settings.hideSeen = true;
          saveSettings();
          window.location.reload();
       });

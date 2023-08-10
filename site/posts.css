@@ -16,7 +16,7 @@
   border-radius: 8px;
   background: var(--ledit-background);
   margin: auto;
-  border: 1px solid var(--leddit-border-color);
+  border: 1px solid var(--ledit-border-color);
 }
 
 .post-loading {
