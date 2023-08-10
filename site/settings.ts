@@ -18,7 +18,7 @@ export const defaultSettings = {
    hideSeen: false,
    seenIds: [],
    theme: "light",
-   defaultSubreddit: "all"
+   defaultSubreddit: defaultMix
 };
 
 export function getSettings(): Settings {
@@ -164,9 +164,11 @@ export class SettingsView extends View {
 
       // Reset to defaults
       elements.reset.addEventListener("click", (event) => {
-         event.stopPropagation();
-         resetSettings();
-         this.render();
+         if (confirm("Are you sure you want to reset your subreddit list and settings?")) {
+            event.stopPropagation();
+            resetSettings();
+            this.render();
+         }
       })
    }
 

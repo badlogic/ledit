@@ -19,6 +19,7 @@
    --ledit-color-dim: rgb(130, 130, 123);
    --ledit-border-color: none;
    --ledit-link-color: #8db5e1;
+   --ledit-default-check-color: rgba(197, 197, 185, 0.3);
 }
 
 .light-theme {
@@ -30,6 +31,7 @@
    --ledit-color-dim: #777;
    --ledit-border-color: #ddd;
    --ledit-link-color: #3a579b;
+   --ledit-default-check-color: #ddd;
 }
 
 body,
@@ -105,7 +107,7 @@ blockquote {
 }
 
 .color-dim-fill {
-   fill: var(--ledit-color-dim);
+   fill: var(--ledit-default-check-color);
 }
 
 @media (max-width: 767px) {
