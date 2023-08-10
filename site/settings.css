@@ -6,6 +6,7 @@
   z-index: 20;
   overflow: auto;
   user-select: none;
+  backdrop-filter: blur(10px);
 }
 
 .settings {
