@@ -27,7 +27,7 @@ npm run dev
 
 This will start a local web server that serves the files in `site/` on http://localhost:8080. If you make changes to the sources, the browser automatically reloads.
 
-If you use VS Code (you should), then open the `ledit/` folder and run the `ledit` launch configuration. A browser window will open, you can set breakpoints, change code and save, and see your changes applied instantly.
+If you use VS Code (you should), then open the `ledit/` folder and run the `ledit` launch configuration. A browser window will open, showing what's served on http://localhost:8080. You can then set breakpoints, change code and save in VS Code, and see your changes applied instantly.
 
 # Deployment
 ```
