@@ -22,6 +22,9 @@ export interface Post {
     over_18: boolean;
     permalink: string;
     selftext_html: string;
+    gallery_data: {
+      items: {media_id: string, id: number}[],
+    },
     media_metadata: {
       [key: string]: {
         status: string;

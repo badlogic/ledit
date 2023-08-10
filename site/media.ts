@@ -42,13 +42,13 @@ export class MediaView extends View {
       }
 
       // Gallery
-      if (post.data.is_gallery && post.data.media_metadata) {
+      if (post.data.is_gallery && post.data.media_metadata && post.data.gallery_data) {
          type image = { x: number; y: number; u: string };
          const images: image[] = [];
-         for (const imageKey of Object.keys(post.data.media_metadata)) {
-            if (post.data.media_metadata[imageKey].p) {
+         for (const imageKey of post.data.gallery_data.items) {
+            if (post.data.media_metadata[imageKey.media_id].p) {
                let image: image | null = null;
-               for (const img of post.data.media_metadata[imageKey].p) {
+               for (const img of post.data.media_metadata[imageKey.media_id].p) {
                   image = img;
                   if (img.x > postsWidth) break;
                }
