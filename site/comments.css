@@ -69,4 +69,5 @@
   padding-top: 0.5em;
   color: var(--ledit-color-dim);
   font-size: 0.8em;
+  cursor: pointer;
 }

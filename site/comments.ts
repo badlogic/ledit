@@ -62,9 +62,9 @@ export class CommentView extends View {
 
       this.innerHTML = /*html*/ `
          <div class="comment-meta">
-               <span class="comment-author ${this.opName == comment.data.author ? "comment-author-op" : ""}"><a href="https://www.reddit.com/u/${comment.data.author}" target="_blank">${
+               <span class="comment-author ${this.opName == comment.data.author ? "comment-author-op" : ""}"><a href="https://www.reddit.com/u/${
          comment.data.author
-      }</a></span>
+      }" target="_blank">${comment.data.author}</a></span>
                <span>• </span>
                <span class="comment-data">${dateToText(comment.data.created_utc * 1000)}</span>
                <span>• </span>
@@ -89,8 +89,8 @@ export class CommentView extends View {
       // Add replies and reply count. Setup expand/collapse.
       const elements = this.elements<{
          text: HTMLElement;
-         replies: HTMLElement,
-         repliesCount: HTMLElement
+         replies: HTMLElement;
+         repliesCount: HTMLElement;
       }>();
 
       if (comment.data.replies && (comment.data.replies as any) != "" && comment.data.replies.data.children) {
@@ -102,19 +102,21 @@ export class CommentView extends View {
             elements.replies.append(replyDom);
          }
 
-         elements.text.addEventListener("click", (event) => {
+         const toggleCollapsed = (event: MouseEvent) => {
             if ((event.target as HTMLElement).tagName != "A") {
-              event.stopPropagation();
-              event.preventDefault();
-              if (elements.replies.classList.contains("hidden")) {
-                elements.replies.classList.remove("hidden");
-                elements.repliesCount.classList.add("hidden");
-              } else {
-                elements.replies.classList.add("hidden");
-                elements.repliesCount.classList.remove("hidden");
-              }
+               event.stopPropagation();
+               event.preventDefault();
+               if (elements.replies.classList.contains("hidden")) {
+                  elements.replies.classList.remove("hidden");
+                  elements.repliesCount.classList.add("hidden");
+               } else {
+                  elements.replies.classList.add("hidden");
+                  elements.repliesCount.classList.remove("hidden");
+               }
             }
-          });
+         };
+         elements.text.addEventListener("click", toggleCollapsed);
+         elements.repliesCount.addEventListener("click", toggleCollapsed);
       }
    }
 }
