@@ -17,7 +17,7 @@
   font-size: var(--ledit-font-size-big);
   display: flex;
   flex-direction: column;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 2px 5px var(--ledit-shadow-color);
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
 }

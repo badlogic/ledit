@@ -20,6 +20,7 @@
    --ledit-border-color: none;
    --ledit-link-color: #8db5e1;
    --ledit-default-check-color: rgba(197, 197, 185, 0.3);
+   --ledit-shadow-color: #ffffff20;
 }
 
 .light-theme {
@@ -32,6 +33,7 @@
    --ledit-border-color: #ddd;
    --ledit-link-color: #3a579b;
    --ledit-default-check-color: #ddd;
+   --ledit-shadow-color: rgba(0, 0, 0, 0.3);
 }
 
 body,
@@ -123,6 +125,10 @@ blockquote {
       margin: calc(var(--ledit-padding) * -1.9) !important;
       margin-bottom: 0 !important;
       margin-top: 0 !important;
+   }
+
+   .comments > .comment {
+      border-radius: 0px !important;
    }
 }
 
