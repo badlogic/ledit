@@ -14,7 +14,7 @@ export class PostsView extends View {
    private loadedPages = 1;
    static {
       getSettings().seenIds.forEach((seen) => PostsView.seenPosts.add(seen));
-      PostsView.hideSeen = getSettings().hideSeen
+      PostsView.hideSeen = getSettings().hideSeen;
       getSettings().hideSeen = false;
       saveSettings();
    }
@@ -81,7 +81,7 @@ export class PostsView extends View {
          // Load more if all posts where hidden.
          requestAnimationFrame(() => {
             loadMore();
-         })
+         });
       } else {
          // Otherwise the user will have to scroll.
          onVisibleOnce(loadMoreDiv, loadMore);
@@ -171,6 +171,12 @@ export class PostView extends View {
       elements.buttonsRow.addEventListener("click", () => {
          this.toggleComments();
       });
+
+      document.addEventListener("keydown", (event) => {
+         if (event.key === "Escape" || event.keyCode === 27) {
+            popStateCallback(null);
+         }
+      });
    }
 
    commentsView: CommentsView | null = null;
@@ -218,9 +224,8 @@ customElements.define("ledit-post", PostView);
 
 let statePushed = false;
 let openCommentsViews: CommentsView[] = [];
-function popStateCallback(event: PopStateEvent) {
-   console.log("In popstate callback");
-   // Otherwise, if a state is pushed, at least one view is
+function popStateCallback(event: PopStateEvent | null) {
+   // If a state is pushed, at least one view is
    // open. Remove any visible views.
    if (statePushed) {
       let scrollTo = -1;
@@ -251,12 +256,14 @@ function popStateCallback(event: PopStateEvent) {
 
       if (removedViews == 0) {
          // If no views were removed, non were visible. Do a proper back navigation.
-         window.removeEventListener("popstate", popStateCallback);
-         history.back();
+         if (event) {
+            window.removeEventListener("popstate", popStateCallback);
+            history.back();
+         }
       } else {
          // Else, prevent back navigation
-         event.preventDefault();
-         event.stopPropagation();
+         event?.preventDefault();
+         event?.stopPropagation();
          statePushed = false;
       }
    }
