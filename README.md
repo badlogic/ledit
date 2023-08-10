@@ -31,6 +31,7 @@ If you use VS Code (you should), then open the `ledit/` folder and run the `ledi
 
 # Deployment
 ```
+npm install
 npm run build
 ```
 
