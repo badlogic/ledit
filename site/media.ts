@@ -25,7 +25,7 @@ export class MediaView extends View {
 
       // Self post, show text, dim it, cap vertical size, and make it expand on click.
       if (post.data.is_self) {
-         let selfPost = dom(`<div class="post-self-preview">${htmlDecode(post.data.selftext_html)}</div>`)[0];
+         let selfPost = dom(`<div class="post-self-preview">${htmlDecode(post.data.selftext_html ?? "")}</div>`)[0];
          selfPost.addEventListener("click", (event) => {
             if ((event.target as HTMLElement).tagName != "A") {
                selfPost.style.maxHeight = "100%";
