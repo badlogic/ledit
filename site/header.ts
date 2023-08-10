@@ -1,6 +1,6 @@
 import "./header.css";
 import { getSorting, getSubreddit } from "./reddit";
-import { SettingsView, getSettings, saveSettings } from "./settings";
+import { SettingsView, defaultMix, getSettings, saveSettings } from "./settings";
 import { svgBurger, svgPlus } from "./svg/index";
 import { navigate } from "./utils";
 import { View } from "./view";
@@ -14,8 +14,8 @@ export class HeaderView extends View {
       this.innerHTML = /*html*/ `
       <div class="header-container">
          <div class="header">
-            <div x-id="showMenu" class="header-menu svg-icon no-user-select" style="padding-left: var(--ledit-padding);">${svgBurger}</div>
-            <div x-id="subreddit" class="header-subreddit">r/${getSubreddit()}</div>
+            <div x-id="showMenu" class="header-menu svg-icon color-fill no-user-select" style="padding-left: var(--ledit-padding);">${svgBurger}</div>
+            <div x-id="subreddit" class="header-subreddit">r/${getSubreddit() == defaultMix ? "ledit_mix" : getSubreddit()}</div>
             <input x-id="subredditInput" class="header-subreddit-input hidden" value="${getSubreddit()}"/>
             <select x-id="sorting" class="header-sorting" tabindex="-1" style="padding-right: var(--ledit-margin);">
                <option value="hot">Hot</option>
@@ -27,7 +27,7 @@ export class HeaderView extends View {
                <option value="top-year">Top year</option>
                <option value="top-alltime">Top all time</option>
             </select>
-            <span x-id="addSubreddit" class="header-subreddit-add svg-icon" style="padding-right: var(--ledit-padding);">${svgPlus}</span>
+            <span x-id="addSubreddit" class="header-subreddit-add svg-icon color-fill" style="padding-right: var(--ledit-padding);">${svgPlus}</span>
          </div>
       </div>
         `;

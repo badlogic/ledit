@@ -97,7 +97,9 @@ export class CommentView extends View {
          const numReplies = comment.data.replies.data.children.length;
          elements.repliesCount.innerText = `${numReplies == 1 ? "1 reply" : numReplies + " replies"}`;
          for (const reply of comment.data.replies.data.children) {
-            if (comment.data.author == undefined) continue;
+            if (comment.data.author == undefined) {
+               continue;
+            }
             const replyDom = new CommentView(reply, this.opName);
             elements.replies.append(replyDom);
          }

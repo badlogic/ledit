@@ -100,6 +100,14 @@ blockquote {
    padding: 0;
 }
 
+.color-fill {
+   fill: var(--ledit-color);
+}
+
+.color-dim-fill {
+   fill: var(--ledit-color-dim);
+}
+
 @media (max-width: 767px) {
    .posts,
    .comments,
@@ -114,4 +122,12 @@ blockquote {
       margin-bottom: 0 !important;
       margin-top: 0 !important;
    }
+}
+
+.box {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   width: 2em;
+   height: 2em;
 }

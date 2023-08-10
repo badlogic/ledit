@@ -138,14 +138,14 @@ export class PostView extends View {
          <div x-id="media"></div>
          <div x-id="buttonsRow" class="post-buttons">
             <div x-id="toggleComments" class="post-comments-toggle">
-               <span class="svg-icon">${svgSpeeBubble}</span>
+               <span class="svg-icon color-fill">${svgSpeeBubble}</span>
                <span>${addCommasToNumber(post.num_comments)}</span>
             </div>
             ${
                post.is_gallery
                   ? /*html*/ `
             <div class="post-gallery-toggle">
-               <span class="svg-icon">${svgImages}</span>
+               <span class="svg-icon color-fill">${svgImages}</span>
                <span>${numGalleryImages}</span>
             </div>`
                   : ""
@@ -153,7 +153,7 @@ export class PostView extends View {
             <div class="post-points">
                <span class="svgIcon">${svgUpArrow}</span>
                <span>${addCommasToNumber(post.score)}</span>
-               <span class="svg-icon">${svgDownArrow}</span>
+               <span class="svg-icon color-fill">${svgDownArrow}</span>
             </div>
          </div>
          <div x-id="comments"></div>
