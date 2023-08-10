@@ -30,11 +30,11 @@ export class PostsView extends View {
       try {
          let result = await getPosts(after);
          console.log(`Loaded more posts for ${getSubreddit()}.`);
-         await this.renderPosts(result);
          if (after) {
             this.loadedPages++;
             this.postsDiv.append(dom(`<div class="post-loading">Page ${this.loadedPages}</div>`)[0]);
          }
+         await this.renderPosts(result);
       } catch (e) {
          this.showError("Could not load r/" + getSubreddit(), e);
       } finally {
