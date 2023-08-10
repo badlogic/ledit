@@ -52,6 +52,8 @@
   overflow: hidden;
   white-space: pre;
   text-overflow: ellipsis;
+  width: 100%;
+  justify-content: start;
 }
 
 .settings-row:hover {
