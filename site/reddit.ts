@@ -1,165 +1,147 @@
+import "video.js/dist/video-js.min.css";
+import videojs from "video.js";
+import Player from "video.js/dist/types/player";
+
+import { Comment, Post, Posts, SortingOption, Source } from "./data";
+import { dom, htmlDecode, intersectsViewport, onAddedToDOM, onTapped } from "./utils";
+
 let count = 0;
-export interface Posts {
-  kind: "listing";
-  data: {
-    after: string;
-    children: Post[];
-  };
+interface RedditPosts {
+   kind: "listing";
+   data: {
+      after: string;
+      children: RedditPost[];
+   };
 }
 
-export interface Post {
-  data: {
-    author: string;
-    created_utc: number;
-    domain: string;
-    is_created_from_ads_ui: boolean;
-    is_reddit_media_domain: boolean;
-    is_video: boolean;
-    is_self: boolean;
-    is_gallery: boolean;
-    id: string,
-    num_comments: number;
-    over_18: boolean;
-    permalink: string;
-    selftext_html: string;
-    gallery_data: {
-      items: {media_id: string, id: number}[],
-    },
-    media_metadata: {
-      [key: string]: {
-        status: string;
-        p: {
-          x: number;
-          y: number;
-          u: string;
-        }[];
+interface RedditPost {
+   data: {
+      author: string;
+      created_utc: number;
+      domain: string;
+      is_created_from_ads_ui: boolean;
+      is_reddit_media_domain: boolean;
+      is_video: boolean;
+      is_self: boolean;
+      is_gallery: boolean;
+      id: string;
+      num_comments: number;
+      over_18: boolean;
+      permalink: string;
+      selftext_html: string;
+      gallery_data: {
+         items: { media_id: string; id: number }[];
       };
-    };
-    preview: {
-      enabled: boolean;
-      images: {
-        resolutions: {
-          url: string;
-          width: number;
-          height: number;
-        }[];
-      }[];
-      reddit_video_preview: {
-        dash_url: string;
-        hls_url: string;
-        fallback_url: string;
-        is_gif: boolean;
-        width: number;
-        height: number;
-      } | null;
-      source: {
-        url: string;
-        width: number;
-        height: number;
+      media_metadata: {
+         [key: string]: {
+            status: string;
+            p: {
+               x: number;
+               y: number;
+               u: string;
+            }[];
+         };
       };
-    };
-    secure_media: {
-      reddit_video: {
-        fallback_url: string;
-        width: number;
-        height: number;
-        dash_url: string;
-        hls_url: string;
+      preview: {
+         enabled: boolean;
+         images: {
+            resolutions: {
+               url: string;
+               width: number;
+               height: number;
+            }[];
+         }[];
+         reddit_video_preview: {
+            dash_url: string;
+            hls_url: string;
+            fallback_url: string;
+            is_gif: boolean;
+            width: number;
+            height: number;
+         } | null;
+         source: {
+            url: string;
+            width: number;
+            height: number;
+         };
       };
-    };
-    secure_media_embed: {
-      content: string;
-      width: number;
-      height: number;
-      media_domain_url: string;
-    };
-    score: number;
-    subreddit: string;
-    subreddit_id: string;
-    thumbnail: string;
-    title: string;
-    ups: number;
-    downs: number;
-    url: string;
-  };
+      secure_media: {
+         reddit_video: {
+            fallback_url: string;
+            width: number;
+            height: number;
+            dash_url: string;
+            hls_url: string;
+         };
+      };
+      secure_media_embed: {
+         content: string;
+         width: number;
+         height: number;
+         media_domain_url: string;
+      };
+      score: number;
+      subreddit: string;
+      subreddit_id: string;
+      thumbnail: string;
+      title: string;
+      ups: number;
+      downs: number;
+      url: string;
+   };
 }
 
-export interface Comment {
-  data: {
-    author: string;
-    created_utc: number;
-    body_html: string;
-    score: number;
-    permalink: string;
-    replies: Comments | "" | undefined;
-  };
-  kind: "t1";
+export interface RedditComment {
+   data: {
+      author: string;
+      created_utc: number;
+      body_html: string;
+      score: number;
+      permalink: string;
+      replies: RedditComments | "" | undefined;
+   };
+   kind: "t1";
 }
 
-export interface Comments {
-  data: {
-    children: Comment[];
-  };
-  kind: "Listing";
-}
-
-/**
- * Gets the posts for the current subreddit and url encoded in `window.location.hash`.
- * E.g. `https://ledit.io/#austria/top-week` will fetch the data from
- * `https://www.reddit.com/austria/top/.json?t=week`.
- *
- * If `after` is given, then the page identifier by this token will be loaded instead
- * of the first page.
- */
-export async function getPosts(after: string | null = null): Promise<Posts> {
-  const sortFrag = getSortingFragment();
-  const sortParam = getSortingParameter();
-  const hash = "/r/" + getSubreddit() + "/" + sortFrag + "/.json?" + sortParam + "&" + (after ? "after=" + after : "");
-  const url = "https://www.reddit.com" + (!hash.startsWith("/") ? "/" : "") + hash;
-  const response = await fetch(url);
-  return (await response.json()) as Posts;
-}
-
-/** Fetches the comments for a post. Returns null if no comments could be loaded. */
-export async function getComments(post: Post) {
-  const response = await fetch("https://www.reddit.com/" + post.data.permalink + "/.json");
-  const data = await response.json();
-  if (data.length < 2) return null;
-  return data[1] as Comments;
+export interface RedditComments {
+   data: {
+      children: RedditComment[];
+   };
+   kind: "Listing";
 }
 
 /**
  * Extracts the subreddit name from `window.location.hash`, e.g.
- *`https://ledit.io/#austria/top-week` gives `austria`
+ *`https://ledit.io/#r/austria/top-week` gives `austria`
  */
-export function getSubreddit() {
-  const hash = window.location.hash;
-  if (hash.length == 0) {
-    return "all";
-  }
-  const tokens = hash.substring(1).split("/");
-  if (tokens.length == 0) return "all";
-  return decodeURIComponent(tokens[0]);
+function getSubreddit() {
+   const hash = window.location.hash;
+   if (hash.length == 0) {
+      return "all";
+   }
+   const tokens = hash.substring(1).split("/");
+   if (tokens.length < 2) return "all";
+   return decodeURIComponent(tokens[1]);
 }
 
 /**
  * Extracts the subreddit name from `window.location.hash`, e.g.
- *`https://ledit.io/#austria/top-week` gives `top-week`.
+ *`https://ledit.io/#r/austria/top-week` gives `top-week`.
  *
  * Returns `hot` if no sorting is given in the hash.
  */
-export function getSorting() {
-  const hash = window.location.hash;
-  if (hash.length == 0) {
-    return "hot";
-  }
-  const tokens = hash.substring(1).split("/");
-  if (tokens.length < 2) return "hot";
-  if (["hot", "new", "rising", "top-today", "top-week", "top-month", "top-year", "top-alltime"].some((sorting) => sorting == tokens[1])) {
-    return tokens[1];
-  } else {
-    return "hot";
-  }
+function getSorting() {
+   const hash = window.location.hash;
+   if (hash.length == 0) {
+      return "hot";
+   }
+   const tokens = hash.substring(1).split("/");
+   if (tokens.length < 3) return "hot";
+   if (["hot", "new", "rising", "top-today", "top-week", "top-month", "top-year", "top-alltime"].some((sorting) => sorting == tokens[2])) {
+      return tokens[2];
+   } else {
+      return "hot";
+   }
 }
 
 /**
@@ -167,8 +149,8 @@ export function getSorting() {
  * part that needs to go into the reddit URL, e.g. the `top` part in
  * https://www.reddit.com/r/Austria/top/?t=week
  */
-export function getSortingFragment() {
-  return getSorting().split("-")[0];
+function getSortingFragment() {
+   return getSorting().split("-")[0];
 }
 
 /**
@@ -178,8 +160,294 @@ export function getSortingFragment() {
  *
  * Returns an empty string if no sorting is given in the hash.
  */
-export function getSortingParameter() {
-  const tokens = getSorting().split("-");
-  if (tokens.length != 2) return "";
-  return "t=" + tokens[1];
+function getSortingParameter() {
+   const tokens = getSorting().split("-");
+   if (tokens.length != 2) return "";
+   return "t=" + tokens[1];
+}
+
+export class RedditSource implements Source {
+   async getPosts(after: string | null): Promise<Posts> {
+      const sortFrag = getSortingFragment();
+      const sortParam = getSortingParameter();
+      const hash = "/r/" + getSubreddit() + "/" + sortFrag + "/.json?" + sortParam + "&" + (after ? "after=" + after : "");
+      const url = "https://www.reddit.com" + (!hash.startsWith("/") ? "/" : "") + hash;
+      const response = await fetch(url);
+      const redditPosts = (await response.json()) as RedditPosts;
+      if (!redditPosts || !redditPosts.data || !redditPosts.data.children) {
+         return {
+            posts: [],
+            after: null,
+         };
+      }
+
+      const convertPost = (redditPost: RedditPost) => {
+         let numGalleryImages = 0;
+         if (redditPost.data.is_gallery) {
+            for (const imageKey of Object.keys(redditPost.data.media_metadata)) {
+               if (redditPost.data.media_metadata[imageKey].p) {
+                  numGalleryImages++;
+               }
+            }
+         }
+         return {
+            url: "https://www.reddit.com/" + redditPost.data.permalink,
+            title: redditPost.data.title,
+            isSelf: redditPost.data.is_self,
+            isGallery: redditPost.data.is_gallery,
+            numGalleryImages,
+            author: redditPost.data.author,
+            authorUrl: "https://www.reddit.com/u/" + redditPost.data.author,
+            createdAt: redditPost.data.created_utc,
+            sub: redditPost.data.subreddit,
+            score: redditPost.data.score,
+            numComments: redditPost.data.num_comments,
+            redditPost,
+         } as Post;
+      };
+
+      const posts = [] as Post[];
+      for (const redditPost of redditPosts.data.children) {
+         if (redditPost.data.author == undefined) continue;
+         posts.push(convertPost(redditPost));
+      }
+
+      return {
+         posts: posts,
+         after: redditPosts.data.after,
+      };
+   }
+   async getComments(post: Post): Promise<Comment[]> {
+      const response = await fetch(post.url + ".json");
+      const data = await response.json();
+      if (data.length < 2) return [];
+      const redditComments = data[1] as RedditComments;
+      if (!redditComments || !redditComments.data || !redditComments.data.children) {
+         return [];
+      }
+
+      const convertComment = (redditComment: RedditComment) => {
+         const comment = {
+            url: "https://www.reddit.com/" + redditComment.data.permalink,
+            author: redditComment.data.author,
+            authorUrl: `http://www.reddit.com/u/${redditComment.data.author}`,
+            createdAt: redditComment.data.created_utc,
+            score: redditComment.data.score,
+            html: redditComment.data.body_html,
+            replies: [] as Comment[],
+         } as Comment;
+         if (redditComment.data.replies != "" && redditComment.data.replies !== undefined) {
+            for (const reply of redditComment.data.replies.data.children) {
+               if (reply.data.author == undefined) continue;
+               comment.replies.push(convertComment(reply));
+            }
+         }
+         return comment as Comment;
+      };
+
+      const comments: Comment[] = [];
+      for (const comment of redditComments.data.children) {
+         if (comment.data.author == undefined) continue;
+         comments.push(convertComment(comment));
+      }
+      return comments;
+   }
+
+   getMediaDom(canonicalPost: Post): Element[] {
+      const post = (canonicalPost as any).redditPost;
+      const postsWidth = document.querySelector(".posts")!.clientWidth; // account for padding in post
+
+      // Self post, show text, dim it, cap vertical size, and make it expand on click.
+      if (post.data.is_self) {
+         let selfPost = dom(`<div class="post-self-preview">${htmlDecode(post.data.selftext_html ?? "")}</div>`)[0];
+         selfPost.addEventListener("click", (event) => {
+            if ((event.target as HTMLElement).tagName != "A") {
+               selfPost.style.maxHeight = "100%";
+               selfPost.style.color = "var(--ledit-color)";
+            }
+         });
+         // Ensure links in self text open a new tab
+         let links = selfPost.querySelectorAll("a")!;
+         for (let i = 0; i < links.length; i++) {
+            let link = links[i];
+            link.setAttribute("target", "_blank");
+         }
+         return [selfPost];
+      }
+
+      // Gallery
+      if (post.data.is_gallery && post.data.media_metadata && post.data.gallery_data) {
+         type image = { x: number; y: number; u: string };
+         const images: image[] = [];
+         for (const imageKey of post.data.gallery_data.items) {
+            if (post.data.media_metadata[imageKey.media_id].p) {
+               let image: image | null = null;
+               for (const img of post.data.media_metadata[imageKey.media_id].p) {
+                  image = img;
+                  if (img.x > postsWidth) break;
+               }
+               if (image) images.push(image);
+            }
+         }
+         const galleryDom = dom(/*html*/ `
+          <div class="media-image-gallery">
+             ${images.map((img, index) => `<img src="${img.u}" ${index > 0 ? 'class="hidden"' : ""}>`).join("")}
+          </div>
+       `);
+         const imagesDom = galleryDom[0].querySelectorAll("img");
+         const imageClickListener = () => {
+            let scrolled = false;
+            imagesDom.forEach((img, index) => {
+               if (index == 0) return;
+               if (img.classList.contains("hidden")) {
+                  img.classList.remove("hidden");
+               } else {
+                  img.classList.add("hidden");
+                  if (scrolled) return;
+                  scrolled = true;
+                  if (imagesDom[0].getBoundingClientRect().top < 16 * 4) {
+                     window.scrollTo({ top: imagesDom[0].getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
+                  }
+               }
+            });
+         };
+         for (let i = 0; i < imagesDom.length; i++) {
+            imagesDom[i].addEventListener("click", imageClickListener);
+         }
+         return galleryDom;
+      }
+
+      // Reddit hosted video
+      if (post.data.secure_media && post.data.secure_media.reddit_video) {
+         return [RedditSource.renderVideo(post.data.secure_media.reddit_video, false)];
+      }
+
+      // External embed like YouTube Vimeo
+      if (post.data.secure_media_embed && post.data.secure_media_embed.media_domain_url) {
+         const embed = post.data.secure_media_embed;
+         const embedWidth = postsWidth;
+         const embedHeight = Math.floor((embed.height / embed.width) * embedWidth);
+         if (embed.content.includes("iframe")) {
+            const embedUrl = htmlDecode(
+               embed.content
+                  .replace(`width="${embed.width}"`, `width="${embedWidth}"`)
+                  .replace(`height="${embed.height}"`, `height="${embedHeight}"`)
+                  .replace("position:absolute;", "")
+            );
+            let embedDom = dom(`<div class="media" style="width: ${embedWidth}px; height: ${embedHeight}px;">${embedUrl}</div>`)[0];
+            // Make YouTube videos stop if they scroll out of frame.
+            if (embed.content.includes("youtube")) {
+               // Pause when out of view
+               document.addEventListener("scroll", () => {
+                  const videoElement = embedDom.querySelector("iframe");
+                  if (videoElement && !intersectsViewport(videoElement)) {
+                     videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
+                  }
+               });
+               return [embedDom];
+            }
+         } else {
+            return dom(
+               `<div class="media" style="width: ${embedWidth}px; height: ${embedHeight}px;"><iframe width="${embedWidth}" height="${embedHeight}" src="${embed.media_domain_url}"></iframe></div>`
+            );
+         }
+      }
+
+      // Plain old .gif
+      if (post.data.url.endsWith(".gif")) {
+         return dom(`<div class="media"><img src="${post.data.url}"></img></div>`);
+      }
+
+      // Image, pick the one that's one size above the current posts width so pinch zooming
+      // in shows more pixels.
+      if (post.data.preview && post.data.preview.images && post.data.preview.images.length > 0) {
+         let image: { url: string; width: number; height: number } | null = null;
+         for (const img of post.data.preview.images[0].resolutions) {
+            image = img;
+            if (img.width > postsWidth) break;
+         }
+         if (!image) return [document.createElement("div")];
+         if (!post.data.preview.reddit_video_preview?.fallback_url) return dom(`<div class="media"><img src="${image.url}"></img></div>`);
+         return [RedditSource.renderVideo(post.data.preview.reddit_video_preview, post.data.preview.reddit_video_preview.is_gif)];
+      }
+
+      // Fallback to thumbnail which is super low-res.
+      const missingThumbnailTags = new Set<String>(["self", "nsfw", "default", "image", "spoiler"]);
+      const thumbnailUrl = post.data.thumbnail.includes("://") ? post.data.thumbnail : "";
+      if (post.data.thumbnail && !missingThumbnailTags.has(post.data.thumbnail)) {
+         return dom(`<div class="media"><img src="${thumbnailUrl}"></img></div>`);
+      }
+      return [document.createElement("div")];
+   }
+
+   static renderVideo(
+      embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string },
+      loop: boolean
+   ): Element {
+      let videoDom = dom(/*html*/ `<div class="media">
+        <video-js controls fluid class="video-js" style="width: 100%;" ${loop ? "loop" : ""} data-setup="{}">
+            <source src="${embed.dash_url}">
+            <source src="${embed.hls_url}">
+            <source src="${embed.fallback_url}">
+        </video-js>
+      </div>`)[0];
+      onAddedToDOM(videoDom, () => {
+         const videoDiv = videoDom.querySelector("video-js");
+         if (videoDiv) {
+            const video = videojs(videoDiv);
+            var videoElement = video.el().querySelector("video")!;
+
+            // Toggle pause/play on click
+            const togglePlay = function () {
+               if (video.paused()) {
+                  video.play();
+               } else {
+                  video.pause();
+               }
+            };
+            videoElement.addEventListener("clicked", togglePlay);
+            onTapped(videoElement, togglePlay);
+
+            // Pause when out of view
+            document.addEventListener("scroll", () => {
+               if (videoElement && videoElement === document.pictureInPictureElement) {
+                  return;
+               }
+               if (!video.paused() && !intersectsViewport(videoElement)) {
+                  video.pause();
+               }
+            });
+         }
+      });
+      return videoDom;
+   }
+
+   getSub() {
+      return getSubreddit();
+   }
+
+   getSubPrefix(): string {
+      return "r/";
+   }
+
+   getSortingOptions(): SortingOption[] {
+    return [
+      { value: "hot", label: "Hot" },
+      { value: "new", label: "New" },
+      { value: "rising", label: "Rising" },
+      { value: "top-today", label: "Top today" },
+      { value: "top-week", label: "Top week" },
+      { value: "top-month", label: "Top month" },
+      { value: "top-year", label: "Top year" },
+      { value: "top-alltime", label: "Top all time" },
+    ]
+   }
+
+   getSorting(): string {
+       return getSorting();
+   }
+
+   isSingleSource(): boolean {
+       return false;
+   }
 }

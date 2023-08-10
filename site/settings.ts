@@ -4,22 +4,22 @@ import { dom, navigate } from "./utils";
 import { View } from "./view";
 
 interface Settings {
-   subreddits: string[];
+   sub: string[];
    hideSeen: boolean,
    seenIds: string[];
    theme: string;
-   defaultSubreddit: string
+   defaultSub: string
 }
 
 let settings: Settings | null = null;
-export const defaultMix = "AdviceAnimals+AskReddit+askscience+assholedesign+aww+battlestations+bestof+BetterEveryLoop+blackmagicfuckery+boardgames+BuyItForLife+Damnthatsinteresting+dataisbeautiful+DesignDesign+DIY+diyelectronics+DrugNerds+europe+explainlikeimfive+facepalm+fatFIRE+fightporn+Fitness+funny+Futurology+gadgets+gaming+GifRecipes+gifs+GiftIdeas+history+homeautomation+Hue+IAmA+IllegalLifeProTips+INEEEEDIT+instant_regret+interestingasfuck+InternetIsBeautiful+Jokes+JusticeServed+kitchens+LifeProTips+maybemaybemaybe+mildlyinfuriating+mildlyinteresting+mildlyvagina+movies+news+NintendoSwitch+nottheonion+oddlysatisfying+OldSchoolCool+pcmasterrace+photoshopbattles+pics+PoliticalHumor+ProgrammerHumor+PublicFreakout+rarepuppers+recipes+rickandmorty+RoomPorn+running+science+Showerthoughts+slatestarcodex+space+spicy+technology+technologyconnections+television+therewasanattempt+todayilearned+UnethicalLifeProTips+Unexpected+UpliftingNews+videos+watchpeoplealmostdie+Wellthatsucks+Whatcouldgowrong+whitepeoplegifs+woahdude+worldnews+WTF"
+export const defaultMix = "r/AdviceAnimals+AskReddit+askscience+assholedesign+aww+battlestations+bestof+BetterEveryLoop+blackmagicfuckery+boardgames+BuyItForLife+Damnthatsinteresting+dataisbeautiful+DesignDesign+DIY+diyelectronics+DrugNerds+europe+explainlikeimfive+facepalm+fatFIRE+fightporn+Fitness+funny+Futurology+gadgets+gaming+GifRecipes+gifs+GiftIdeas+history+homeautomation+Hue+IAmA+IllegalLifeProTips+INEEEEDIT+instant_regret+interestingasfuck+InternetIsBeautiful+Jokes+JusticeServed+kitchens+LifeProTips+maybemaybemaybe+mildlyinfuriating+mildlyinteresting+mildlyvagina+movies+news+NintendoSwitch+nottheonion+oddlysatisfying+OldSchoolCool+pcmasterrace+photoshopbattles+pics+PoliticalHumor+ProgrammerHumor+PublicFreakout+rarepuppers+recipes+rickandmorty+RoomPorn+running+science+Showerthoughts+slatestarcodex+space+spicy+technology+technologyconnections+television+therewasanattempt+todayilearned+UnethicalLifeProTips+Unexpected+UpliftingNews+videos+watchpeoplealmostdie+Wellthatsucks+Whatcouldgowrong+whitepeoplegifs+woahdude+worldnews+WTF"
 export const defaultSettings = {
-   subreddits: [defaultMix, "all", "pics", "videos", "worldnews", "science", "todayilearned"],
+   sub: [defaultMix, "r/all", "r/pics", "r/videos", "r/worldnews", "r/science", "r/todayilearned"],
    hideSeen: false,
    seenIds: [],
    theme: "light",
-   defaultSubreddit: defaultMix
-};
+   defaultSub: defaultMix
+} as Settings;
 
 export function getSettings(): Settings {
    if (settings) return settings;
@@ -96,11 +96,11 @@ export class SettingsView extends View {
       });
 
       // Populate subreddits
-      for (const subreddit of settings.subreddits) {
-         const isDefault = settings.defaultSubreddit == subreddit;
+      for (const subreddit of settings.sub) {
+         const isDefault = settings.defaultSub == subreddit;
          const subredditDiv = dom(/*html*/`
          <div class="settings-row">
-             <a x-id="subreddit" href="#${subreddit}" style="flex: 1">${subreddit == defaultMix ? "Ledit Mix" : subreddit}</a>
+             <a x-id="subreddit" href="#${subreddit}" style="flex: 1">${subreddit == defaultMix ? "r/ledit_mix" : subreddit}</a>
              <div x-id="makeDefaultSubreddit" class="box">
                <span class="svg-icon ${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</span>
             </div>
@@ -119,14 +119,14 @@ export class SettingsView extends View {
          });
          subElements.makeDefaultSubreddit.addEventListener("click", (event) => {
             event.stopPropagation();
-            if (subreddit == settings.defaultSubreddit) return;
-            settings.defaultSubreddit = subreddit;
+            if (subreddit == settings.defaultSub) return;
+            settings.defaultSub = subreddit;
             saveSettings();
             this.render();
          });
          subElements.deleteSubreddit.addEventListener("click", (event) => {
             event.stopPropagation();
-            settings.subreddits = settings.subreddits.filter((sub) => sub != subreddit);
+            settings.sub = settings.sub.filter((sub) => sub != subreddit);
             saveSettings();
             this.render();
          });

@@ -1,11 +1,11 @@
 import "./posts.css";
-import { Post, Posts, getPosts, getSubreddit } from "./reddit";
 import { svgDownArrow, svgImages, svgLoader, svgSpeeBubble, svgUpArrow } from "./svg/index";
 import { addCommasToNumber, dateToText, dom, intersectsViewport, onVisibleOnce } from "./utils";
 import { View } from "./view";
 import { MediaView } from "./media";
 import { CommentsView } from "./comments";
 import { getSettings, saveSettings } from "./settings";
+import { Post, Posts, Source, getSource } from "./data";
 
 export class PostsView extends View {
    private readonly postsDiv: Element;
@@ -25,46 +25,48 @@ export class PostsView extends View {
    }
 
    async loadPosts(after: string | null) {
+      const source = getSource();
       const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
       this.postsDiv.append(loadingDiv);
       try {
-         let result = await getPosts(after);
-         console.log(`Loaded more posts for ${getSubreddit()}.`);
+         let result = await source.getPosts(after);
+         console.log(`Loaded more posts for '${source.getSubPrefix() + source.getSub()}'.`);
          if (after) {
             this.loadedPages++;
             this.postsDiv.append(dom(`<div class="post-loading">Page ${this.loadedPages}</div>`)[0]);
          }
          await this.renderPosts(result);
       } catch (e) {
-         this.showError("Could not load r/" + getSubreddit(), e);
+         this.showError("Could not load " + source.getSubPrefix() + source.getSub(), e);
       } finally {
          loadingDiv.remove();
       }
    }
 
    async renderPosts(posts: Posts) {
-      if ((!posts || !posts.data || !posts.data.children) && this.postsDiv.children.length == 1) {
-         this.showError(`Subreddit ${getSubreddit()} does not exist.`);
+      const source = getSource();
+      if (posts.posts.length == 0) {
+         this.showError(`${source.getSubPrefix() + source.getSub()} does not exist.`);
          return;
       }
 
       // Render posts
       let hiddenPosts = 0;
-      for (let i = 0; i < posts.data.children.length; i++) {
-         const post = posts.data.children[i];
+      for (let i = 0; i < posts.posts.length; i++) {
+         const post = posts.posts[i];
          const postDiv = new PostView(post);
-         if (PostsView.seenPosts.has(post.data.id) && PostsView.hideSeen) {
+         if (PostsView.seenPosts.has(post.url) && PostsView.hideSeen) {
             postDiv.classList.add("hidden");
             hiddenPosts++;
          }
          this.postsDiv.append(postDiv);
 
          onVisibleOnce(postDiv, () => {
-            if (!PostsView.seenPosts.has(post.data.id)) {
-               PostsView.seenPosts.add(post.data.id);
-               getSettings().seenIds.push(post.data.id);
+            if (!PostsView.seenPosts.has(post.url)) {
+               PostsView.seenPosts.add(post.url);
+               getSettings().seenIds.push(post.url);
                saveSettings();
-               console.log("Seen " + post.data.id);
+               console.log("Seen " + post.url);
             }
          });
       }
@@ -74,10 +76,10 @@ export class PostsView extends View {
       this.postsDiv.append(loadMoreDiv);
       const loadMore = async () => {
          loadMoreDiv.remove();
-         await this.loadPosts(posts.data.after);
+         await this.loadPosts(posts.after);
       };
 
-      if (hiddenPosts == posts.data.children.length) {
+      if (hiddenPosts == posts.posts.length) {
          // Load more if all posts where hidden.
          requestAnimationFrame(() => {
             loadMore();
@@ -103,29 +105,22 @@ export class PostView extends View {
    }
 
    render() {
-      const post = this.post.data;
-      const showUrl = !post.is_self && !post.url.includes("redd.it") && !post.url.includes("www.reddit.com");
-      const showSubreddit = getSubreddit().toLowerCase() != post.subreddit.toLowerCase();
-      let numGalleryImages = 0;
-      if (post.is_gallery) {
-         for (const imageKey of Object.keys(post.media_metadata)) {
-            if (post.media_metadata[imageKey].p) {
-               numGalleryImages++;
-            }
-         }
-      }
+      const source = getSource();
+      const post = this.post;
+      const showUrl = !post.isSelf && !post.url.includes("redd.it") && !post.url.includes("www.reddit.com");
+      const showSubreddit = getSource().getSub().toLowerCase() != post.sub.toLowerCase();
       this.innerHTML = /*html*/ `
-      <div class="post ${PostsView.seenPosts.has(post.id) ? "post-seen" : ""}">
+      <div class="post ${PostsView.seenPosts.has(post.url) ? "post-seen" : ""}">
          <div class="post-title"><a href="${post.url}" target="_blank">${post.title}</a></div>
          <div class="post-meta">
             ${
                showSubreddit
-                  ? /*html*/ `<span class="post-subreddit"><a href="https://www.reddit.com/r/${post.subreddit}" target="_blank">r/${post.subreddit}</a></span><span> •</span>`
+                  ? /*html*/ `<span class="post-subreddit"><a href="${post.url}" target="_blank">${source.getSubPrefix() + post.sub}</a></span><span> •</span>`
                   : ""
             }
-            <span class="post-date">${dateToText(post.created_utc * 1000)}</span>
+            <span class="post-date">${dateToText(post.createdAt * 1000)}</span>
             <span>•</span>
-            <span class="post-author"><a href="https://www.reddit.com/u/${post.author}" target="_blank">${post.author}</a></span>
+            <span class="post-author"><a href="${post.authorUrl}" target="_blank">${post.author}</a></span>
             ${
                showUrl
                   ? `<span>• </span><span class="post-url">${
@@ -133,20 +128,20 @@ export class PostView extends View {
                     }</span>`
                   : ""
             }
-            <span>${PostsView.seenPosts.has(post.id) ? "• seen" : ""}</span>
+            <span>${PostsView.seenPosts.has(post.url) ? "• seen" : ""}</span>
          </div>
          <div x-id="media"></div>
          <div x-id="buttonsRow" class="post-buttons">
             <div x-id="toggleComments" class="post-comments-toggle">
                <span class="svg-icon color-fill">${svgSpeeBubble}</span>
-               <span>${addCommasToNumber(post.num_comments)}</span>
+               <span>${addCommasToNumber(post.numComments)}</span>
             </div>
             ${
-               post.is_gallery
+               post.isGallery
                   ? /*html*/ `
             <div class="post-gallery-toggle">
                <span class="svg-icon color-fill">${svgImages}</span>
-               <span>${numGalleryImages}</span>
+               <span>${post.numGalleryImages}</span>
             </div>`
                   : ""
             }

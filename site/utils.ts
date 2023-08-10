@@ -85,9 +85,9 @@ export function dom(html: string): HTMLElement[] {
    return children as HTMLElement[];
 }
 
-/** Navigate to the given subreddit. */
-export function navigate(subreddit: string) {
-   window.location.hash = subreddit;
+/** Navigate to the given sub. */
+export function navigate(sub: string) {
+   window.location.hash = sub;
    window.location.reload();
 }
 

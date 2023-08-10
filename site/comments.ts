@@ -1,10 +1,10 @@
 import "./comments.css";
-import { Comment, Comments, Post, getComments } from "./reddit";
+import { Post, Comment, getSource } from "./data";
 import { svgLoader } from "./svg";
 import { dateToText, dom, htmlDecode } from "./utils";
 import { View } from "./view";
 
-const commentsCache = new Map<string, Comments>();
+const commentsCache = new Map<string, Comment[]>();
 
 export class CommentsView extends View {
    private comments: Comment[] | null = null;
@@ -14,18 +14,19 @@ export class CommentsView extends View {
       super();
       this.render();
       this.classList.add("comments");
-      this.opName = post.data.author;
+      this.opName = post.author;
       (async () => this.loadComments(post))();
    }
 
    async loadComments(post: Post) {
+      const source = getSource();
       const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
       this.append(loadingDiv);
       try {
-         const commentsData = commentsCache.has(post.data.permalink) ? commentsCache.get(post.data.permalink)! : await getComments(post);
+         const commentsData = commentsCache.has(post.url) ? commentsCache.get(post.url)! : await source.getComments(post);
          if (!commentsData) return;
-         commentsCache.set(post.data.permalink, commentsData);
-         this.comments = commentsData.data.children;
+         commentsCache.set(post.url, commentsData);
+         this.comments = commentsData;
          this.render();
       } catch (e) {
          this.showError("Could not load comments", e);
@@ -37,7 +38,6 @@ export class CommentsView extends View {
    render() {
       if (!this.comments) return;
       for (const comment of this.comments) {
-         if (comment.data.author == undefined) continue;
          this.append(new CommentView(comment, this.opName));
       }
    }
@@ -58,22 +58,21 @@ export class CommentView extends View {
 
    render() {
       const comment = this.comment;
-      if (comment.data.author == undefined) return;
 
       this.innerHTML = /*html*/ `
          <div class="comment-meta">
-               <span class="comment-author ${this.opName == comment.data.author ? "comment-author-op" : ""}"><a href="https://www.reddit.com/u/${
-         comment.data.author
-      }" target="_blank">${comment.data.author}</a></span>
+               <span class="comment-author ${this.opName == comment.author ? "comment-author-op" : ""}">
+                  <a href="${comment.authorUrl}" target="_blank">${comment.author}</a>
+               </span>
                <span>• </span>
-               <span class="comment-data">${dateToText(comment.data.created_utc * 1000)}</span>
+               <span class="comment-data">${dateToText(comment.createdAt * 1000)}</span>
                <span>• </span>
-               <span class="comment-points">${comment.data.score} pts</span>
+               <span class="comment-points">${comment.score} pts</span>
                <span>• </span>
-               <a class="comment-reply" href="https://www.reddit.com/${comment.data.permalink}" target="_blank">Reply</a>
+               <a class="comment-reply" href="${comment.url}" target="_blank">Reply</a>
          </div>
          <div x-id="text" class="comment-text">
-               ${htmlDecode(comment.data.body_html)}
+               ${htmlDecode(comment.html)}
          </div>
          <div x-id="replies" class="comment-replies"></div>
          <div x-id="repliesCount" class="comment-replies-count hidden"></div>
@@ -93,33 +92,27 @@ export class CommentView extends View {
          repliesCount: HTMLElement;
       }>();
 
-      if (comment.data.replies && (comment.data.replies as any) != "" && comment.data.replies.data.children) {
-         const numReplies = comment.data.replies.data.children.length;
-         elements.repliesCount.innerText = `${numReplies == 1 ? "1 reply" : numReplies + " replies"}`;
-         for (const reply of comment.data.replies.data.children) {
-            if (comment.data.author == undefined) {
-               continue;
-            }
-            const replyDom = new CommentView(reply, this.opName);
-            elements.replies.append(replyDom);
-         }
-
-         const toggleCollapsed = (event: MouseEvent) => {
-            if ((event.target as HTMLElement).tagName != "A") {
-               event.stopPropagation();
-               event.preventDefault();
-               if (elements.replies.classList.contains("hidden")) {
-                  elements.replies.classList.remove("hidden");
-                  elements.repliesCount.classList.add("hidden");
-               } else {
-                  elements.replies.classList.add("hidden");
-                  elements.repliesCount.classList.remove("hidden");
-               }
-            }
-         };
-         elements.text.addEventListener("click", toggleCollapsed);
-         elements.repliesCount.addEventListener("click", toggleCollapsed);
+      elements.repliesCount.innerText = `${comment.replies.length == 1 ? "1 reply" : comment.replies.length + " replies"}`;
+      for (const reply of comment.replies) {
+         const replyDom = new CommentView(reply, this.opName);
+         elements.replies.append(replyDom);
       }
+
+      const toggleCollapsed = (event: MouseEvent) => {
+         if ((event.target as HTMLElement).tagName != "A") {
+            event.stopPropagation();
+            event.preventDefault();
+            if (elements.replies.classList.contains("hidden")) {
+               elements.replies.classList.remove("hidden");
+               elements.repliesCount.classList.add("hidden");
+            } else {
+               elements.replies.classList.add("hidden");
+               elements.repliesCount.classList.remove("hidden");
+            }
+         }
+      };
+      elements.text.addEventListener("click", toggleCollapsed);
+      elements.repliesCount.addEventListener("click", toggleCollapsed);
    }
 }
 customElements.define("ledit-comment", CommentView);
