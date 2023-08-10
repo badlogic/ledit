@@ -13,11 +13,11 @@
 .dark-theme {
    --ledit-background: #121b25;
    --ledit-background-dim: #0b1117;
-   --ledit-background-buttons: ##52585f;
+   --ledit-background-buttons: #52585f;
    --ledit-header-border: #0b1117;
    --ledit-color: #ccc;
    --ledit-color-dim: rgb(130, 130, 123);
-   --ledit-border-color: rgba(255, 255, 255, 0.3);
+   --ledit-border-color: none;
    --ledit-link-color: #8db5e1;
 }
 
