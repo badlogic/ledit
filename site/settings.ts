@@ -143,9 +143,9 @@ export class SettingsView extends View {
 
       // Populate themes
       for (const theme of ["Dark", "Light"]) {
-         const themeDiv = dom(`
+         const themeDiv = dom(/*html*/`
          <div class="settings-row">
-           <span style="flex: 1">${theme}</span><span class="svg-icon color-fill hidden">${svgCheck}</span>
+           <div style="flex: 1">${theme}</div><div class="svg-icon box color-fill hidden">${svgCheck}</div>
          </div>`)[0];
          if (settings.theme == theme) {
             themeDiv.querySelector(".svg-icon")?.classList.remove("hidden");

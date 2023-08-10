@@ -25,7 +25,7 @@
 .settings-row-close {
   display: flex;
   align-items: center;
-  padding: var(--ledit-margin) var(--ledit-padding);
+  padding: var(--ledit-margin) var(--ledit-margin);
   font-size: var(--ledit-font-size);
   height: 1em;
   cursor: pointer;
@@ -35,7 +35,8 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 0 var(--ledit-margin);
+  padding: 0 calc(var(--ledit-padding) + var(--ledit-margin));
+  padding-right: var(--ledit-margin);
   font-size: var(--ledit-font-size);
   height: 2em;
   cursor: pointer;
@@ -61,7 +62,7 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 0 var(--ledit-padding);
+  padding: 0 var(--ledit-margin);
   font-size: var(--ledit-font-size);
   font-weight: 600;
   height: 2em;
