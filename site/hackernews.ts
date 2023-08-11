@@ -1,3 +1,4 @@
+import { encodeHTML } from "entities";
 import { Comment, Post, Posts, SortingOption, Source } from "./data";
 
 interface HNPost {
@@ -62,11 +63,14 @@ export class HackerNewsSource implements Source {
    }
 
    async getComments(post: Post): Promise<Comment[]> {
+      // Use algolia to get all comments in one go
       const hnPost = (post as any).hnPost as HNPost;
       let response = await fetch("https://hn.algolia.com/api/v1/search?tags=comment,story_" + hnPost.id + "&hitsPerPage=" + hnPost.descendants)
       const data = await response.json();
       const hits: HNComment[] = [...data.hits];
       const lookup = new Map<string, HNComment>();
+
+      // Build up the comment tree
       for (const hit of hits) {
          lookup.set(hit.objectID, hit);
       }
@@ -77,6 +81,44 @@ export class HackerNewsSource implements Source {
          parent.replies.push(hit);
       }
 
+      // Use the "official" API to get the sorting for each fucking node and reorder the
+      // replies.
+      //
+      // We used the official API to get the post. It's kids are in order. We build up
+      // the root of the true again based on that order.
+      const roots: HNComment[] = [];
+      if (hnPost.kids) {
+         for (const rootId of hnPost.kids) {
+            const root = lookup.get(rootId.toString());
+            if (root) roots.push(root);
+         }
+      }
+
+      // Next, we traverse the comment tree. Any comment with more than 1 reply
+      // gets its replies re-ordered based on the official API response.
+      const sortReplies = async (hnComment: HNComment) => {
+         if (!hnComment.replies) return;
+         if (hnComment.replies.length > 1) {
+            const info = (await getHNItem(hnComment.objectID)) as { kids: number[] | undefined};
+            hnComment.replies = [];
+            if (info.kids) {
+               for (const kid of info.kids) {
+                  const kidComment = lookup.get(kid.toString());
+                  if (kidComment) hnComment.replies.push(kidComment);
+               }
+            }
+         }
+         for (const reply of hnComment.replies) {
+            await sortReplies(reply);
+         }
+      }
+
+      const promises = []
+      for (const root of roots) {
+         promises.push(sortReplies(root));
+      }
+      await Promise.all(promises);
+
       const convertComment = (hnComment: HNComment) => {
          const comment = {
             url: `https://news.ycombinator.com/item?id=${hnComment.objectID}`,
@@ -84,7 +126,7 @@ export class HackerNewsSource implements Source {
             authorUrl: `https://news.ycombinator.com/user?id=${hnComment.author}`,
             createdAt: hnComment.created_at_i,
             score: 0,
-            html: hnComment.comment_text,
+            html: encodeHTML(hnComment.comment_text),
             replies: [] as Comment[],
          } as Comment;
          if (hnComment.replies) {
@@ -95,7 +137,7 @@ export class HackerNewsSource implements Source {
 
          return comment as Comment;
       };
-      const comments = hits.filter((hit) => hit.parent_id == hnPost.id).map((hit) => convertComment(hit));
+      const comments = roots.map((root) => convertComment(root));
       return comments;
    }
 
