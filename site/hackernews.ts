@@ -126,7 +126,7 @@ export class HackerNewsSource implements Source {
             authorUrl: `https://news.ycombinator.com/user?id=${hnComment.author}`,
             createdAt: hnComment.created_at_i,
             score: 0,
-            html: encodeHTML(hnComment.comment_text),
+            html: encodeHTML("<p>" + hnComment.comment_text.replace(/<p>/g, '<p></p>')),
             replies: [] as Comment[],
          } as Comment;
          if (hnComment.replies) {
