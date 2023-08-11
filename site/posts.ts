@@ -146,7 +146,7 @@ export class PostView extends View {
                   : ""
             }
             <div class="post-points">
-               <span class="svgIcon">${svgUpArrow}</span>
+               <span class="svgIcon color-fill">${svgUpArrow}</span>
                <span>${addCommasToNumber(post.score)}</span>
                <span class="svg-icon color-fill">${svgDownArrow}</span>
             </div>
