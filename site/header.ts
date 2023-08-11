@@ -65,7 +65,8 @@ export class HeaderView extends View {
       }
       elements.sorting.value = source.getSorting();
       elements.sorting.addEventListener("change", () => {
-        navigate(source.getSubPrefix() + source.getSub() + "/" + elements.sorting.value);
+         const hash = source.getSubPrefix() + source.getSub();
+        navigate(hash + (hash.endsWith("/") ? "" : "/") + elements.sorting.value);
       });
 
       // Add subreddit button. Either hide it if the subreddit is already in the

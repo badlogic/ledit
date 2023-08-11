@@ -1,5 +1,6 @@
 import { encodeHTML } from "entities";
 import { Comment, Post, Posts, SortingOption, Source } from "./data";
+import { dom, htmlDecode } from "./utils";
 
 interface HNPost {
    by: string,
@@ -10,7 +11,8 @@ interface HNPost {
    time: number,
    title: string,
    type: string,
-   url: string
+   url: string,
+   text: string,
 }
 
 interface HNComment {
@@ -27,9 +29,20 @@ async function getHNItem(id: string): Promise<any> {
    return await response.json();
 }
 
+
 export class HackerNewsSource implements Source {
+   private getSortingUrl() {
+      const sorting = this.getSorting();
+      if (sorting == "news") return "topstories.json";
+      if (sorting == "newest") return "newstories.json";
+      if (sorting == "ask") return "askstories.json";
+      if (sorting == "show") return "showstories.json";
+      if (sorting == "jobs") return "jobstories.json";
+      return "topstories.json";
+   }
+
    async getPosts(after: string | null): Promise<Posts> {
-      const response = await fetch("https://hacker-news.firebaseio.com/v0/topstories.json");
+      const response = await fetch("https://hacker-news.firebaseio.com/v0/" + this.getSortingUrl());
       const storyIds = await response.json() as number[];
       let startIndex = after ? Number.parseInt(after) : 0;
       const requests: Promise<HNPost>[] = [];
@@ -43,7 +56,7 @@ export class HackerNewsSource implements Source {
          posts.push({
             url: hnPost.url ?? "https://news.ycombinator.com/item?id=" + hnPost.id,
             title: hnPost.title,
-            isSelf: false,
+            isSelf: hnPost.text ? true : false,
             isGallery: false,
             numGalleryImages: 0,
             author: hnPost.by,
@@ -142,6 +155,24 @@ export class HackerNewsSource implements Source {
    }
 
    getMediaDom(post: Post): Element[] {
+      if (post.isSelf) {
+         let text = ((post as any).hnPost as HNPost).text;
+         text = encodeHTML(text);
+         let selfPost = dom(`<div class="post-self-preview">${htmlDecode(text)}</div>`)[0];
+         selfPost.addEventListener("click", (event) => {
+            if ((event.target as HTMLElement).tagName != "A") {
+               selfPost.style.maxHeight = "100%";
+               selfPost.style.color = "var(--ledit-color)";
+            }
+         });
+         // Ensure links in self text open a new tab
+         let links = selfPost.querySelectorAll("a")!;
+         for (let i = 0; i < links.length; i++) {
+            let link = links[i];
+            link.setAttribute("target", "_blank");
+         }
+         return [selfPost];
+      }
       return [];
    }
    getSub(): string {
@@ -151,10 +182,26 @@ export class HackerNewsSource implements Source {
       return "hackernews/";
    }
    getSortingOptions(): SortingOption[] {
-      return [];
+      return [
+         { value: "news", label: "News" },
+         { value: "newest", label: "Newest" },
+         { value: "ask", label: "Ask" },
+         { value: "show", label: "Show" },
+         { value: "jobs", label: "Jobs" },
+      ];
    }
    getSorting(): string {
-      return "";
+      const hash = window.location.hash;
+      if (hash.length == 0) {
+         return "news";
+      }
+      const tokens = hash.substring(1).split("/");
+      if (tokens.length < 2) return "news";
+      if (["news", "newest", "ask", "show", "jobs"].some((sorting) => sorting == tokens[1])) {
+         return tokens[1];
+      } else {
+         return "news";
+      }
    }
    isSingleSource(): boolean {
       return true;
