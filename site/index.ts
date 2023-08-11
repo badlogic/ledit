@@ -7,24 +7,28 @@ import { applySettings, getSettings } from "./settings";
 import { navigate } from "./utils";
 import { RedditSource } from "./reddit";
 import { setSource } from "./data";
+import { HackerNewsSource } from "./hackernews";
 
 applySettings();
 
 if (window.location.hash.length == 0) {
-  navigate(getSettings().defaultSub);
+   navigate(getSettings().defaultSub);
 } else {
-  if (window.location.hash.startsWith("r/")) {
-    setSource(new RedditSource());
-  } else {
-    setSource(new RedditSource());
-  }
+  const hash = window.location.hash.substring(1);
+   if (hash.startsWith("r/")) {
+      setSource(new RedditSource());
+   } else if (hash.startsWith("hackernews/")) {
+      setSource(new HackerNewsSource());
+   } else {
+      setSource(new RedditSource());
+   }
 
-  window.addEventListener("hashchange", () => {
-    window.location.reload();
-  });
+   window.addEventListener("hashchange", () => {
+      window.location.reload();
+   });
 
-  document.body.innerHTML = `
+   document.body.innerHTML = `
   <ledit-header></ledit-header>
   <ledit-posts></ledit-posts>
-  `
+  `;
 }
