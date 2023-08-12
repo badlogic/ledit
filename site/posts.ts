@@ -176,6 +176,16 @@ export class PostView extends View {
          }
       });
       if (post.numComments == -1) elements.buttonsRow.classList.add("hidden");
+
+      if (collapse) {
+         const expand = (event: MouseEvent) => {
+            event.stopPropagation();
+            event.preventDefault();
+            this.querySelector(".post")?.classList.remove("post-seen");
+            this.removeEventListener("click", expand);
+         };
+         this.addEventListener("click", expand);
+      }
    }
 
    commentsView: CommentsView | null = null;
