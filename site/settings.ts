@@ -1,25 +1,50 @@
+import { SourcePrefix } from "./data";
 import "./settings.css";
 import { svgCheck, svgClose, svgGithub, svgHeart, svgMinus } from "./svg/index";
 import { dom, navigate } from "./utils";
 import { View } from "./view";
 
+interface Bookmark {
+   source: SourcePrefix;
+   label: string;
+   ids: string[];
+   isDefault: boolean;
+}
+
 interface Settings {
-   sub: string[];
-   hideSeen: boolean,
+   bookmarks: Bookmark[];
+   hideSeen: boolean;
    seenIds: string[];
    theme: string;
-   defaultSub: string
+   collapseSeenPosts: boolean;
 }
 
 let settings: Settings | null = null;
-export const defaultMix = "r/AdviceAnimals+AskReddit+askscience+assholedesign+aww+battlestations+bestof+BetterEveryLoop+blackmagicfuckery+boardgames+BuyItForLife+Damnthatsinteresting+dataisbeautiful+DesignDesign+DIY+diyelectronics+DrugNerds+europe+explainlikeimfive+facepalm+fatFIRE+fightporn+Fitness+funny+Futurology+gadgets+gaming+GifRecipes+gifs+GiftIdeas+history+homeautomation+Hue+IAmA+IllegalLifeProTips+INEEEEDIT+instant_regret+interestingasfuck+InternetIsBeautiful+Jokes+JusticeServed+kitchens+LifeProTips+maybemaybemaybe+mildlyinfuriating+mildlyinteresting+mildlyvagina+movies+news+NintendoSwitch+nottheonion+oddlysatisfying+OldSchoolCool+pcmasterrace+photoshopbattles+pics+PoliticalHumor+ProgrammerHumor+PublicFreakout+rarepuppers+recipes+rickandmorty+RoomPorn+running+science+Showerthoughts+slatestarcodex+space+spicy+technology+technologyconnections+television+therewasanattempt+todayilearned+UnethicalLifeProTips+Unexpected+UpliftingNews+videos+watchpeoplealmostdie+Wellthatsucks+Whatcouldgowrong+whitepeoplegifs+woahdude+worldnews+WTF"
 export const defaultSettings = {
-   sub: [defaultMix, "r/all", "r/pics", "r/videos", "r/worldnews", "r/science", "r/todayilearned", "hackernews/"],
+   bookmarks: [
+      // prettier-ignore
+      { source: "r/", label: "ledit_mix", ids: ["AdviceAnimals","AskReddit","askscience","assholedesign","aww","battlestations","bestof","BetterEveryLoop","blackmagicfuckery","boardgames","BuyItForLife","Damnthatsinteresting","dataisbeautiful","DesignDesign","DIY","diyelectronics","DrugNerds","europe","explainlikeimfive","facepalm","fatFIRE","fightporn","Fitness","funny","Futurology","gadgets","gaming","GifRecipes","gifs","GiftIdeas","history","homeautomation","Hue","IAmA","IllegalLifeProTips","INEEEEDIT","instant_regret","interestingasfuck","InternetIsBeautiful","Jokes","JusticeServed","kitchens","LifeProTips","maybemaybemaybe","mildlyinfuriating","mildlyinteresting","mildlyvagina","movies","news","NintendoSwitch","nottheonion","oddlysatisfying","OldSchoolCool","pcmasterrace","photoshopbattles","pics","PoliticalHumor","ProgrammerHumor","PublicFreakout","rarepuppers","recipes","rickandmorty","RoomPorn","running","science","Showerthoughts","slatestarcodex","space","spicy","technology","technologyconnections","television","therewasanattempt","todayilearned","UnethicalLifeProTips","Unexpected","UpliftingNews","videos","watchpeoplealmostdie","Wellthatsucks","Whatcouldgowrong","whitepeoplegifs","woahdude","worldnews","WTF"], isDefault: true},
+      { source: "r/", label: "all", ids: ["all"], isDefault: false },
+      { source: "r/", label: "pics", ids: ["pics"], isDefault: false },
+      { source: "r/", label: "videos", ids: ["videos"], isDefault: false },
+      { source: "r/", label: "worldnews", ids: ["worldnews"], isDefault: false },
+      { source: "r/", label: "science", ids: ["science"], isDefault: false },
+      { source: "r/", label: "todayilearned", ids: ["todayilearned"], isDefault: false },
+      { source: "hn/", label: "hackernews", ids: [""], isDefault: false },
+   ],
    hideSeen: false,
    seenIds: [],
    theme: "light",
-   defaultSub: defaultMix
+   collapseSeenPosts: true,
 } as Settings;
+
+export function bookmarkToHash(bookmark: Bookmark) {
+   return bookmark.source + bookmark.ids.join("+");
+}
+
+export function bookmarkToShortHash(bookmark: Bookmark) {
+   return bookmark.ids.join("+");
+}
 
 export function getSettings(): Settings {
    if (settings) return settings;
@@ -61,13 +86,17 @@ export class SettingsView extends View {
             <div x-id="container" class="settings-container">
                 <div class="settings">
                     <div x-id="close" class="settings-row-close"><span class="svg-icon color-fill">${svgClose}</span></div>
-                    <div class="settings-row-header">Subreddits</div>
-                    <div x-id="subreddits"></div>
+                    <div class="settings-row-header">Bookmarks</div>
+                    <div x-id="bookmarks"></div>
+                    <div class="settings-row-header">Theme</div>
+                    <div x-id="themes"></div>
                     <div x-id="hideSeen" class="settings-row">
                      <span style="flex: 1">Hide seen posts</span>
                     </div>
-                    <div class="settings-row-header">Theme</div>
-                    <div x-id="themes"></div>
+                    <div x-id="collapseSeen" class="settings-row">
+                     <div style="flex: 1">Collapse seen posts</div>
+                     <div class="svg-icon ${getSettings().collapseSeenPosts ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
+                    </div>
                     <div class="settings-row-header">About</div>
                     <div class="settings-row"><a href="https://github.com/badlogic/ledit" class="svg-icon color-fill">${svgGithub} GitHub</a></div>
                     <div class="settings-row"><a href="https://github.com/sponsors/badlogic" class="svg-icon color-fill">${svgHeart} Buy me a coffee</a></div>
@@ -79,9 +108,10 @@ export class SettingsView extends View {
       const elements = this.elements<{
          container: Element;
          close: Element;
-         subreddits: Element;
+         bookmarks: Element;
          hideSeen: Element;
          themes: Element;
+         collapseSeen: Element;
          reset: Element;
       }>();
 
@@ -95,42 +125,54 @@ export class SettingsView extends View {
          this.close();
       });
 
-      // Populate subreddits
-      for (const subreddit of settings.sub) {
-         const isDefault = settings.defaultSub == subreddit;
-         const subredditDiv = dom(/*html*/`
-         <div class="settings-row">
-             <a x-id="subreddit" href="#${subreddit}" style="flex: 1">${subreddit == defaultMix ? "r/ledit_mix" : subreddit}</a>
-             <div x-id="makeDefaultSubreddit" class="box">
-               <span class="svg-icon ${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</span>
-            </div>
-            <div x-id="deleteSubreddit" class="box">
-               <span class="svg-icon color-fill">${svgMinus}</span>
-            </div>
-         </div>
-         `)[0];
-         const subElements = View.elements<{
-            subreddit: Element,
-            makeDefaultSubreddit: Element,
-            deleteSubreddit: Element
-         }>(subredditDiv)
-         subElements.subreddit.addEventListener("click", () => {
-            navigate(subreddit);
-         });
-         subElements.makeDefaultSubreddit.addEventListener("click", (event) => {
-            event.stopPropagation();
-            if (subreddit == settings.defaultSub) return;
-            settings.defaultSub = subreddit;
-            saveSettings();
-            this.render();
-         });
-         subElements.deleteSubreddit.addEventListener("click", (event) => {
-            event.stopPropagation();
-            settings.sub = settings.sub.filter((sub) => sub != subreddit);
-            saveSettings();
-            this.render();
-         });
-         elements.subreddits.append(subredditDiv);
+      // Populate bookmarks
+      const bySource = new Map<string, Bookmark[]>();
+      for (const bookmark of settings.bookmarks) {
+         let source = bySource.get(bookmark.source);
+         if (!source) bySource.set(bookmark.source, (source = []));
+         source.push(bookmark);
+      }
+      for (const source of bySource.keys()) {
+         const sourceHeaderDiv = dom(`<div class="settings-row">${source}</div>`)[0];
+         elements.bookmarks.append(sourceHeaderDiv);
+         for (const bookmark of bySource.get(source)!) {
+            const isDefault = bookmark.isDefault;
+            const hash = bookmarkToHash(bookmark);
+            const bookmarkDiv = dom(/*html*/ `
+               <div class="settings-row" style="margin-left: var(--ledit-padding)">
+                  <a x-id="sub" href="#${hash}" style="flex: 1">${bookmark.label}</a>
+                  <div x-id="makeDefaultSub" class="box">
+                     <span class="svg-icon ${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</span>
+                  </div>
+                  <div x-id="deleteSub" class="box">
+                     <span class="svg-icon color-fill">${svgMinus}</span>
+                  </div>
+               </div>
+            `)[0];
+            const subElements = View.elements<{
+               sub: Element;
+               makeDefaultSub: Element;
+               deleteSub: Element;
+            }>(bookmarkDiv);
+            subElements.sub.addEventListener("click", () => {
+               navigate(hash);
+            });
+            subElements.makeDefaultSub.addEventListener("click", (event) => {
+               event.stopPropagation();
+               if (isDefault) return;
+               settings.bookmarks.forEach((bm) => { bm.isDefault = false });
+               bookmark.isDefault = true;
+               saveSettings();
+               this.render();
+            });
+            subElements.deleteSub.addEventListener("click", (event) => {
+               event.stopPropagation();
+               settings.bookmarks = settings.bookmarks.filter((bm) => bm != bookmark);
+               saveSettings();
+               this.render();
+            });
+            elements.bookmarks.append(bookmarkDiv);
+         }
       }
 
       // Setup show seen toggle
@@ -143,7 +185,7 @@ export class SettingsView extends View {
 
       // Populate themes
       for (const theme of ["Dark", "Light"]) {
-         const themeDiv = dom(/*html*/`
+         const themeDiv = dom(/*html*/ `
          <div class="settings-row">
            <div style="flex: 1">${theme}</div><div class="svg-icon box color-fill hidden">${svgCheck}</div>
          </div>`)[0];
@@ -162,14 +204,27 @@ export class SettingsView extends View {
          elements.themes.append(themeDiv);
       }
 
+      // Collapse seen toggle
+      elements.collapseSeen.addEventListener("click", (event) => {
+         event.stopPropagation();
+         getSettings().collapseSeenPosts = !getSettings().collapseSeenPosts;
+         const collapse = getSettings().collapseSeenPosts;
+         document.querySelectorAll(".post").forEach((el) => {
+            if (collapse) el.classList.add("post-seen");
+            else el.classList.remove("post-seen");
+         });
+         saveSettings();
+         this.render();
+      });
+
       // Reset to defaults
       elements.reset.addEventListener("click", (event) => {
-         if (confirm("Are you sure you want to reset your subreddit list and settings?")) {
+         if (confirm("Are you sure you want to reset your bookmark list and settings?")) {
             event.stopPropagation();
             resetSettings();
             this.render();
          }
-      })
+      });
    }
 
    close() {

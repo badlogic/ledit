@@ -9,7 +9,10 @@
             "request": "launch",
             "name": "ledit",
             "url": "http://localhost:8080/",
-            "webRoot": "${workspaceFolder}/site"
+            "webRoot": "${workspaceFolder}/site",
+            "runtimeArgs": [
+                "--disable-web-security"
+             ],
         }
     ]
 }

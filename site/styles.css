@@ -139,3 +139,12 @@ blockquote {
    width: 2em;
    height: 2em;
 }
+
+.load-more {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   border: 1px solid var(--ledit-color-dim);
+   border-radius: 8px;
+   margin-top: var(--ledit-padding);
+}

@@ -37,10 +37,9 @@ export interface Source {
    getComments(post: Post): Promise<Comment[]>,
    getMediaDom(post: Post): Element[],
    getSub(): string,
-   getSubPrefix(): string,
+   getSubPrefix(): SourcePrefix,
    getSortingOptions(): SortingOption[],
    getSorting(): string,
-   isSingleSource(): boolean
 }
 
 let source: Source | null = null;
@@ -53,3 +52,5 @@ export function getSource(): Source {
    if (!source) throw new Error("No source given.");
    return source;
 }
+
+export type SourcePrefix = "r/" | "hn/" | "rss/";

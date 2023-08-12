@@ -20,6 +20,20 @@
   box-shadow: 0px 1px 3px var(--ledit-shadow-color);
 }
 
+.post-seen .post-title a {
+  font-size: var(--ledit-font-size);
+  color: var(--ledit-color-dim);
+}
+
+.post-seen {
+  background: var(--ledit-background-dim);
+}
+
+.post-seen .post-media,
+.post-seen .post-buttons {
+  display: none;
+}
+
 .post-loading {
   text-align: center;
   margin: var(--ledit-margin);
@@ -43,7 +57,7 @@
   color: var(--ledit-color)
 }
 
-.post-subreddit {
+.post-sub {
   font-size: var(--ledit-font-size-small);
 }
 
@@ -55,22 +69,54 @@
 }
 
 .post-self-preview {
-  max-height: calc(var(--ledit-font-size) * 10);
-  overflow: hidden;
-  position: relative;
-  color: var(--ledit-color-dim);
   cursor: pointer;
 }
 
-.post-self-preview::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: calc(var(--ledit-padding) * 2); /* Adjust this value to control the height of the fade-out effect */
-  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), var(--ledit-background));
-  pointer-events: none;
+.post-rss-preview {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  cursor: pointer;
+  margin-bottom: calc(var(--ledit-padding) * 1.5);
+}
+
+.post-rss-preview > div > p:last-child {
+  margin-bottom: 0;
+}
+
+.post-rss-preview-image {
+  max-width: 150px !important;
+  flex: 0 0 auto; /* Prevent vertical growth and maintain aspect ratio */
+  object-fit: contain;
+  margin-right: var(--ledit-margin);
+}
+
+.post-rss-preview img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 8px;
+}
+
+.post-rss-preview video {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 8px;
+}
+
+.post-rss-preview h1 {
+  font-size: var(--ledit-font-size);
+}
+
+.post-rss-preview h2 {
+  font-size: var(--ledit-font-size);
+}
+
+.post-rss-preview h3 {
+  font-size: var(--ledit-font-size);
+}
+
+.post-rss-preview h4 {
+  font-size: var(--ledit-font-size);
 }
 
 .post-url {

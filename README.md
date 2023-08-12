@@ -1,20 +1,28 @@
 # ledit
-A read-only reddit client for people who don't like bells and whistles. Ideal for content and comment browsing and nothing else.
+A read-only Reddit/Hackernews/RSS client for people who don't like bells and whistles. Ideal for content and comment browsing and nothing else.
 
 [Try it](https://marioslab.io/projects/ledit)
 
 # Usage
-By default, `r/all` is shown. Click on the subreddit name at the top and enter the name of another subreddit you want to visit.
+ledit lets you browse Reddit, Hackernews, and RSS feeds. There are two ways to specify the source you want to browse:
 
-[https://marioslab.io/projects/ledit/#images](https://marioslab.io/projects/ledit/#images)
-[https://marioslab.io/projects/ledit/#aww](https://marioslab.io/projects/ledit/#aww)
-[https://marioslab.io/projects/ledit/#videos](https://marioslab.io/projects/ledit/#videos)
+1. In the browser address bar, append `#r/subreddit`, `#hn/`, or `#rss/https://example.com/rss`.
+2. Click the source name in the header of the site and enter a new source, e.g. `r/all`, or `rss/http://example.com/rss``.
 
-If you absolutely need to reply to a comment, there's a tiny "reply" link in the header of each comment. It will open a new browser tab on "real" Reddit, where you can reply if you're logged in. Don't reply.
+In case of Reddit, you can view multi-subreddits by simply concatenating the subreddit names with a `+`. E.g. `r/pics+videos+science` will show you posts from these 3 subreddits in a single stream.
 
-# Roadmap
-* Back button to collapse entire comment section
-* Optionally hide already seen posts
+In case of RSS, you can view multiple feeds by simply concatenating their URLs with a `+`. E.g. `rss/https://news.site.com/rss+https://othernews.uk/rss` will show you posts from both RSS feeds in a single stream.
+
+Use the bookmark button in the header to bookmark the currently viewed source.
+
+To access your bookmarks and settings, click the icon in the top left corner of the site header.
+
+You can open a bookmark by simply clicking it. You can make a bookmark the default by clicking its checkmark. You can remove a bookmark by clicking `-`.
+
+You can choose between the `Light` and `Dark` theme in the settings and toggle whether to collapse already seen posts. The `Hide seen posts` option is experimental. It will load content from the currently selected source until it finds posts that you have not yet seen.
+
+Finally, each source offers sorting options via the select box in the top right corner of the site header. Play around with them.
+
 
 # Development
 You'll need [Node.js](https://nodejs.org/en) for development. Assuming you have Node installed:

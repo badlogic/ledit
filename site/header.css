@@ -21,7 +21,7 @@
     font-weight: 500;
   }
 
-  .header-subreddit {
+  .header-sub {
     display: inline-block;
     max-width: 80%;
     overflow: hidden;
@@ -33,7 +33,7 @@
     margin-left: var(--ledit-padding);
   }
 
-  .header-subreddit-input {
+  .header-sub-input {
     background: none;
     border: none;
     border-bottom: 0.5px solid var(--ledit-color);
@@ -47,7 +47,7 @@
     margin-left: var(--ledit-padding);
   }
 
-  .header-subreddit-add {
+  .header-bookmark-add {
     cursor: pointer;
   }
 

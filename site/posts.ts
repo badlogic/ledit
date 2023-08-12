@@ -55,9 +55,11 @@ export class PostsView extends View {
       for (let i = 0; i < posts.posts.length; i++) {
          const post = posts.posts[i];
          const postDiv = new PostView(post);
-         if (PostsView.seenPosts.has(post.url) && PostsView.hideSeen) {
-            postDiv.classList.add("hidden");
-            hiddenPosts++;
+         if (PostsView.seenPosts.has(post.url)) {
+            if (PostsView.hideSeen) {
+               postDiv.classList.add("hidden");
+               hiddenPosts++;
+            }
          }
          this.postsDiv.append(postDiv);
 
@@ -72,22 +74,24 @@ export class PostsView extends View {
       }
 
       // Setup infinite scroll
-      const loadMoreDiv = dom(`<div class="post-loading">Load more</div>`)[0];
-      this.postsDiv.append(loadMoreDiv);
-      const loadMore = async () => {
-         loadMoreDiv.remove();
-         await this.loadPosts(posts.after);
-      };
+      if (posts.after) {
+         const loadMoreDiv = dom(`<div class="post-loading">Load more</div>`)[0];
+         this.postsDiv.append(loadMoreDiv);
+         const loadMore = async () => {
+            loadMoreDiv.remove();
+            await this.loadPosts(posts.after);
+         };
 
-      if (hiddenPosts == posts.posts.length) {
-         // Load more if all posts where hidden.
-         requestAnimationFrame(() => {
-            loadMore();
-         });
-      } else {
-         // Otherwise the user will have to scroll.
-         onVisibleOnce(loadMoreDiv, loadMore);
-         loadMoreDiv.addEventListener("click", loadMore);
+         if (hiddenPosts == posts.posts.length) {
+            // Load more if all posts where hidden.
+            requestAnimationFrame(() => {
+               loadMore();
+            });
+         } else {
+            // Otherwise the user will have to scroll.
+            onVisibleOnce(loadMoreDiv, loadMore);
+            loadMoreDiv.addEventListener("click", loadMore);
+         }
       }
    }
 
@@ -108,14 +112,15 @@ export class PostView extends View {
       const source = getSource();
       const post = this.post;
       const showUrl = !post.isSelf && !post.url.includes("redd.it") && !post.url.includes("www.reddit.com");
-      const showSubreddit = getSource().getSub().toLowerCase() != post.sub.toLowerCase();
+      const showSub = getSource().getSub().toLowerCase() != post.sub.toLowerCase();
+      const collapse = getSettings().collapseSeenPosts && PostsView.seenPosts.has(post.url) ? "post-seen" : "";
       this.innerHTML = /*html*/ `
-      <div class="post ${PostsView.seenPosts.has(post.url) ? "post-seen" : ""}">
+      <div class="post ${collapse}">
          <div class="post-title"><a href="${post.url}" target="_blank">${post.title}</a></div>
          <div class="post-meta">
             ${
-               showSubreddit
-                  ? /*html*/ `<span class="post-subreddit"><a href="${post.url}" target="_blank">${source.getSubPrefix() + post.sub}</a></span><span> •</span>`
+               showSub
+                  ? /*html*/ `<span class="post-sub"><a href="${post.url}" target="_blank">${post.sub}</a></span><span> •</span>`
                   : ""
             }
             <span class="post-date">${dateToText(post.createdAt * 1000)}</span>
@@ -128,9 +133,8 @@ export class PostView extends View {
                     }</span>`
                   : ""
             }
-            <span>${PostsView.seenPosts.has(post.url) ? "• seen" : ""}</span>
          </div>
-         <div x-id="media"></div>
+         <div x-id="media" class="post-media"></div>
          <div x-id="buttonsRow" class="post-buttons">
             <div x-id="toggleComments" class="post-comments-toggle">
                <span class="svg-icon color-fill">${svgSpeeBubble}</span>
@@ -162,7 +166,6 @@ export class PostView extends View {
       }>();
 
       elements.media.append(new MediaView(this.post));
-
       elements.buttonsRow.addEventListener("click", () => {
          this.toggleComments();
       });
@@ -172,6 +175,7 @@ export class PostView extends View {
             popStateCallback(null);
          }
       });
+      if (post.numComments == -1) elements.buttonsRow.classList.add("hidden");
    }
 
    commentsView: CommentsView | null = null;

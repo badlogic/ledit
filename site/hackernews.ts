@@ -1,6 +1,6 @@
 import { encodeHTML } from "entities";
-import { Comment, Post, Posts, SortingOption, Source } from "./data";
-import { dom, htmlDecode } from "./utils";
+import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
+import { dom, htmlDecode, limitElementHeight } from "./utils";
 
 interface HNPost {
    by: string,
@@ -159,18 +159,17 @@ export class HackerNewsSource implements Source {
          let text = ((post as any).hnPost as HNPost).text;
          text = encodeHTML(text);
          let selfPost = dom(`<div class="post-self-preview">${htmlDecode(text)}</div>`)[0];
-         selfPost.addEventListener("click", (event) => {
-            if ((event.target as HTMLElement).tagName != "A") {
-               selfPost.style.maxHeight = "100%";
-               selfPost.style.color = "var(--ledit-color)";
-            }
-         });
+
          // Ensure links in self text open a new tab
          let links = selfPost.querySelectorAll("a")!;
          for (let i = 0; i < links.length; i++) {
             let link = links[i];
             link.setAttribute("target", "_blank");
          }
+
+         requestAnimationFrame(() => {
+            limitElementHeight(selfPost, 4.5);
+         })
          return [selfPost];
       }
       return [];
@@ -178,8 +177,8 @@ export class HackerNewsSource implements Source {
    getSub(): string {
       return "";
    }
-   getSubPrefix(): string {
-      return "hackernews/";
+   getSubPrefix(): SourcePrefix {
+      return "hn/";
    }
    getSortingOptions(): SortingOption[] {
       return [
@@ -203,8 +202,4 @@ export class HackerNewsSource implements Source {
          return "news";
       }
    }
-   isSingleSource(): boolean {
-      return true;
-   }
-
 }

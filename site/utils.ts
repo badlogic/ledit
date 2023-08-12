@@ -112,3 +112,62 @@ export function onTapped(element: HTMLElement, callback: () => void) {
 export function insertAfter(newNode: HTMLElement, referenceNode: HTMLElement) {
    referenceNode.parentNode?.insertBefore(newNode, referenceNode.nextSibling);
 }
+
+export function computedCssSizePx(variableName: string) {
+   const computedStyles = getComputedStyle(document.documentElement);
+   const variableValue = computedStyles.getPropertyValue(variableName);
+   return parseInt(variableValue, 10);
+}
+
+export function limitElementHeight(div: HTMLElement, maxHeightInLines: number) {
+   const computedStyles = getComputedStyle(document.documentElement);
+   const fontSize = parseInt(computedStyles.getPropertyValue("--ledit-font-size"), 10);
+
+   const maxHeight = fontSize * maxHeightInLines;
+   const clickableAreaHeight = fontSize * 2;
+
+   if (div.clientHeight > maxHeight) {
+      div.style.height = `${maxHeight}px`;
+      div.style.overflow = "hidden";
+
+      const loadMoreDiv = document.createElement("div");
+      loadMoreDiv.classList.add("load-more");
+      loadMoreDiv.textContent = "Show more";
+      loadMoreDiv.style.height = `${clickableAreaHeight}px`;
+
+      const loadMore = () => {
+         div.style.height = "auto";
+         loadMoreDiv.style.display = "none";
+      }
+      div.addEventListener("click", loadMore)
+      loadMoreDiv.addEventListener("click", loadMore);
+
+      div.insertAdjacentElement("afterend", loadMoreDiv);
+   }
+}
+
+export function removeTrailingEmptyParagraphs(htmlString: string): string {
+   const parser = new DOMParser();
+   const parsedDoc = parser.parseFromString(htmlString, "text/html");
+
+   const paragraphs = parsedDoc.querySelectorAll("p");
+   let lastNonEmptyParagraphIndex = -1;
+
+   // Find the index of the last non-empty paragraph
+   for (let i = paragraphs.length - 1; i >= 0; i--) {
+      const paragraphText = paragraphs[i].textContent?.trim() || "";
+      if (paragraphText !== "") {
+         lastNonEmptyParagraphIndex = i;
+         break;
+      }
+   }
+
+   if (lastNonEmptyParagraphIndex >= 0) {
+      // Remove the empty paragraphs after the last non-empty paragraph
+      for (let i = paragraphs.length - 1; i > lastNonEmptyParagraphIndex; i--) {
+         paragraphs[i].parentNode?.removeChild(paragraphs[i]);
+      }
+   }
+
+   return parsedDoc.body.innerHTML;
+}

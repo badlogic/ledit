@@ -2,8 +2,8 @@ import "video.js/dist/video-js.min.css";
 import videojs from "video.js";
 import Player from "video.js/dist/types/player";
 
-import { Comment, Post, Posts, SortingOption, Source } from "./data";
-import { dom, htmlDecode, intersectsViewport, onAddedToDOM, onTapped } from "./utils";
+import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
+import { dom, htmlDecode, intersectsViewport, limitElementHeight, onAddedToDOM, onTapped } from "./utils";
 
 let count = 0;
 interface RedditPosts {
@@ -260,18 +260,17 @@ export class RedditSource implements Source {
       // Self post, show text, dim it, cap vertical size, and make it expand on click.
       if (post.data.is_self) {
          let selfPost = dom(`<div class="post-self-preview">${htmlDecode(post.data.selftext_html ?? "")}</div>`)[0];
-         selfPost.addEventListener("click", (event) => {
-            if ((event.target as HTMLElement).tagName != "A") {
-               selfPost.style.maxHeight = "100%";
-               selfPost.style.color = "var(--ledit-color)";
-            }
-         });
+
          // Ensure links in self text open a new tab
          let links = selfPost.querySelectorAll("a")!;
          for (let i = 0; i < links.length; i++) {
             let link = links[i];
             link.setAttribute("target", "_blank");
          }
+
+         requestAnimationFrame(() => {
+            limitElementHeight(selfPost, 4.5);
+         });
          return [selfPost];
       }
 
@@ -426,7 +425,7 @@ export class RedditSource implements Source {
       return getSubreddit();
    }
 
-   getSubPrefix(): string {
+   getSubPrefix(): SourcePrefix {
       return "r/";
    }
 
@@ -445,9 +444,5 @@ export class RedditSource implements Source {
 
    getSorting(): string {
        return getSorting();
-   }
-
-   isSingleSource(): boolean {
-       return false;
    }
 }
