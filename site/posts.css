@@ -62,10 +62,16 @@
 }
 
 .post-meta {
+  display: flex;
   color: var(--ledit-color-dim);
   font-size: var(--ledit-font-size-small);
   padding: calc(var(--ledit-padding) * 0.5) 0;
   margin-top: -4px;
+}
+
+.post-meta span {
+  display: flex;
+  align-items: center;
 }
 
 .post-self-preview {

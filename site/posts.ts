@@ -124,11 +124,11 @@ export class PostView extends View {
                   : ""
             }
             <span class="post-date">${dateToText(post.createdAt * 1000)}</span>
-            ${post.author.length != 0 ? `<span>•</span>` : ""}
+            ${post.author.length != 0 ? `<span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>` : ""}
             <span class="post-author"><a href="${post.authorUrl}" target="_blank">${post.author}</a></span>
             ${
                showUrl
-                  ? `<span>•</span><span class="post-url">${
+                  ? `<span style="margin: 0 calc(var(--ledit-padding) / 2);>•</span><span class="post-url">${
                        new URL(post.url.startsWith("/r/") ? "https://www.reddit.com" + post.url : post.url).host
                     }</span>`
                   : ""
