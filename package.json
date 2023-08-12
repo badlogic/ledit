@@ -33,6 +33,7 @@
     "typescript": "^5.1.6"
   },
   "dependencies": {
+    "@extractus/feed-extractor": "^7.0.1",
     "entities": "^4.5.0",
     "intersection-observer": "^0.12.2",
     "video.js": "^8.3.0"

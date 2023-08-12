@@ -1,3 +1,4 @@
+import { FeedEntry, extractFromXml } from "@extractus/feed-extractor";
 import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { dom, limitElementHeight, removeTrailingEmptyParagraphs } from "./utils";
 
@@ -13,48 +14,53 @@ export class RssSource implements Source {
    }
 
    async getRssPosts(url: string): Promise<Post[]> {
+      const options = {
+         getExtraEntryFields: (feedEntry: any) => {
+            const result: any = {};
+            if (feedEntry.enclosure) {
+               result["enclosure"] = {
+                  url: feedEntry.enclosure["@_url"],
+                  type: feedEntry.enclosure["@_type"],
+                  length: feedEntry.enclosure["@_length"],
+               };
+            }
+            if (feedEntry["media:content"]) {
+               result["mediaContent"] = {
+                  url: feedEntry["media:content"]["@_url"],
+                  type: feedEntry["media:content"]["@_type"],
+                  length: feedEntry["media:content"]["@_length"],
+               };
+            }
+            return result;
+         },
+      };
+
       const response = await fetch("http://marioslab.io/proxy?url=" + encodeURI(url));
       const text = await response.text();
       console.log(text);
       const rss = await new window.DOMParser().parseFromString(text, "text/xml");
       const channelImageUrl = this.extractChannelImage(rss);
-      const xmlItems = rss.querySelectorAll("item");
+      const result = extractFromXml(text, options);
+      if (!result || !result.entries) return [];
+
       const posts: Post[] = [];
-      xmlItems.forEach((item) => {
-         try {
-            const title = item.querySelector("title")?.textContent;
-            if (!title) return;
-            const url = (item.querySelector("link") as any).textContent;
-            if (!url) return;
-            let date = new Date().toUTCString();
-            if (item.querySelector("pubDate")) {
-               date = (item.querySelector("pubDate") as any).textContent;
-            } else if (item.getElementsByTagName("dc:date").length > 0) {
-               date = (item.getElementsByTagName("dc:date")[0] as any).textContent;
-            }
-            if (!date) return;
-            posts.push({
-               url,
-               title,
-               isSelf: true,
-               isGallery: false,
-               numGalleryImages: 0,
-               author: "",
-               authorUrl: "",
-               createdAt: new Date(date).getTime() / 1000,
-               sub: `${
-                  channelImageUrl
-                     ? `<img src="${channelImageUrl}" style="max-height: calc(var(--ledit-font-size) * 1);"></img>`
-                     : new URL(url).hostname
-               }`,
-               score: -1,
-               numComments: -1,
-               xmlItem: item,
-            } as Post);
-         } catch (e) {
-            console.error("Couldn't parse rss item", e);
-         }
-      });
+      for (const entry of result.entries) {
+         if (!entry.link || !entry.published || !entry.title) continue;
+         posts.push({
+            url: entry.link,
+            title: entry.title,
+            isSelf: true,
+            isGallery: false,
+            numGalleryImages: 0,
+            author: "",
+            authorUrl: "",
+            createdAt: new Date(entry.published).getTime() / 1000,
+            sub: `${channelImageUrl ? `<img src="${channelImageUrl}" style="max-height: calc(1.5 * var(--ledit-font-size));"></img>` : new URL(url).hostname}`,
+            score: -1,
+            numComments: -1,
+            xmlItem: entry,
+         } as Post);
+      }
       return posts;
    }
 
@@ -79,24 +85,22 @@ export class RssSource implements Source {
    }
 
    getMediaDom(post: Post): Element[] {
-      const xmlItem = (post as any).xmlItem;
+      const xmlItem = (post as any).xmlItem as FeedEntry;
       if (!xmlItem) return [];
-      if (!xmlItem.querySelector("description")) return [];
-      const description = xmlItem.querySelector("description").textContent;
+      const description = xmlItem.description;
       if (!description) return [];
       let imageUrl = null;
-      const enclosure = xmlItem.querySelector("enclosure");
+
+      const enclosure = (xmlItem as any).enclosure;
       if (enclosure) {
-         if (enclosure.getAttribute("type") && enclosure.getAttribute("type").startsWith("image")) {
-            imageUrl = enclosure.getAttribute("url");
-         }
+         imageUrl = enclosure.url;
       }
-      const mediaContent = xmlItem.querySelector("media\\:content");
+
+      const mediaContent = (xmlItem as any).mediaContent;
       if (mediaContent) {
-         if (mediaContent.getAttribute("type") && mediaContent.getAttribute("type").startsWith("image")) {
-            imageUrl = mediaContent.getAttribute("url");
-         }
+         imageUrl = mediaContent.url;
       }
+
       const postDiv = dom(
          `<div class="post-rss-preview">${
             imageUrl ? `<img src="${imageUrl}" class="post-rss-preview-image" style="flex: 0; max-width: 150px !important;">` : ""
@@ -112,8 +116,7 @@ export class RssSource implements Source {
 
       requestAnimationFrame(() => {
          limitElementHeight(postDiv, 8);
-      })
-
+      });
       return [postDiv];
    }
 

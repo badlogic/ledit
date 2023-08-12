@@ -31,6 +31,7 @@ export const defaultSettings = {
       { source: "r/", label: "science", ids: ["science"], isDefault: false },
       { source: "r/", label: "todayilearned", ids: ["todayilearned"], isDefault: false },
       { source: "hn/", label: "hackernews", ids: [""], isDefault: false },
+      { source: "rss/", label: "International News", ids: ["http://rss.cnn.com/rss/edition.rss", "http://feeds.bbci.co.uk/news/rss.xml", "https://www.lemonde.fr/en/rss/une.xml", "http://rss.dw.com/rdf/rss-en-all"], isDefault: false }
    ],
    hideSeen: false,
    seenIds: [],
@@ -90,14 +91,16 @@ export class SettingsView extends View {
                     <div x-id="bookmarks"></div>
                     <div class="settings-row-header">Theme</div>
                     <div x-id="themes"></div>
-                    <div x-id="hideSeen" class="settings-row">
-                     <span style="flex: 1">Hide seen posts</span>
-                    </div>
                     <div x-id="collapseSeen" class="settings-row">
                      <div style="flex: 1">Collapse seen posts</div>
-                     <div class="svg-icon ${getSettings().collapseSeenPosts ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
+                     <div class="svg-icon box ${getSettings().collapseSeenPosts ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
+                    </div>
+                    <div x-id="hideSeen" class="settings-row">
+                     <span style="flex: 1">Hide seen posts (experimental)</span>
                     </div>
                     <div class="settings-row-header">About</div>
+
+                    <div class="settings-row"><a href="https://github.com/badlogic/ledit#usage">How does this work?</a></div>
                     <div class="settings-row"><a href="https://github.com/badlogic/ledit" class="svg-icon color-fill">${svgGithub} GitHub</a></div>
                     <div class="settings-row"><a href="https://github.com/sponsors/badlogic" class="svg-icon color-fill">${svgHeart} Buy me a coffee</a></div>
                     <div x-id="reset" class="settings-row">Reset to defaults</div>
