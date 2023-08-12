@@ -35,7 +35,7 @@ export class RssSource implements Source {
          },
       };
 
-      const response = await fetch("http://marioslab.io/proxy?url=" + encodeURI(url));
+      const response = await fetch("https://marioslab.io/proxy?url=" + encodeURI(url));
       const text = await response.text();
       console.log(text);
       const rss = await new window.DOMParser().parseFromString(text, "text/xml");
