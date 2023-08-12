@@ -7,7 +7,7 @@
     "prepare": "husky install",
     "clean": "rimraf site/build",
     "build": "npm run clean && npm run build:site",
-    "build:site": "./esbuild.mjs",
+    "build:site": "node ./esbuild.mjs",
     "dev": "concurrently \"npm run clean\" \"npx live-server site --cors --watch ./site --no-browser\" \"npm run build:site -- --watch\"",
     "format": "npx prettier --write ."
   },
