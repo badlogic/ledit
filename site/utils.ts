@@ -268,3 +268,7 @@ class NavigationGuard {
 }
 
 export const navigationGuard = new NavigationGuard();
+
+export function assertNever(x: never) {
+   throw new Error("Unexpected object: " + x);
+ }

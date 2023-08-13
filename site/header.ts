@@ -13,11 +13,13 @@ export class HeaderView extends View {
 
    render() {
       const source = getSource();
+      const hash = source.getSourcePrefix() + source.getFeed();
+      const bookmark = getSettings().bookmarks.find((bookmark) => bookmarkToHash(bookmark) == hash);
       this.innerHTML = /*html*/ `
       <div class="header-container">
          <div class="header">
             <div x-id="showMenu" class="header-menu svg-icon color-fill no-user-select" style="padding-left: var(--ledit-padding);">${svgBurger}</div>
-            <div x-id="feed" class="header-feed">${source.getSourcePrefix() + source.getFeed()}</div>
+            <div x-id="feed" class="header-feed">${bookmark ? bookmark.source + bookmark.label : hash}</div>
             <input x-id="feedInput" class="header-feed-input hidden" value="${source.getSourcePrefix()} + ${source.getFeed()}"/>
             <select x-id="sorting" class="header-sorting" tabindex="-1" style="padding-right: var(--ledit-margin);">
             </select>
@@ -79,7 +81,7 @@ export class HeaderView extends View {
             settings.bookmarks.push({
                source: source.getSourcePrefix(),
                label: source.getFeed(),
-               ids: [source.getFeed()],
+               ids: source.getFeed().split("+"),
                isDefault: false
             });
             saveSettings();

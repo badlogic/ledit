@@ -1,3 +1,5 @@
+import { assertNever } from "./utils";
+
 export interface Posts {
    posts: Post[];
    after: string | null;
@@ -54,3 +56,12 @@ export function getSource(): Source {
 }
 
 export type SourcePrefix = "r/" | "hn/" | "rss/";
+export function sourcePrefixLabel(source: SourcePrefix) {
+   switch(source) {
+      case "r/": return "Reddit";
+      case "hn/": return "Hackernews"
+      case "rss/": return "RSS"
+      default:
+         assertNever(source);
+   }
+}

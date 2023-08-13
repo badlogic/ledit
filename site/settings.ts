@@ -1,7 +1,7 @@
-import { SourcePrefix } from "./data";
+import { SourcePrefix, sourcePrefixLabel } from "./data";
 import "./settings.css";
 import { svgCheck, svgClose, svgGithub, svgHeart, svgMinus, svgPencil } from "./svg/index";
-import { dom, navigate, navigationGuard } from "./utils";
+import { assertNever, dom, navigate, navigationGuard } from "./utils";
 import { View } from "./view";
 
 interface Bookmark {
@@ -130,25 +130,15 @@ export class SettingsView extends View {
          reset: Element;
       }>();
 
-      // Dismiss when container is clicked
-      elements.container.addEventListener("click", () => {
-         this.close();
-      });
-
-      // Dimiss when close button is clicked
-      elements.close.addEventListener("click", () => {
-         this.close();
-      });
-
       // Populate bookmarks
-      const bySource = new Map<string, Bookmark[]>();
+      const bySource = new Map<SourcePrefix, Bookmark[]>();
       for (const bookmark of settings.bookmarks) {
          let source = bySource.get(bookmark.source);
          if (!source) bySource.set(bookmark.source, (source = []));
          source.push(bookmark);
       }
       for (const source of bySource.keys()) {
-         const sourceHeaderDiv = dom(`<div class="settings-row">${source}</div>`)[0];
+         const sourceHeaderDiv = dom(`<div class="settings-row"><strong>${sourcePrefixLabel(source)}</strong></div>`)[0];
          elements.bookmarks.append(sourceHeaderDiv);
          for (const bookmark of bySource.get(source)!) {
             const isDefault = bookmark.isDefault;
@@ -170,6 +160,7 @@ export class SettingsView extends View {
             const subElements = View.elements<{
                feed: Element;
                makeDefaultFeed: Element;
+               editFeed: Element;
                deleteFeed: Element;
             }>(bookmarkDiv);
             subElements.feed.addEventListener("click", () => {
@@ -185,6 +176,10 @@ export class SettingsView extends View {
                saveSettings();
                this.render();
             });
+            subElements.editFeed.addEventListener("click", (event) => {
+               this.close();
+               document.body.append(new BookmarkEditor(bookmark));
+            });
             subElements.deleteFeed.addEventListener("click", (event) => {
                event.stopPropagation();
                settings.bookmarks = settings.bookmarks.filter((bm) => bm != bookmark);
@@ -192,6 +187,20 @@ export class SettingsView extends View {
                this.render();
             });
             elements.bookmarks.append(bookmarkDiv);
+         }
+         if (source != "hn/") {
+            const addBookmarkDiv = dom(`<div class="settings-row" style="margin-left: var(--ledit-padding)">New bookmark</div>`)[0];
+            elements.bookmarks.append(addBookmarkDiv);
+            addBookmarkDiv.addEventListener("click", () => {
+               const newBookmark: Bookmark = {
+                  isDefault: false,
+                  source: source,
+                  label: "",
+                  ids: [],
+               };
+               this.close();
+               document.body.append(new BookmarkEditor(newBookmark, true));
+            });
          }
       }
 
@@ -246,16 +255,28 @@ export class SettingsView extends View {
          }
       });
 
+      // Close when container is clicked
+      elements.container.addEventListener("click", () => {
+         this.close();
+      });
+
+      // Close when close button is clicked
+      elements.close.addEventListener("click", () => {
+         this.close();
+      });
+
+      // Close when escape is pressed
       const escapeListener = (event: KeyboardEvent) => {
-         event.stopPropagation();
-         event.preventDefault();
          if (event.key === "Escape" || event.keyCode === 27) {
+            event.stopPropagation();
+            event.preventDefault();
             this.close();
             document.removeEventListener("keydown", escapeListener);
          }
       };
       document.addEventListener("keydown", escapeListener);
 
+      // Close on back navigation
       const navListener = () => {
          navigationGuard.removeCallback(navListener);
          this.close();
@@ -264,11 +285,12 @@ export class SettingsView extends View {
       navigationGuard.push();
       navigationGuard.registerCallback(navListener);
 
+      // Prevent underlying posts from scrolling
       elements.container.addEventListener("wheel", (event) => {
          if ((event.target as HTMLElement).classList.contains("settings")) {
-            event.preventDefault(); // Prevent default scrolling
-            event.stopPropagation(); // Stop propagation to lower div
-            this.scrollTop -= (event as any).deltaY; // Scroll the overlay content
+            event.preventDefault();
+            event.stopPropagation();
+            this.scrollTop -= (event as any).deltaY;
          }
       });
    }
@@ -279,3 +301,138 @@ export class SettingsView extends View {
    }
 }
 customElements.define("ledit-settings", SettingsView);
+
+function sourcePrefixToFeedLabel(source: SourcePrefix) {
+   switch (source) {
+      case "r/":
+         return "Subreddits";
+      case "hn/":
+         return "Hackernews";
+      case "rss/":
+         return "RSS feeds";
+      default:
+         assertNever(source);
+   }
+}
+
+export class BookmarkEditor extends View {
+   constructor(public readonly bookmark: Bookmark, public readonly isNew = false) {
+      super();
+      this.render();
+   }
+
+   render() {
+      this.innerHTML = /*html*/ `
+      <div x-id="container" class="settings-container">
+          <div x-id="editor" class="settings">
+            <div x-id="close" class="settings-row-close"><span class="svg-icon color-fill">${svgClose}</span></div>
+            <div class="settings-row-header">${sourcePrefixLabel(this.bookmark.source)} bookmark</div>
+            <div class="settings-row-label">Label</div>
+            <input x-id="label" class="settings-row-input" value="${this.bookmark.label}">
+            <div class="settings-row-label">${sourcePrefixToFeedLabel(this.bookmark.source)}</div>
+            <textarea x-id="feedIds" class="settings-row-textarea"></textarea>
+            <div x-id="save" class="load-more settings-row-label">Save</div>
+         </div>
+      </div>
+      `;
+
+      const elements = this.elements<{
+         container: Element;
+         editor: Element;
+         close: Element;
+         label: HTMLInputElement;
+         feedIds: HTMLTextAreaElement;
+         save: Element;
+      }>();
+
+      // Populate feeds
+      elements.feedIds.value = this.bookmark.ids.join("\n");
+
+      // Save functionality
+      elements.save.addEventListener("click", () => {
+         // validate
+         const label = elements.label.value.trim();
+         if (label.length == 0) {
+            alert("Please specify a label");
+            return;
+         }
+         if (this.isNew) {
+            if (getSettings().bookmarks.some((bookmark) => bookmark.label == label)) {
+               alert(`Bookmark with label '${label}' already exists`);
+               return;
+            }
+         }
+
+         const feedIdsValue = elements.feedIds.value.trim();
+         if (feedIdsValue.length == 0) {
+            alert(`Please specify one or more ${sourcePrefixToFeedLabel(this.bookmark.source)}, separated by commas or line breaks.`);
+            return;
+         }
+         const feedIds = feedIdsValue.split(/[,\n]+/).filter((feedId) => feedId != undefined && feedId != null && feedId.trim().length != 0).map((feedId) => feedId.trim());
+         if (feedIds.length == 0) {
+            alert(`Please specify one or more ${sourcePrefixToFeedLabel(this.bookmark.source)}, separated by commas or line breaks.`);
+            return;
+         }
+
+         // All good, save the bookmark and close.
+         this.bookmark.label = label;
+         this.bookmark.ids = feedIds;
+         if (this.isNew) {
+            getSettings().bookmarks.push(this.bookmark);
+         }
+         saveSettings();
+         this.close();
+      })
+
+      // Prevent clicking in input elements to dismiss editor
+      elements.editor.addEventListener("click", (event: Event) => {
+         event.stopPropagation();
+      });
+
+      // Close when container is clicked
+      elements.container.addEventListener("click", () => {
+         this.close();
+      });
+
+      // Close when close button is clicked
+      elements.close.addEventListener("click", () => {
+         this.close();
+      });
+
+      // Close when escape is pressed
+      const escapeListener = (event: KeyboardEvent) => {
+         if (event.key === "Escape" || event.keyCode === 27) {
+            event.stopPropagation();
+            event.preventDefault();
+            this.close();
+            document.removeEventListener("keydown", escapeListener);
+         }
+      };
+      document.addEventListener("keydown", escapeListener);
+
+      // Close on back navigation
+      const navListener = () => {
+         navigationGuard.removeCallback(navListener);
+         this.close();
+         return false;
+      };
+      navigationGuard.push();
+      navigationGuard.registerCallback(navListener);
+
+      // Prevent underlying posts from scrolling
+      elements.container.addEventListener("wheel", (event) => {
+         if ((event.target as HTMLElement).classList.contains("settings")) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.scrollTop -= (event as any).deltaY;
+         }
+      });
+   }
+
+   close() {
+      this.remove();
+      navigationGuard.pop();
+      document.body.append(new SettingsView());
+   }
+}
+customElements.define("ledit-bookmark-editor", BookmarkEditor);
