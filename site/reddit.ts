@@ -218,7 +218,8 @@ export class RedditSource implements Source {
       };
    }
    async getComments(post: Post): Promise<Comment[]> {
-      const response = await fetch(post.url + ".json");
+      const commentsUrl = "https://www.reddit.com/" + (post as any).redditPost.data.permalink + ".json";
+      const response = await fetch(commentsUrl);
       const data = await response.json();
       if (data.length < 2) return [];
       const redditComments = data[1] as RedditComments;
