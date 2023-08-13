@@ -202,6 +202,7 @@ type NavigationCallback = () => boolean;
 class NavigationGuard {
    private stack: NavigationCallback[][] = [[]];
    private listener;
+   private pushedState = false;
 
    constructor() {
       history.scrollRestoration = "manual";
@@ -223,7 +224,10 @@ class NavigationGuard {
 
    registerCallback(callback: NavigationCallback): void {
       this.stack[this.stack.length - 1].push(callback);
-      if (history.state != "guard") history.pushState("guard", "", null);
+      if (history.state != "guard") {
+         this.pushedState = true;
+         history.pushState("guard", "", null);
+      }
    }
 
    removeCallback(callback: NavigationCallback): void {
@@ -255,7 +259,7 @@ class NavigationGuard {
          event.preventDefault();
          history.forward();
       } else {
-         if(history.state == "guard") history.back();
+         if (this.pushedState) history.back();
       }
    }
 }
