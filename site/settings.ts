@@ -31,8 +31,18 @@ export const defaultSettings = {
       { source: "r/", label: "science", ids: ["science"], isDefault: false },
       { source: "r/", label: "todayilearned", ids: ["todayilearned"], isDefault: false },
       { source: "hn/", label: "hackernews", ids: [""], isDefault: false },
-      { source: "rss/", label: "International News", ids: ["http://rss.cnn.com/rss/edition.rss", "http://feeds.bbci.co.uk/news/rss.xml", "https://www.lemonde.fr/en/rss/une.xml", "http://rss.dw.com/rdf/rss-en-all"], isDefault: false },
-      { source: "rss/", label: "Tech News", ids: ["https://techcrunch.com/feed/","https://www.theverge.com/rss/frontpage","https://www.wired.com/feed/rss","https://gizmodo.com/rss","https://feeds.arstechnica.com/arstechnica/index"], isDefault: false }
+      {
+         source: "rss/",
+         label: "Tech News",
+         ids: [
+            "https://techcrunch.com/feed/",
+            "https://www.theverge.com/rss/frontpage",
+            "https://www.wired.com/feed/rss",
+            "https://gizmodo.com/rss",
+            "https://feeds.arstechnica.com/arstechnica/index",
+         ],
+         isDefault: false,
+      },
    ],
    hideSeen: false,
    seenIds: [],
@@ -168,7 +178,9 @@ export class SettingsView extends View {
             subElements.makeDefaultFeed.addEventListener("click", (event) => {
                event.stopPropagation();
                if (isDefault) return;
-               settings.bookmarks.forEach((bm) => { bm.isDefault = false });
+               settings.bookmarks.forEach((bm) => {
+                  bm.isDefault = false;
+               });
                bookmark.isDefault = true;
                saveSettings();
                this.render();
@@ -234,23 +246,31 @@ export class SettingsView extends View {
          }
       });
 
-      const escapeListener =(event: KeyboardEvent) => {
+      const escapeListener = (event: KeyboardEvent) => {
          event.stopPropagation();
          event.preventDefault();
          if (event.key === "Escape" || event.keyCode === 27) {
             this.close();
             document.removeEventListener("keydown", escapeListener);
          }
-      }
+      };
       document.addEventListener("keydown", escapeListener);
 
       const navListener = () => {
          navigationGuard.removeCallback(navListener);
          this.close();
          return false;
-      }
+      };
       navigationGuard.push();
-      navigationGuard.registerCallback(navListener)
+      navigationGuard.registerCallback(navListener);
+
+      elements.container.addEventListener("wheel", (event) => {
+         if ((event.target as HTMLElement).classList.contains("settings")) {
+            event.preventDefault(); // Prevent default scrolling
+            event.stopPropagation(); // Stop propagation to lower div
+            this.scrollTop -= (event as any).deltaY; // Scroll the overlay content
+         }
+      });
    }
 
    close() {
