@@ -90,6 +90,10 @@
   margin-bottom: 0;
 }
 
+.post-rss-preview > div {
+  width: 100%;
+}
+
 .post-rss-preview-image {
   max-width: 150px !important;
   flex: 0 0 auto; /* Prevent vertical growth and maintain aspect ratio */

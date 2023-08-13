@@ -1,6 +1,31 @@
 import { FeedEntry, extractFromXml } from "@extractus/feed-extractor";
 import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { dom, makeCollapsible, removeTrailingEmptyParagraphs } from "./utils";
+import { parse, isValid } from 'date-fns';
+
+function parseFeedDate(dateString: string): Date {
+   // Common RSS and Atom date formats (RFC 822 and RFC 3339)
+   const possibleFormats = [
+     "EEE, dd MMM yyyy HH:mm:ss xx", // RFC 822
+     "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",  // RFC 3339 with milliseconds
+     "yyyy-MM-dd'T'HH:mm:ssxxx",      // RFC 3339 without milliseconds
+     "yyyy-MM-dd'T'HH:mm:ss'Z'",      // RFC 3339 UTC format
+   ];
+
+   for (const format of possibleFormats) {
+     try {
+       const parsedDate = parse(dateString, format, new Date());
+       if (isValid(parsedDate)) {
+         return parsedDate;
+       }
+     } catch (error) {
+       // Parsing failed with the current format, continue trying others
+     }
+   }
+
+   console.error("Unable to parse feed date:", dateString);
+   return new Date();
+ }
 
 export class RssSource implements Source {
    extractChannelImage(rss: Document) {
@@ -15,6 +40,7 @@ export class RssSource implements Source {
 
    async getRssPosts(url: string): Promise<Post[]> {
       const options = {
+         useISODateFormat: false,
          getExtraEntryFields: (feedEntry: any) => {
             const result: any = {};
             if (feedEntry.enclosure) {
@@ -69,7 +95,7 @@ export class RssSource implements Source {
             numGalleryImages: 0,
             author: "",
             authorUrl: "",
-            createdAt: new Date(entry.published).getTime() / 1000,
+            createdAt: parseFeedDate(entry.published as any as string).getTime() / 1000,
             feed: `${
                channelImageUrl
                   ? `<img src="${channelImageUrl}" style="max-height: calc(1.5 * var(--ledit-font-size));"></img>`
@@ -126,12 +152,11 @@ export class RssSource implements Source {
          } <div>${removeTrailingEmptyParagraphs(description)}</div></div>`
       )[0];
       mediaDiv.querySelectorAll("script").forEach((script) => {
-         script.remove()
+         script.remove();
       });
       mediaDiv.querySelectorAll("iframe").forEach((iframe) => {
-         iframe.remove()
+         iframe.remove();
       });
-
 
       // Ensure links in self text open a new tab
       let links = mediaDiv.querySelectorAll("a")!;
