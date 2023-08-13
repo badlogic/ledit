@@ -31,7 +31,8 @@ export const defaultSettings = {
       { source: "r/", label: "science", ids: ["science"], isDefault: false },
       { source: "r/", label: "todayilearned", ids: ["todayilearned"], isDefault: false },
       { source: "hn/", label: "hackernews", ids: [""], isDefault: false },
-      { source: "rss/", label: "International News", ids: ["http://rss.cnn.com/rss/edition.rss", "http://feeds.bbci.co.uk/news/rss.xml", "https://www.lemonde.fr/en/rss/une.xml", "http://rss.dw.com/rdf/rss-en-all"], isDefault: false }
+      { source: "rss/", label: "International News", ids: ["http://rss.cnn.com/rss/edition.rss", "http://feeds.bbci.co.uk/news/rss.xml", "https://www.lemonde.fr/en/rss/une.xml", "http://rss.dw.com/rdf/rss-en-all"], isDefault: false },
+      { source: "rss/", label: "Tech News", ids: ["https://techcrunch.com/feed/","https://www.theverge.com/rss/frontpage","https://mashable.com/feeds/rss/all","https://www.wired.com/feed/rss","https://gizmodo.com/rss","https://feeds.arstechnica.com/arstechnica/index"], isDefault: false }
    ],
    hideSeen: false,
    seenIds: [],

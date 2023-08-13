@@ -1,6 +1,6 @@
 import { FeedEntry, extractFromXml } from "@extractus/feed-extractor";
 import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
-import { dom, limitElementHeight, removeTrailingEmptyParagraphs } from "./utils";
+import { dom, makeCollapsible, removeTrailingEmptyParagraphs } from "./utils";
 
 export class RssSource implements Source {
    extractChannelImage(rss: Document) {
@@ -37,8 +37,14 @@ export class RssSource implements Source {
                }
             }
             if (feedEntry.description) {
-               if (feedEntry.description.includes("<p>")) {
+               if (feedEntry.description.includes("<") && feedEntry.description.includes(">")) {
                   result.html = feedEntry.description;
+               }
+            }
+
+            if (feedEntry["content:encoded"]) {
+               if (feedEntry["content:encoded"].includes("<") && feedEntry["content:encoded"].includes(">")) {
+                  result.html = feedEntry["content:encoded"];
                }
             }
             return result;
@@ -47,7 +53,6 @@ export class RssSource implements Source {
 
       const response = await fetch("https://marioslab.io/proxy?url=" + encodeURI(url));
       const text = await response.text();
-      console.log(text);
       const rss = await new window.DOMParser().parseFromString(text, "text/xml");
       const channelImageUrl = this.extractChannelImage(rss);
       const result = extractFromXml(text, options);
@@ -65,7 +70,11 @@ export class RssSource implements Source {
             author: "",
             authorUrl: "",
             createdAt: new Date(entry.published).getTime() / 1000,
-            feed: `${channelImageUrl ? `<img src="${channelImageUrl}" style="max-height: calc(1.5 * var(--ledit-font-size));"></img>` : new URL(url).hostname}`,
+            feed: `${
+               channelImageUrl
+                  ? `<img src="${channelImageUrl}" style="max-height: calc(1.5 * var(--ledit-font-size));"></img>`
+                  : new URL(url).hostname
+            }`,
             score: -1,
             numComments: -1,
             xmlItem: entry,
@@ -125,7 +134,7 @@ export class RssSource implements Source {
       }
 
       requestAnimationFrame(() => {
-         limitElementHeight(postDiv, 8);
+         makeCollapsible(postDiv, 8);
       });
       return [postDiv];
    }

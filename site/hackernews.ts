@@ -1,6 +1,6 @@
 import { encodeHTML } from "entities";
 import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
-import { dom, htmlDecode, limitElementHeight } from "./utils";
+import { dom, htmlDecode, makeCollapsible } from "./utils";
 
 interface HNPost {
    by: string,
@@ -168,7 +168,7 @@ export class HackerNewsSource implements Source {
          }
 
          requestAnimationFrame(() => {
-            limitElementHeight(selfPost, 4.5);
+            makeCollapsible(selfPost, 4.5);
          })
          return [selfPost];
       }

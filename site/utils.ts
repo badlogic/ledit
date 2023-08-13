@@ -85,9 +85,9 @@ export function dom(html: string): HTMLElement[] {
    return children as HTMLElement[];
 }
 
-/** Navigate to the given sub. */
-export function navigate(sub: string) {
-   window.location.hash = sub;
+/** Navigate to the given feed. */
+export function navigate(feed: string) {
+   window.location.hash = feed;
    window.location.reload();
 }
 
@@ -119,31 +119,49 @@ export function computedCssSizePx(variableName: string) {
    return parseInt(variableValue, 10);
 }
 
-export function limitElementHeight(div: HTMLElement, maxHeightInLines: number) {
-   const computedStyles = getComputedStyle(document.documentElement);
-   const fontSize = parseInt(computedStyles.getPropertyValue("--ledit-font-size"), 10);
+export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
+   requestAnimationFrame(() => {
+      const computedStyles = getComputedStyle(document.documentElement);
+      const fontSize = parseInt(computedStyles.getPropertyValue("--ledit-font-size"), 10);
 
-   const maxHeight = fontSize * maxHeightInLines;
-   const clickableAreaHeight = fontSize * 2;
+      const maxHeight = fontSize * maxHeightInLines;
+      const clickableAreaHeight = fontSize * 2;
 
-   if (div.clientHeight > maxHeight) {
-      div.style.height = `${maxHeight}px`;
-      div.style.overflow = "hidden";
+      if (div.clientHeight > maxHeight) {
+         div.style.height = `${maxHeight}px`;
+         div.style.overflow = "hidden";
+         div.style.marginBottom = "0";
 
-      const loadMoreDiv = document.createElement("div");
-      loadMoreDiv.classList.add("load-more");
-      loadMoreDiv.textContent = "Show more";
-      loadMoreDiv.style.height = `${clickableAreaHeight}px`;
+         const loadMoreDiv = document.createElement("div");
+         loadMoreDiv.classList.add("load-more");
+         loadMoreDiv.textContent = "Show more";
+         loadMoreDiv.style.height = `${clickableAreaHeight}px`;
 
-      const loadMore = () => {
-         div.style.height = "auto";
-         loadMoreDiv.style.display = "none";
+         let collapsed = true;
+         const loadMore = (event: MouseEvent) => {
+            if ((event.target as HTMLElement).tagName != "A") {
+               event.preventDefault();
+               event.stopPropagation();
+
+               if (collapsed) {
+                  div.style.height = "auto";
+                  loadMoreDiv.style.display = "none";
+               } else {
+                  div.style.height = `${maxHeight}px`;
+                  loadMoreDiv.style.display = "";
+                  if (div.getBoundingClientRect().top < 16 * 4) {
+                     window.scrollTo({ top: div.getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
+                  }
+               }
+               collapsed = !collapsed;
+            }
+         };
+         div.addEventListener("click", loadMore);
+         loadMoreDiv.addEventListener("click", loadMore);
+
+         div.insertAdjacentElement("afterend", loadMoreDiv);
       }
-      div.addEventListener("click", loadMore)
-      loadMoreDiv.addEventListener("click", loadMore);
-
-      div.insertAdjacentElement("afterend", loadMoreDiv);
-   }
+   });
 }
 
 export function removeTrailingEmptyParagraphs(htmlString: string): string {

@@ -3,7 +3,7 @@ import videojs from "video.js";
 import Player from "video.js/dist/types/player";
 
 import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
-import { dom, htmlDecode, intersectsViewport, limitElementHeight, onAddedToDOM, onTapped } from "./utils";
+import { dom, htmlDecode, intersectsViewport, makeCollapsible, onAddedToDOM, onTapped } from "./utils";
 
 let count = 0;
 interface RedditPosts {
@@ -269,7 +269,7 @@ export class RedditSource implements Source {
          }
 
          requestAnimationFrame(() => {
-            limitElementHeight(selfPost, 4.5);
+            makeCollapsible(selfPost, 4.5);
          });
          return [selfPost];
       }

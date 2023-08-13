@@ -57,7 +57,7 @@
   color: var(--ledit-color)
 }
 
-.post-sub {
+.post-feed {
   font-size: var(--ledit-font-size-small);
 }
 
@@ -107,6 +107,11 @@
   max-width: 100% !important;
   height: auto !important;
   border-radius: 8px;
+}
+
+.post-rss-preview svg {
+  width: 1em;
+  height: 1em;
 }
 
 .post-rss-preview h1 {

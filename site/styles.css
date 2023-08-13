@@ -147,4 +147,5 @@ blockquote {
    border: 1px solid var(--ledit-color-dim);
    border-radius: 8px;
    margin-top: var(--ledit-padding);
+   cursor: pointer;
 }

@@ -68,8 +68,8 @@ export class HeaderView extends View {
         navigate(hash + (hash.endsWith("/") ? "" : "/") + elements.sorting.value);
       });
 
-      // Add bookmark button. Either hide it if the sub is already in the
-      // settings, or add click listener to add the sub to the settings as a bookmark.
+      // Add bookmark button. Either hide it if the feed is already in the
+      // settings, or add click listener to add the feed to the settings as a bookmark.
       const settings = getSettings();
       if (settings.bookmarks.some((bookmark) => bookmarkToHash(bookmark) == source.getSourcePrefix() + source.getFeed())) {
          elements.addBookmark.classList.add("hidden");
