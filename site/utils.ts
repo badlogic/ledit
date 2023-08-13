@@ -1,3 +1,5 @@
+import { getSource } from "./data";
+
 export function dateToText(utcTimestamp: number): string {
    const now = Date.now();
    const timeDifference = now - utcTimestamp;
@@ -202,12 +204,13 @@ type NavigationCallback = () => boolean;
 class NavigationGuard {
    private stack: NavigationCallback[][] = [[]];
    private listener;
-   private pushedState = false;
+   private token: string | null;
 
    constructor() {
       history.scrollRestoration = "manual";
       this.listener = this.handlePopState.bind(this);
       window.addEventListener("popstate", this.listener);
+      this.token = null;
    }
 
    numCallbacks() {
@@ -224,9 +227,9 @@ class NavigationGuard {
 
    registerCallback(callback: NavigationCallback): void {
       this.stack[this.stack.length - 1].push(callback);
-      if (history.state != "guard") {
-         this.pushedState = true;
-         history.pushState("guard", "", null);
+      if (this.token == null) {
+         this.token = getSource().getSourcePrefix() + getSource().getFeed();
+         history.pushState(this.token, "", null);
       }
    }
 
@@ -259,7 +262,7 @@ class NavigationGuard {
          event.preventDefault();
          history.forward();
       } else {
-         if (this.pushedState) history.back();
+         //
       }
    }
 }
