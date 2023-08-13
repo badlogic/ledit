@@ -62,7 +62,7 @@ export class HackerNewsSource implements Source {
             author: hnPost.by,
             authorUrl: "https://news.ycombinator.com/user?id=" + hnPost.by,
             createdAt: hnPost.time,
-            sub: "",
+            feed: "",
             score: hnPost.score,
             numComments: hnPost.descendants ?? 0,
             hnPost
@@ -174,10 +174,10 @@ export class HackerNewsSource implements Source {
       }
       return [];
    }
-   getSub(): string {
+   getFeed(): string {
       return "";
    }
-   getSubPrefix(): SourcePrefix {
+   getSourcePrefix(): SourcePrefix {
       return "hn/";
    }
    getSortingOptions(): SortingOption[] {

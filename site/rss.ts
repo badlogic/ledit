@@ -31,6 +31,16 @@ export class RssSource implements Source {
                   length: feedEntry["media:content"]["@_length"],
                };
             }
+            if (feedEntry.content) {
+               if (feedEntry.content["@_type"] == "html") {
+                  result.html = feedEntry.content["#text"];
+               }
+            }
+            if (feedEntry.description) {
+               if (feedEntry.description.includes("<p>")) {
+                  result.html = feedEntry.description;
+               }
+            }
             return result;
          },
       };
@@ -55,7 +65,7 @@ export class RssSource implements Source {
             author: "",
             authorUrl: "",
             createdAt: new Date(entry.published).getTime() / 1000,
-            sub: `${channelImageUrl ? `<img src="${channelImageUrl}" style="max-height: calc(1.5 * var(--ledit-font-size));"></img>` : new URL(url).hostname}`,
+            feed: `${channelImageUrl ? `<img src="${channelImageUrl}" style="max-height: calc(1.5 * var(--ledit-font-size));"></img>` : new URL(url).hostname}`,
             score: -1,
             numComments: -1,
             xmlItem: entry,
@@ -65,7 +75,7 @@ export class RssSource implements Source {
    }
 
    async getPosts(after: string | null): Promise<Posts> {
-      const urls = this.getSub().split("+");
+      const urls = this.getFeed().split("+");
       const promises: Promise<Post[]>[] = [];
       for (const url of urls) {
          promises.push(this.getRssPosts(url));
@@ -87,7 +97,7 @@ export class RssSource implements Source {
    getMediaDom(post: Post): Element[] {
       const xmlItem = (post as any).xmlItem as FeedEntry;
       if (!xmlItem) return [];
-      const description = xmlItem.description;
+      const description = (xmlItem as any).html ?? xmlItem.description;
       if (!description) return [];
       let imageUrl = null;
 
@@ -120,7 +130,7 @@ export class RssSource implements Source {
       return [postDiv];
    }
 
-   getSub(): string {
+   getFeed(): string {
       const hash = window.location.hash;
       if (hash.length == 0) {
          return "";
@@ -130,7 +140,7 @@ export class RssSource implements Source {
       return decodeURIComponent(hash.substring(slashIndex + 1));
    }
 
-   getSubPrefix(): SourcePrefix {
+   getSourcePrefix(): SourcePrefix {
       return "rss/";
    }
 

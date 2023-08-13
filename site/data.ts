@@ -12,7 +12,7 @@ export interface Post {
    author: string;
    authorUrl: string;
    createdAt: number;
-   sub: string;
+   feed: string;
    score: number;
    numComments: number;
 }
@@ -36,8 +36,8 @@ export interface Source {
    getPosts(after: string | null): Promise<Posts>,
    getComments(post: Post): Promise<Comment[]>,
    getMediaDom(post: Post): Element[],
-   getSub(): string,
-   getSubPrefix(): SourcePrefix,
+   getFeed(): string,
+   getSourcePrefix(): SourcePrefix,
    getSortingOptions(): SortingOption[],
    getSorting(): string,
 }

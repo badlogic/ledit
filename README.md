@@ -4,7 +4,14 @@ A read-only Reddit/Hackernews/RSS client for people who don't like bells and whi
 [Try it](https://marioslab.io/projects/ledit)
 
 # Usage
-ledit lets you browse Reddit, Hackernews, and RSS feeds. There are two ways to specify the source you want to browse:
+ledit lets you browse Reddit, Hackernews, and RSS feeds in a desktop and mobile friendly way. It is aimed at consumption, not participation. Here's how you use it.
+
+## Feeds
+A feed is a subreddit, Hackernews, or an RSS feed. You can specify which feed you want to view in by clicking on the feed displayed in the site header:
+
+
+
+
 
 1. In the browser address bar, append `#r/subreddit`, `#hn/`, or `#rss/https://example.com/rss`.
 2. Click the source name in the header of the site and enter a new source, e.g. `r/all`, or `rss/http://example.com/rss``.

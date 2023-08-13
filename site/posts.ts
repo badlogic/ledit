@@ -30,14 +30,14 @@ export class PostsView extends View {
       this.postsDiv.append(loadingDiv);
       try {
          let result = await source.getPosts(after);
-         console.log(`Loaded more posts for '${source.getSubPrefix() + source.getSub()}'.`);
+         console.log(`Loaded more posts for '${source.getSourcePrefix() + source.getFeed()}'.`);
          if (after) {
             this.loadedPages++;
             this.postsDiv.append(dom(`<div class="post-loading">Page ${this.loadedPages}</div>`)[0]);
          }
          await this.renderPosts(result);
       } catch (e) {
-         this.showError("Could not load " + source.getSubPrefix() + source.getSub(), e);
+         this.showError("Could not load " + source.getSourcePrefix() + source.getFeed(), e);
       } finally {
          loadingDiv.remove();
       }
@@ -46,7 +46,7 @@ export class PostsView extends View {
    async renderPosts(posts: Posts) {
       const source = getSource();
       if (posts.posts.length == 0) {
-         this.showError(`${source.getSubPrefix() + source.getSub()} does not exist.`);
+         this.showError(`${source.getSourcePrefix() + source.getFeed()} does not exist.`);
          return;
       }
 
@@ -112,24 +112,25 @@ export class PostView extends View {
       const source = getSource();
       const post = this.post;
       const showUrl = !post.isSelf && !post.url.includes("redd.it") && !post.url.includes("www.reddit.com");
-      const showSub = getSource().getSub().toLowerCase() != post.sub.toLowerCase();
+      const showFeed = getSource().getFeed().toLowerCase() != post.feed.toLowerCase();
       const collapse = getSettings().collapseSeenPosts && PostsView.seenPosts.has(post.url) ? "post-seen" : "";
       this.innerHTML = /*html*/ `
       <div class="post ${collapse}">
          <div class="post-title"><a href="${post.url}" target="_blank">${post.title}</a></div>
          <div class="post-meta">
             ${
-               showSub
-                  ? /*html*/ `<a href="${post.url}" target="_blank"><span class="post-sub">${post.sub}</span></a><span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>`
+               showFeed
+                  ? /*html*/ `<a href="${post.url}" target="_blank"><span class="post-feed">${post.feed}</span></a><span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>`
                   : ""
             }
             <span class="post-date">${dateToText(post.createdAt * 1000)}</span>
             ${post.author.length != 0 ? `<span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>` : ""}
             <span class="post-author"><a href="${post.authorUrl}" target="_blank">${post.author}</a></span>
+            ${showUrl ? `<span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>` : ""}
             ${
                showUrl
-                  ? `<span style="margin: 0 calc(var(--ledit-padding) / 2);>•</span><span class="post-url">${
-                       new URL(post.url.startsWith("/r/") ? "https://www.reddit.com" + post.url : post.url).host
+                  ? `<span class="post-url">${
+                       new URL(post.url).host
                     }</span>`
                   : ""
             }

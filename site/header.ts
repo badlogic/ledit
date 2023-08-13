@@ -17,8 +17,8 @@ export class HeaderView extends View {
       <div class="header-container">
          <div class="header">
             <div x-id="showMenu" class="header-menu svg-icon color-fill no-user-select" style="padding-left: var(--ledit-padding);">${svgBurger}</div>
-            <div x-id="sub" class="header-sub">${source.getSubPrefix() + source.getSub()}</div>
-            <input x-id="subInput" class="header-sub-input hidden" value="${source.getSubPrefix()} + ${source.getSub()}"/>
+            <div x-id="feed" class="header-feed">${source.getSourcePrefix() + source.getFeed()}</div>
+            <input x-id="feedInput" class="header-feed-input hidden" value="${source.getSourcePrefix()} + ${source.getFeed()}"/>
             <select x-id="sorting" class="header-sorting" tabindex="-1" style="padding-right: var(--ledit-margin);">
             </select>
             <span x-id="addBookmark" class="header-bookmark-add svg-icon color-fill" style="padding-right: var(--ledit-padding);">${svgPlus}</span>
@@ -28,8 +28,8 @@ export class HeaderView extends View {
 
       const elements = this.elements<{
          showMenu: Element;
-         sub: Element;
-         subInput: HTMLInputElement;
+         feed: Element;
+         feedInput: HTMLInputElement;
          sorting: HTMLSelectElement;
          addBookmark: Element;
       }>();
@@ -39,22 +39,22 @@ export class HeaderView extends View {
          document.body.append(new SettingsView());
       });
 
-      // Sub input. If label is clicked, hide it and unhide input.
-      elements.sub.addEventListener("click", () => {
-         elements.sub.classList.add("hidden");
-         elements.subInput.classList.remove("hidden");
-         elements.subInput.value = source.getSubPrefix() + source.getSub();
-         elements.subInput.select();
-         elements.subInput.addEventListener("keydown", (event) => {
+      // Feed input. If label is clicked, hide it and unhide input.
+      elements.feed.addEventListener("click", () => {
+         elements.feed.classList.add("hidden");
+         elements.feedInput.classList.remove("hidden");
+         elements.feedInput.value = source.getSourcePrefix() + source.getFeed();
+         elements.feedInput.select();
+         elements.feedInput.addEventListener("keydown", (event) => {
             if (event.key === "Enter" || event.key === "Go" || event.keyCode === 13) {
-               navigate(elements.subInput.value);
+               navigate(elements.feedInput.value);
             }
          });
 
          // Switch back to label if the user aborted by unfocusing the input field.
-         elements.subInput.addEventListener("blur", () => {
-            elements.sub.classList.remove("hidden");
-            elements.subInput.classList.add("hidden");
+         elements.feedInput.addEventListener("blur", () => {
+            elements.feed.classList.remove("hidden");
+            elements.feedInput.classList.add("hidden");
          });
       });
 
@@ -64,22 +64,22 @@ export class HeaderView extends View {
       }
       elements.sorting.value = source.getSorting();
       elements.sorting.addEventListener("change", () => {
-         const hash = source.getSubPrefix() + source.getSub();
+         const hash = source.getSourcePrefix() + source.getFeed();
         navigate(hash + (hash.endsWith("/") ? "" : "/") + elements.sorting.value);
       });
 
       // Add bookmark button. Either hide it if the sub is already in the
       // settings, or add click listener to add the sub to the settings as a bookmark.
       const settings = getSettings();
-      if (settings.bookmarks.some((bookmark) => bookmarkToHash(bookmark) == source.getSubPrefix() + source.getSub())) {
+      if (settings.bookmarks.some((bookmark) => bookmarkToHash(bookmark) == source.getSourcePrefix() + source.getFeed())) {
          elements.addBookmark.classList.add("hidden");
       } else {
          elements.addBookmark.addEventListener("click", (event) => {
             event.stopPropagation();
             settings.bookmarks.push({
-               source: source.getSubPrefix(),
-               label: source.getSub(),
-               ids: [source.getSub()],
+               source: source.getSourcePrefix(),
+               label: source.getFeed(),
+               ids: [source.getFeed()],
                isDefault: false
             });
             saveSettings();

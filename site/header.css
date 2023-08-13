@@ -21,7 +21,7 @@
     font-weight: 500;
   }
 
-  .header-sub {
+  .header-feed {
     display: inline-block;
     max-width: 80%;
     overflow: hidden;
@@ -33,7 +33,7 @@
     margin-left: var(--ledit-padding);
   }
 
-  .header-sub-input {
+  .header-feed-input {
     background: none;
     border: none;
     border-bottom: 0.5px solid var(--ledit-color);

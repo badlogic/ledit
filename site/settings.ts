@@ -143,24 +143,24 @@ export class SettingsView extends View {
             const hash = bookmarkToHash(bookmark);
             const bookmarkDiv = dom(/*html*/ `
                <div class="settings-row" style="margin-left: var(--ledit-padding)">
-                  <a x-id="sub" href="#${hash}" style="flex: 1">${bookmark.label}</a>
-                  <div x-id="makeDefaultSub" class="box">
+                  <a x-id="feed" href="#${hash}" style="flex: 1">${bookmark.label}</a>
+                  <div x-id="makeDefaultFeed" class="box">
                      <span class="svg-icon ${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</span>
                   </div>
-                  <div x-id="deleteSub" class="box">
+                  <div x-id="deleteFeed" class="box">
                      <span class="svg-icon color-fill">${svgMinus}</span>
                   </div>
                </div>
             `)[0];
             const subElements = View.elements<{
-               sub: Element;
-               makeDefaultSub: Element;
-               deleteSub: Element;
+               feed: Element;
+               makeDefaultFeed: Element;
+               deleteFeed: Element;
             }>(bookmarkDiv);
-            subElements.sub.addEventListener("click", () => {
+            subElements.feed.addEventListener("click", () => {
                navigate(hash);
             });
-            subElements.makeDefaultSub.addEventListener("click", (event) => {
+            subElements.makeDefaultFeed.addEventListener("click", (event) => {
                event.stopPropagation();
                if (isDefault) return;
                settings.bookmarks.forEach((bm) => { bm.isDefault = false });
@@ -168,7 +168,7 @@ export class SettingsView extends View {
                saveSettings();
                this.render();
             });
-            subElements.deleteSub.addEventListener("click", (event) => {
+            subElements.deleteFeed.addEventListener("click", (event) => {
                event.stopPropagation();
                settings.bookmarks = settings.bookmarks.filter((bm) => bm != bookmark);
                saveSettings();

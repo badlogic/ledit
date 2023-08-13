@@ -199,7 +199,7 @@ export class RedditSource implements Source {
             author: redditPost.data.author,
             authorUrl: "https://www.reddit.com/u/" + redditPost.data.author,
             createdAt: redditPost.data.created_utc,
-            sub: redditPost.data.subreddit,
+            feed: redditPost.data.subreddit,
             score: redditPost.data.score,
             numComments: redditPost.data.num_comments,
             redditPost,
@@ -421,11 +421,11 @@ export class RedditSource implements Source {
       return videoDom;
    }
 
-   getSub() {
+   getFeed() {
       return getSubreddit();
    }
 
-   getSubPrefix(): SourcePrefix {
+   getSourcePrefix(): SourcePrefix {
       return "r/";
    }
 
