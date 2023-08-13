@@ -191,7 +191,7 @@ export class RedditSource implements Source {
             }
          }
          return {
-            url: "https://www.reddit.com/" + redditPost.data.permalink,
+            url: redditPost.data.url,
             title: redditPost.data.title,
             isSelf: redditPost.data.is_self,
             isGallery: redditPost.data.is_gallery,
