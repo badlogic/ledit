@@ -51,6 +51,7 @@
    font: inherit;
    font-size: var(--ledit-font-size);
    margin: 0 calc(var(--ledit-padding) + var(--ledit-margin));
+   padding: var(--ledit-margin);
 
    background: none;
    border: none;
@@ -59,7 +60,7 @@
    line-height: inherit;
    outline: none;
    box-shadow: none;
-   border-radius: 0;
+   border-radius: 8px;
    resize: vertical;
    overflow: auto;
 }

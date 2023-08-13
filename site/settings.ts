@@ -149,9 +149,13 @@ export class SettingsView extends View {
                   <div x-id="makeDefaultFeed" class="box">
                      <span class="svg-icon ${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</span>
                   </div>
-                  <div x-id="editFeed" class="box">
+                  ${bookmark.source == "hn/" ?
+                  /*html*/`<div x-id="editFeed" class="box">
+                     <span class="svg-icon color-fill"></span>
+                  </div>` :
+                  /*html*/`<div x-id="editFeed" class="box">
                      <span class="svg-icon color-fill">${svgPencil}</span>
-                  </div>
+                  </div>`}
                   <div x-id="deleteFeed" class="box">
                      <span class="svg-icon color-fill">${svgMinus}</span>
                   </div>
@@ -176,10 +180,12 @@ export class SettingsView extends View {
                saveSettings();
                this.render();
             });
-            subElements.editFeed.addEventListener("click", (event) => {
-               this.close();
-               document.body.append(new BookmarkEditor(bookmark));
-            });
+            if (bookmark.source != "hn/") {
+               subElements.editFeed.addEventListener("click", (event) => {
+                  this.close();
+                  document.body.append(new BookmarkEditor(bookmark));
+               });
+            }
             subElements.deleteFeed.addEventListener("click", (event) => {
                event.stopPropagation();
                settings.bookmarks = settings.bookmarks.filter((bm) => bm != bookmark);
@@ -328,10 +334,10 @@ export class BookmarkEditor extends View {
             <div x-id="close" class="settings-row-close"><span class="svg-icon color-fill">${svgClose}</span></div>
             <div class="settings-row-header">${sourcePrefixLabel(this.bookmark.source)} bookmark</div>
             <div class="settings-row-label">Label</div>
-            <input x-id="label" class="settings-row-input" value="${this.bookmark.label}">
-            <div class="settings-row-label">${sourcePrefixToFeedLabel(this.bookmark.source)}</div>
-            <textarea x-id="feedIds" class="settings-row-textarea"></textarea>
-            <div x-id="save" class="load-more settings-row-label">Save</div>
+            <input x-id="label" class="settings-row-input" style="margin-bottom: var(--ledit-padding);" value="${this.bookmark.label}">
+            <div class="settings-row-label" style="margin-bottom: var(--ledit-padding);">${sourcePrefixToFeedLabel(this.bookmark.source)}</div>
+            <textarea x-id="feedIds" class="settings-row-textarea" style="margin-bottom: var(--ledit-margin);"></textarea>
+            <div x-id="save" class="load-more settings-row-label" style="margin: 0 calc(var(--ledit-padding) + var(--ledit-margin)); margin-bottom: var(--ledit-margin);">Save</div>
          </div>
       </div>
       `;
