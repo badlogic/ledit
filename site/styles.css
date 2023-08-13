@@ -45,6 +45,7 @@ html {
    color: var(--ledit-color);
    background: var(--ledit-background-dim);
    font-size: var(--ledit-font-size);
+   -webkit-tap-highlight-color: transparent;
 }
 
 a {

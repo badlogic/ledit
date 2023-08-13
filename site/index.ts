@@ -15,19 +15,21 @@ if (window.location.hash.length == 0) {
    const defaultBookmark = getSettings().bookmarks.find((bookmark) => bookmark.isDefault == true);
    navigate(defaultBookmark ? bookmarkToHash(defaultBookmark) : "r/all");
 } else {
-  const hash = window.location.hash.substring(1);
-   if (hash.startsWith("r/")) {
+  const hash = window.location.hash;
+   if (hash.startsWith("#r/")) {
       setSource(new RedditSource());
-   } else if (hash.startsWith("hackernews/") || hash.startsWith("hn")) {
+   } else if (hash.startsWith("#hackernews/") || hash.startsWith("#hn")) {
       setSource(new HackerNewsSource());
-   } else if (hash.startsWith("rss/")) {
+   } else if (hash.startsWith("#rss/")) {
       setSource(new RssSource());
    } else {
       setSource(new RedditSource());
    }
 
    window.addEventListener("hashchange", () => {
-      window.location.reload();
+      if (window.location.hash != hash) {
+         window.location.reload();
+      }
    });
 
    document.body.innerHTML = `

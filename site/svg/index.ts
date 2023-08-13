@@ -24,6 +24,8 @@ import close from "./close.svg"
 import check from "./check.svg"
 // @ts-ignore
 import heart from "./heart.svg"
+// @ts-ignore
+import pencil from "./pencil.svg"
 
 export const svgBurger = burger;
 export const svgCircle = circle;
@@ -38,3 +40,4 @@ export const svgGithub = github;
 export const svgClose = close;
 export const svgCheck = check;
 export const svgHeart = heart;
+export const svgPencil = pencil;

@@ -1,6 +1,6 @@
 import "./posts.css";
 import { svgDownArrow, svgImages, svgLoader, svgSpeeBubble, svgUpArrow } from "./svg/index";
-import { addCommasToNumber, dateToText, dom, intersectsViewport, onVisibleOnce } from "./utils";
+import { addCommasToNumber, dateToText, dom, intersectsViewport, navigationGuard, onVisibleOnce } from "./utils";
 import { View } from "./view";
 import { MediaView } from "./media";
 import { CommentsView } from "./comments";
@@ -166,14 +166,18 @@ export class PostView extends View {
          comments: Element;
       }>();
 
-      elements.media.append(new MediaView(this.post));
+      onVisibleOnce(this, () => {
+         console.log("Showing media of " + this.post.title);
+         elements.media.append(new MediaView(this.post));
+      });
+
       elements.buttonsRow.addEventListener("click", () => {
          this.toggleComments();
       });
 
       document.addEventListener("keydown", (event) => {
          if (event.key === "Escape" || event.keyCode === 27) {
-            popStateCallback(null);
+            if (elements.buttonsRow.classList.contains("post-buttons-sticky") && intersectsViewport(elements.buttonsRow)) this.toggleComments();
          }
       });
       if (post.numComments == -1) elements.buttonsRow.classList.add("hidden");
@@ -197,85 +201,37 @@ export class PostView extends View {
          buttonsRow: Element;
       }>();
 
+      const hideComments = () => {
+         // Hide the comments, triggered by a click on the comments button
+         this.commentsView?.remove();
+         navigationGuard.removeCallback(navListener);
+
+         elements.buttonsRow.classList.remove("post-buttons-sticky");
+         if (elements.buttonsRow.getBoundingClientRect().top < 16 * 4) {
+            requestAnimationFrame(() => {
+               const scrollTo = elements.buttonsRow.getBoundingClientRect().top + window.pageYOffset - 16 * 4;
+               window.scrollTo({ top: scrollTo });
+            });
+         }
+      }
+
+      const navListener = () => {
+         if (intersectsViewport(elements.buttonsRow)) {
+            hideComments();
+            return false;
+         }
+         return true;
+      }
+
       if (elements.comments.children.length == 0) {
          // Show the comments
          if (!this.commentsView) this.commentsView = new CommentsView(this.post, this);
          elements.comments.append(this.commentsView);
          elements.buttonsRow.classList.add("post-buttons-sticky");
-
-         // If we haven't pushed a history state yet, push one
-         // This will prevent the user from going back via the
-         // back button or back swiping.
-         //
-         // Also push the view onto the list of currently open
-         // views.
-         if (!statePushed) {
-            history.pushState({}, "", "");
-            statePushed = true;
-         }
-         openCommentsViews.push(this.commentsView);
+         navigationGuard.registerCallback(navListener);
       } else {
-         // Hide the comments, triggered by a click on the comments button
-         this.commentsView?.remove();
-
-         // Manually remove the view from the list of open views.
-         openCommentsViews = openCommentsViews.filter((view) => view != this.commentsView);
-
-         elements.buttonsRow.classList.remove("post-buttons-sticky");
-         if (elements.buttonsRow.getBoundingClientRect().top < 16 * 4) {
-            requestAnimationFrame(() => {
-               window.scrollTo({ top: elements.buttonsRow.getBoundingClientRect().top + window.pageYOffset - 16 * 4 });
-            });
-         }
+         hideComments();
       }
    }
 }
 customElements.define("ledit-post", PostView);
-
-let statePushed = false;
-let openCommentsViews: CommentsView[] = [];
-function popStateCallback(event: PopStateEvent | null) {
-   // If a state is pushed, at least one view is
-   // open. Remove any visible views.
-   if (statePushed) {
-      let scrollTo = -1;
-      let removedViews = 0;
-
-      for (let i = 0; i < openCommentsViews.length; i++) {
-         const commentsView = openCommentsViews[i];
-         const postView = commentsView.postView as PostView;
-         const buttonsRow = postView.elements<{ buttonsRow: Element }>().buttonsRow;
-
-         // Is the toggle button for the view visible? Then remove the
-         // view and optionally scroll to its toggle button, if its
-         // at the top of the page.
-         if (intersectsViewport(buttonsRow)) {
-            commentsView.remove();
-            removedViews++;
-            openCommentsViews.splice(i, 1);
-            buttonsRow.classList.remove("post-buttons-sticky");
-            if (buttonsRow.getBoundingClientRect().top < 16 * 4) {
-               scrollTo = buttonsRow.getBoundingClientRect().top + window.pageYOffset - 16 * 4;
-            }
-         }
-      }
-
-      if (scrollTo != -1) {
-         requestAnimationFrame(() => window.scrollTo({ top: scrollTo }));
-      }
-
-      if (removedViews == 0) {
-         // If no views were removed, non were visible. Do a proper back navigation.
-         if (event) {
-            window.removeEventListener("popstate", popStateCallback);
-            history.back();
-         }
-      } else {
-         // Else, prevent back navigation
-         event?.preventDefault();
-         event?.stopPropagation();
-         statePushed = false;
-      }
-   }
-}
-window.addEventListener("popstate", popStateCallback);

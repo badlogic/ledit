@@ -1,7 +1,7 @@
 import { SourcePrefix } from "./data";
 import "./settings.css";
-import { svgCheck, svgClose, svgGithub, svgHeart, svgMinus } from "./svg/index";
-import { dom, navigate } from "./utils";
+import { svgCheck, svgClose, svgGithub, svgHeart, svgMinus, svgPencil } from "./svg/index";
+import { dom, navigate, navigationGuard } from "./utils";
 import { View } from "./view";
 
 interface Bookmark {
@@ -32,7 +32,7 @@ export const defaultSettings = {
       { source: "r/", label: "todayilearned", ids: ["todayilearned"], isDefault: false },
       { source: "hn/", label: "hackernews", ids: [""], isDefault: false },
       { source: "rss/", label: "International News", ids: ["http://rss.cnn.com/rss/edition.rss", "http://feeds.bbci.co.uk/news/rss.xml", "https://www.lemonde.fr/en/rss/une.xml", "http://rss.dw.com/rdf/rss-en-all"], isDefault: false },
-      { source: "rss/", label: "Tech News", ids: ["https://techcrunch.com/feed/","https://www.theverge.com/rss/frontpage","https://mashable.com/feeds/rss/all","https://www.wired.com/feed/rss","https://gizmodo.com/rss","https://feeds.arstechnica.com/arstechnica/index"], isDefault: false }
+      { source: "rss/", label: "Tech News", ids: ["https://techcrunch.com/feed/","https://www.theverge.com/rss/frontpage","https://www.wired.com/feed/rss","https://gizmodo.com/rss","https://feeds.arstechnica.com/arstechnica/index"], isDefault: false }
    ],
    hideSeen: false,
    seenIds: [],
@@ -92,6 +92,7 @@ export class SettingsView extends View {
                     <div x-id="bookmarks"></div>
                     <div class="settings-row-header">Theme</div>
                     <div x-id="themes"></div>
+                    <div class="settings-row-header">View options</div>
                     <div x-id="collapseSeen" class="settings-row">
                      <div style="flex: 1">Collapse seen posts</div>
                      <div class="svg-icon box ${getSettings().collapseSeenPosts ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
@@ -147,6 +148,9 @@ export class SettingsView extends View {
                   <a x-id="feed" href="#${hash}" style="flex: 1">${bookmark.label}</a>
                   <div x-id="makeDefaultFeed" class="box">
                      <span class="svg-icon ${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</span>
+                  </div>
+                  <div x-id="editFeed" class="box">
+                     <span class="svg-icon color-fill">${svgPencil}</span>
                   </div>
                   <div x-id="deleteFeed" class="box">
                      <span class="svg-icon color-fill">${svgMinus}</span>
@@ -229,10 +233,29 @@ export class SettingsView extends View {
             this.render();
          }
       });
+
+      const escapeListener =(event: KeyboardEvent) => {
+         event.stopPropagation();
+         event.preventDefault();
+         if (event.key === "Escape" || event.keyCode === 27) {
+            this.close();
+            document.removeEventListener("keydown", escapeListener);
+         }
+      }
+      document.addEventListener("keydown", escapeListener);
+
+      const navListener = () => {
+         navigationGuard.removeCallback(navListener);
+         this.close();
+         return false;
+      }
+      navigationGuard.push();
+      navigationGuard.registerCallback(navListener)
    }
 
    close() {
       this.remove();
+      navigationGuard.pop();
    }
 }
 customElements.define("ledit-settings", SettingsView);

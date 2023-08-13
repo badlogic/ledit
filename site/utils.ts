@@ -24,7 +24,7 @@ export function dateToText(utcTimestamp: number): string {
 
    const months = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 30));
    if (months < 12) {
-      return months + "m";
+      return months + "mo";
    }
 
    const years = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 365));
@@ -34,15 +34,23 @@ export function dateToText(utcTimestamp: number): string {
 export function onVisibleOnce(target: Element, callback: () => void) {
    let callbackTriggered = false;
 
-   const checkVisibility = () => {
-      if (!callbackTriggered && intersectsViewport(target)) {
-         callback();
-         callbackTriggered = true;
-         window.removeEventListener("scroll", checkVisibility);
+   const observer = new IntersectionObserver(
+      (entries) => {
+         entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+               callbackTriggered = true;
+               callback();
+               observer.unobserve(entry.target);
+            }
+         });
+      },
+      {
+         root: null,
+         rootMargin: "200px",
+         threshold: 0.01,
       }
-   };
-
-   window.addEventListener("scroll", checkVisibility);
+   );
+   observer.observe(target);
 }
 
 export function onAddedToDOM(element: Element, callback: () => void) {
@@ -53,7 +61,6 @@ export function onAddedToDOM(element: Element, callback: () => void) {
          requestAnimationFrame(checkForInsertion);
       }
    };
-
    checkForInsertion();
 }
 
@@ -189,3 +196,68 @@ export function removeTrailingEmptyParagraphs(htmlString: string): string {
 
    return parsedDoc.body.innerHTML;
 }
+
+type NavigationCallback = () => boolean;
+
+class NavigationGuard {
+   private stack: NavigationCallback[][] = [[]];
+   private listener;
+
+   constructor() {
+      history.scrollRestoration = "manual";
+      this.listener = this.handlePopState.bind(this);
+      window.addEventListener("popstate", this.listener);
+   }
+
+   numCallbacks() {
+      let num = 0;
+      for (const callbacks of this.stack) {
+         num += callbacks.length;
+      }
+      return num;
+   }
+
+   push() {
+      this.stack.push([]);
+   }
+
+   registerCallback(callback: NavigationCallback): void {
+      this.stack[this.stack.length - 1].push(callback);
+      if (history.state != "guard") history.pushState("guard", "", null);
+   }
+
+   removeCallback(callback: NavigationCallback): void {
+      for (const callbacks of this.stack) {
+         const index = callbacks.indexOf(callback);
+         if (index !== -1) {
+            callbacks.splice(index, 1);
+         }
+      }
+   }
+
+   pop() {
+      this.stack.pop();
+   }
+
+   canNavigateBack(): boolean {
+      const callbacks = [...this.stack[this.stack.length - 1]];
+      let canNavigate = true;
+      for (const callback of callbacks) {
+         if (!callback()) {
+            canNavigate = false;
+         }
+      }
+      return canNavigate;
+   }
+
+   private handlePopState(event: PopStateEvent): void {
+      if (!this.canNavigateBack()) {
+         event.preventDefault();
+         history.forward();
+      } else {
+         if(history.state == "guard") history.back();
+      }
+   }
+}
+
+export const navigationGuard = new NavigationGuard();

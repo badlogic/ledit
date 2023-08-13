@@ -120,23 +120,30 @@ export class RssSource implements Source {
          imageUrl = mediaContent.url;
       }
 
-      const postDiv = dom(
+      const mediaDiv = dom(
          `<div class="post-rss-preview">${
             imageUrl ? `<img src="${imageUrl}" class="post-rss-preview-image" style="flex: 0; max-width: 150px !important;">` : ""
          } <div>${removeTrailingEmptyParagraphs(description)}</div></div>`
       )[0];
+      mediaDiv.querySelectorAll("script").forEach((script) => {
+         script.remove()
+      });
+      mediaDiv.querySelectorAll("iframe").forEach((iframe) => {
+         iframe.remove()
+      });
+
 
       // Ensure links in self text open a new tab
-      let links = postDiv.querySelectorAll("a")!;
+      let links = mediaDiv.querySelectorAll("a")!;
       for (let i = 0; i < links.length; i++) {
          let link = links[i];
          link.setAttribute("target", "_blank");
       }
 
       requestAnimationFrame(() => {
-         makeCollapsible(postDiv, 8);
+         makeCollapsible(mediaDiv, 8);
       });
-      return [postDiv];
+      return [mediaDiv];
    }
 
    getFeed(): string {

@@ -7,7 +7,7 @@ A read-only Reddit/Hackernews/RSS client for people who don't like bells and whi
 ledit lets you browse Reddit, Hackernews, and RSS feeds in a desktop and mobile friendly way. It is aimed at consumption, not participation. Here's how you use it.
 
 ## Feeds
-A feed is a subreddit, Hackernews, or an RSS feed. You can specify which feed you want to view in by clicking on the feed displayed in the site header:
+A feed is a subreddit, Hackernews, or an RSS feed. You can specify which feed you want to view by clicking on the feed displayed in the site header:
 
 
 
