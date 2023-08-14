@@ -38,7 +38,7 @@ If the preview content is an image gallery, ledit will display an gallery icon t
 If you've started a video and scroll it out of view, ledit will automatically pause it.
 
 ## Comments
-If a post has comments, ledit will show a comment icon and the number of comments at the bottom of the post. To view the comments, click the comment icon. To collapse the comments, click the comment icon again. Alternatively, you can press the `Escape` key on desktop, or swipe back on mobile to collapse the comment section.
+If a post has comments, ledit will show a comment icon and the number of comments at the bottom of the post. To view the comments, click the comment icon. To collapse the comments, click the comment icon again. Alternatively, you can press the `Escape` key, or swipe back on mobile to collapse the comment section.
 
 You can click on any comment to collapse or expand its child comments.
 
@@ -53,6 +53,8 @@ Clock the pencil to edit a bookmark. You can give it a memorable label. You can 
 
 To remove the bookmark, click `-`.
 
+Instead of clicking `X`, you can press the `Escape` key, or swipe back on mobile to close the bookmarks
+
 ## Settings
 To access the settings, click the icon in the top left corner. The settings are displayed after the bookmarks.
 
@@ -62,9 +64,9 @@ You can toggle collapsing of already seen posts in the `View options` section. A
 
 The `Hide seen posts` setting is actually more of an action. It will remove all seen posts from the currently viewed stream. If no posts are left to be shown, ledit will automatically fetch older posts from the feed. This option is useful if the feed you view hasn't had recent posts and you just want to binge consume.
 
-Instead of clicking the `X` in the top left corner to close the settings, you can also press the `Escape` key on the desktop, or swipe back on your mobile phone.
-
 At the bottom of the settings, you'll find `Rest to defaults`. Clicking this will delete all your bookmarks and replace them with the default bookmarks. It will also reset the theme and view options. Use with care: removed bookmarks can only be restored by re-entering their source prefix and name or URL!
+
+Instead of clicking the `X` in the top left corner to close the settings, you can also press the `Escape` key on the desktop, or swipe back on your mobile phone.
 
 # Development
 You'll need [Node.js](https://nodejs.org/en) for development. Assuming you have Node installed:
