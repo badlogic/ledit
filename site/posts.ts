@@ -46,7 +46,7 @@ export class PostsView extends View {
    async renderPosts(posts: Posts) {
       const source = getSource();
       if (posts.posts.length == 0) {
-         this.showError(`${source.getSourcePrefix() + source.getFeed()} does not exist.`);
+         this.showError(`${source.getSourcePrefix() + source.getFeed()} does not exist or has no posts.`);
          return;
       }
 

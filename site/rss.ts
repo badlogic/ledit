@@ -86,7 +86,7 @@ export class RssSource implements Source {
 
       const posts: Post[] = [];
       for (const entry of result.entries) {
-         if (!entry.link || !entry.published || !entry.title) continue;
+         if (!entry.link || !entry.published) continue;
          posts.push({
             url: entry.link,
             title: entry.title,
