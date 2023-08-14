@@ -70,6 +70,22 @@ At the bottom of the settings, you'll find `Rest to defaults`. Clicking this wil
 Instead of clicking the `X` in the top left corner to close the settings, you can also press the `Escape` key on the desktop, or swipe back on your mobile phone.
 
 ## FAQ
+### Does https://marioslab.io/projects/ledit track me?
+The TL;DR: is: **NO**.
+
+By default, ledit will only serve you 3 files (`index.html`, `index.css`, `index.js`) and not log anything about you requesting those resources. Everything else is done by your browser locally, with one exception:
+
+If you view RSS feeds or YouTube channels, then your browser will ask the server at `marioslab.io` to get the feed/channel information. The reason is that due to browser security policies, that information can not be directly downloaded by your browser (see [same origin policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy) for the gory details).
+
+E.g., if you view `rss/https://derstandard.at/rss` in ledit, than your browser will ask the server at `marioslab.io` to download the contents of `https://derstandard.at/rss`. This is a transient process, meaning that the server at `marioslab.io` will temporarily get to know the URL `https://derstandard.at/rss`, download it, and send it to your browser. Once that process is complete, it forgets all about it.
+
+If you are worried about this, you can run ledit yourself! See the development and deployment sections below.
+
+### Does the content loaded by ledit track me?
+Most likely, yes. Post preview content is directly rendered as returned by the source. That content may include things like tracking pixels, IFrames that execute JavaScript which calls home, etc. Sadly, this is not something ledit itself can prevent from happening.
+
+I suggest to use a browser that can prevent or at least minimize this kind of tracking. [Firefox](https://www.mozilla.org/en-US/firefox/new/) is a great option on both desktop and mobile!
+
 ### Is there a way to import my YouTube subscriptions?
 Well, yes, but it's not for the faint of heart :)
 
@@ -101,3 +117,20 @@ npm run build
 ```
 
 Copy the contents of the `site/` folder to a web server.
+
+## Using your own CORS proxy
+For YouTube channels and RSS feeds, ledit requires a reverse proxy, that adds CORS headers. If you deploy ledit like described above, it will use `https://marioslab.io/proxy` as the proxy.
+
+If you want to use your own CORS proxy, you can run the little NodeJS app in the `proxy/` folder on the same host where you run your web server.
+
+```
+cd proxy
+npm install
+node index.js
+```
+
+The proxy will start on port 3000.
+
+Next, open [site/utils.ts](site/utils.ts) and change the URL of the proxy in the function `proxyFetch()` from `marioslab.io` to the domain or IP address of your web server.
+
+Finally, execute the deployment steps listed above.
