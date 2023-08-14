@@ -1,32 +1,33 @@
 # ledit
-A read-only Reddit/Hackernews/RSS client for people who don't like bells and whistles. Ideal for content and comment browsing and nothing else.
+A read-only Reddit/YouTube/Hackernews/RSS client for people who don't like bells and whistles. Ideal for content and comment browsing and nothing else.
 
 [Try it](https://marioslab.io/projects/ledit)
 
 # Usage
-ledit lets you browse Reddit, Hackernews, and RSS feeds in a desktop and mobile friendly way. It is aimed at consumption, not participation. Here's how you use it.
+ledit lets you browse Reddit subreddits, YouTube channels, Hackernews, and RSS feeds in a desktop and mobile friendly way. It is aimed at consumption, not participation. Here's how you use it.
 
 ## Sources, Feeds, Posts
-A source is a website or protocol which provides one or more feeds. Currently supported sources are Reddit, Hackernews, and RSS. Each source has a prefix:
+A source is a website or protocol which provides one or more feeds. Currently supported sources are Reddit, YouTube, Hackernews, and RSS. Each source has a prefix:
 
 - Reddit: `r/`
 - Hackernews: `hn/`
 - RSS: `rss/`
+- YouTube: `yt/`
 
-A feed is a stream of posts or articles. Currently supported feeds are Reddit subreddits and RSS feeds. Hackernews is special, in that it is a single feed source. Posts in a feed may optionally be sorted by some criteria depending on the source. E.g. posts of a subreddit can be sorted or filtered by hot, new, rising, and so on. Posts from Hackernews can be filtered by news, new, ask HN, show HN, etc.
+A feed is a stream of posts or articles. Currently supported feeds are Reddit subreddits, YouTube channels, and RSS feeds. Hackernews is special, in that it is a single feed source. Posts in a feed may optionally be sorted by some criteria depending on the source. E.g. posts of a subreddit can be sorted or filtered by hot, new, rising, and so on. Posts from Hackernews can be filtered by news, new, ask HN, show HN, etc.
 
-A feed is identified by a name or url in combination with its source's prefix. E.g. the subreddit `cats` is identified by `r/cats`, the RSS feed of Ars Technica is identified by `rss/https://feeds.arstechnica.com/arstechnica/index`.
+A feed is identified by a name or url in combination with its source's prefix. E.g. the subreddit `cats` is identified by `r/cats`, the YouTube channel "Vertiasium" is identified by `yt/vertiasium`, the RSS feed of Ars Technica is identified by `rss/https://feeds.arstechnica.com/arstechnica/index`.
 
 A post consists of at least of a title, link, and publication date. It may optionally include a preview, comments, and a score, which ledit will happily display.
 
 ## Viewing one or more feeds
-To open a feed from a source in ledit, click the currently displayed feed's name in the header, enter the new feed's name, e.g. `r/cats`, `hn/`, or `rss/https://feeds.arstechnica.com/arstechnica/index`, and press enter.
+To open a feed from a source in ledit, click the currently displayed feed's name in the header, enter the new feed's name, e.g. `r/cats`, `yt/veritasium`, `hn/`, or `rss/https://feeds.arstechnica.com/arstechnica/index`, and press enter.
 
 ledit will then load and show the new feed's posts.
 
-In case of Reddit and RSS, you can view multiple feeds at once. Concatenate the feed names or URls with a `+`. E.g. `r/cats+dogs` will show posts from both subreddits `cats` and `dogs`, `rss/https://feeds.arstechnica.com/arstechnica/index+https://techcrunch.com/feed/` will show posts from both Ars Technica and TechCrunch.
+In case of Reddit, YouTube, and RSS, you can view multiple feeds at once. Concatenate the feed names or URls with a `+`. E.g. `r/cats+dogs` will show posts from both subreddits `cats` and `dogs`, `r/redlettermedia+veritasium` will show videos from the YouTube channels Red Letter Media and Veritasium, `rss/https://feeds.arstechnica.com/arstechnica/index+https://techcrunch.com/feed/` will show posts from both Ars Technica and TechCrunch.
 
-Depending on the source, you can sort or filter the currently displayed feed. Use the select box in the top right corner to do so. For Reddit feeds, you can sort by new, rising, etc. For the singular Hackernews feed, you can filter by news, ask HN, show HN, and so forth. RSS feeds to not offer sorting options. Instead, posts are sorted by publication date.
+Depending on the source, you can sort or filter the currently displayed feed. Use the select box in the top right corner to do so. For Reddit feeds, you can sort by new, rising, etc. For the singular Hackernews feed, you can filter by news, ask HN, show HN, and so forth. YouTube channels and RSS feeds to not offer sorting options. Instead, posts are sorted by publication date.
 
 ## Post previews
 A post may have preview content, such as the text of a self-post on Reddit, images, videos, and so on.
@@ -67,6 +68,18 @@ The `Hide seen posts` setting is actually more of an action. It will remove all 
 At the bottom of the settings, you'll find `Rest to defaults`. Clicking this will delete all your bookmarks and replace them with the default bookmarks. It will also reset the theme and view options. Use with care: removed bookmarks can only be restored by re-entering their source prefix and name or URL!
 
 Instead of clicking the `X` in the top left corner to close the settings, you can also press the `Escape` key on the desktop, or swipe back on your mobile phone.
+
+## FAQ
+### Is there a way to import my YouTube subscriptions?
+Well, yes, but it's not for the faint of heart :)
+
+Here's how you can do it with Chrome/Safari/Firefox on the desktop.
+
+1. Open  `https://www.youtube.com/feed/subscriptions` in your browser. You must be logged in.
+2. On the right side, locate the list of subscriptions and click "Show x more" so all your subscriptions are visible in the list. ![docs/expand-subs.png](docs/expand-subs.png)
+3. In the same browser tab, while viewing your subscriptions, enter `javascript:"https://marioslab.io/projects/ledit/#yt/" + Array.from(document.querySelectorAll('a[id="endpoint"]')).filter((link) => link.getAttribute("href") && link.getAttribute("href").startsWith("/@")).map((link) => link.getAttribute("href").substring(2)).join("+")` in the browser address bar and press enter. You should see a link to `https://marioslab.io/projects/ledit`
+4. Copy the link and open it in another tab. You are now browsing your subscriptions on ledit. Click the bookmark icon in the top left to bookmark them.
+
 
 # Development
 You'll need [Node.js](https://nodejs.org/en) for development. Assuming you have Node installed:

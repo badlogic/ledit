@@ -316,6 +316,8 @@ function sourcePrefixToFeedLabel(source: SourcePrefix) {
          return "Hackernews";
       case "rss/":
          return "RSS feeds";
+      case "yt/":
+         return "YouTube feeds";
       default:
          assertNever(source);
    }

@@ -2,24 +2,36 @@ import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./dat
 import { RssSource } from "./rss";
 import { dom, proxyFetch } from "./utils";
 
+const channelIds = localStorage.getItem("youtubeCache") ? JSON.parse(localStorage.getItem("youtubeCache")!) : {};
+
 export class YoutubeSource implements Source {
 
-   async getYoutubeChannel(url: string): Promise<Post[]> {
-      const response = await proxyFetch(url);
-      const text = await response.text();
-      const channelIdIdx = text.indexOf("vnd.youtube://www.youtube.com/channel/");
-      if (channelIdIdx == -1) return [];
-      const channelIdEnd = text.indexOf('"', channelIdIdx);
-      if (channelIdEnd == -1) return [];
-      const channelId = text.substring(channelIdIdx + "vnd.youtube://www.youtube.com/channel/".length, channelIdEnd);
+   async getYoutubeChannel(channel: string): Promise<Post[]> {
+      let channelId: string | null = channelIds[channel];
+
+      if (!channelId) {
+         const url = "https://www.youtube.com/@" + channel;
+         const response = await proxyFetch(url);
+         const text = await response.text();
+         const channelIdIdx = text.indexOf("vnd.youtube://www.youtube.com/channel/");
+         if (channelIdIdx == -1) return [];
+         const channelIdEnd = text.indexOf('"', channelIdIdx);
+         if (channelIdEnd == -1) return [];
+         channelId = text.substring(channelIdIdx + "vnd.youtube://www.youtube.com/channel/".length, channelIdEnd);
+         channelIds[channel] = channelId;
+         localStorage.setItem("youtubeCache", JSON.stringify(channelIds));
+         console.log(`Cached channel id ${channelId} for channel ${channel}`);
+      }
+      console.log(`Fetching recent videos for channel ${channel}, id: ${channelId}`);
       return RssSource.getRssPosts("https://www.youtube.com/feeds/videos.xml?channel_id=" + channelId);
    }
 
    async getPosts(after: string | null): Promise<Posts> {
       const channels = this.getFeed().split("+");
+
       const promises: Promise<Post[]>[] = [];
       for (const channel of channels) {
-         promises.push(this.getYoutubeChannel("https://www.youtube.com/@" + channel));
+         promises.push(this.getYoutubeChannel(channel));
       }
 
       const promisesResult = await Promise.all(promises);
