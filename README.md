@@ -6,30 +6,65 @@ A read-only Reddit/Hackernews/RSS client for people who don't like bells and whi
 # Usage
 ledit lets you browse Reddit, Hackernews, and RSS feeds in a desktop and mobile friendly way. It is aimed at consumption, not participation. Here's how you use it.
 
-## Feeds
-A feed is a subreddit, Hackernews, or an RSS feed. You can specify which feed you want to view by clicking on the feed displayed in the site header:
+## Sources, Feeds, Posts
+A source is a website or protocol which provides one or more feeds. Currently supported sources are Reddit, Hackernews, and RSS. Each source has a prefix:
 
+- Reddit: `r/`
+- Hackernews: `hn/`
+- RSS: `rss/`
 
+A feed is a stream of posts or articles. Currently supported feeds are Reddit subreddits and RSS feeds. Hackernews is special, in that it is a single feed source. Posts in a feed may optionally be sorted by some criteria depending on the source. E.g. posts of a subreddit can be sorted or filtered by hot, new, rising, and so on. Posts from Hackernews can be filtered by news, new, ask HN, show HN, etc.
 
+A feed is identified by a name or url in combination with its source's prefix. E.g. the subreddit `cats` is identified by `r/cats`, the RSS feed of Ars Technica is identified by `rss/https://feeds.arstechnica.com/arstechnica/index`.
 
+A post consists of at least of a title, link, and publication date. It may optionally include a preview, comments, and a score, which ledit will happily display.
 
-1. In the browser address bar, append `#r/subreddit`, `#hn/`, or `#rss/https://example.com/rss`.
-2. Click the source name in the header of the site and enter a new source, e.g. `r/all`, or `rss/http://example.com/rss``.
+## Viewing one or more feeds
+To open a feed from a source in ledit, click the currently displayed feed's name in the header, enter the new feed's name, e.g. `r/cats`, `hn/`, or `rss/https://feeds.arstechnica.com/arstechnica/index`, and press enter.
 
-In case of Reddit, you can view multi-subreddits by simply concatenating the subreddit names with a `+`. E.g. `r/pics+videos+science` will show you posts from these 3 subreddits in a single stream.
+ledit will then load and show the new feed's posts.
 
-In case of RSS, you can view multiple feeds by simply concatenating their URLs with a `+`. E.g. `rss/https://news.site.com/rss+https://othernews.uk/rss` will show you posts from both RSS feeds in a single stream.
+In case of Reddit and RSS, you can view multiple feeds at once. Concatenate the feed names or URls with a `+`. E.g. `r/cats+dogs` will show posts from both subreddits `cats` and `dogs`, `rss/https://feeds.arstechnica.com/arstechnica/index+https://techcrunch.com/feed/` will show posts from both Ars Technica and TechCrunch.
 
-Use the bookmark button in the header to bookmark the currently viewed source.
+Depending on the source, you can sort or filter the currently displayed feed. Use the select box in the top right corner to do so. For Reddit feeds, you can sort by new, rising, etc. For the singular Hackernews feed, you can filter by news, ask HN, show HN, and so forth. RSS feeds to not offer sorting options. Instead, posts are sorted by publication date.
 
-To access your bookmarks and settings, click the icon in the top left corner of the site header.
+## Post previews
+A post may have preview content, such as the text of a self-post on Reddit, images, videos, and so on.
 
-You can open a bookmark by simply clicking it. You can make a bookmark the default by clicking its checkmark. You can remove a bookmark by clicking `-`.
+If the preview content is very large, ledit will limit its height. Click the "Show more" button to expand the preview content to its full height. Click the contents of the expanded preview to collapse it again.
 
-You can choose between the `Light` and `Dark` theme in the settings and toggle whether to collapse already seen posts. The `Hide seen posts` option is experimental. It will load content from the currently selected source until it finds posts that you have not yet seen.
+If the preview content is an image gallery, ledit will display an gallery icon together with the number of images in the gallery at the bottom of the post. Click the image itself (not the icon) to expand the gallery. Click any image in the gallery to collapse the gallery again.
 
-Finally, each source offers sorting options via the select box in the top right corner of the site header. Play around with them.
+If you've started a video and scroll it out of view, ledit will automatically pause it.
 
+## Comments
+If a post has comments, ledit will show a comment icon and the number of comments at the bottom of the post. To view the comments, click the comment icon. To collapse the comments, click the comment icon again. Alternatively, you can press the `Escape` key on desktop, or swipe back on mobile to collapse the comment section.
+
+You can click on any comment to collapse or expand its child comments.
+
+## Bookmarks
+Manually entering feed names all the time is tedious. Instead, you can bookmark the currently viewed feed by clicking the bookmark item in the top right corner.
+
+To access you bookmarks, click the icon in the top left corner. To open a bookmark, click its name.
+
+To make the bookmark the default feed to view when you open ledit, click the bookmark's checkmark.
+
+Clock the pencil to edit a bookmark. You can give it a memorable label. You can also specify additional feeds in the text area by separating them via `,` or a new line. This is often more comfortable compared to entering multiple feeds in the single line text input in the header of the site.
+
+To remove the bookmark, click `-`.
+
+## Settings
+To access the settings, click the icon in the top left corner. The settings are displayed after the bookmarks.
+
+You can choose between the `Light` and `Dark` theme in the `Theme` section.
+
+You can toggle collapsing of already seen posts in the `View options` section. A post is considered seen as soon as its visible in the browser window. In its collapsed form, ledit will gray it out and only show the most basic information, to make it visually obvious that you've seen this post before.
+
+The `Hide seen posts` setting is actually more of an action. It will remove all seen posts from the currently viewed stream. If no posts are left to be shown, ledit will automatically fetch older posts from the feed. This option is useful if the feed you view hasn't had recent posts and you just want to binge consume.
+
+Instead of clicking the `X` in the top left corner to close the settings, you can also press the `Escape` key on the desktop, or swipe back on your mobile phone.
+
+At the bottom of the settings, you'll find `Rest to defaults`. Clicking this will delete all your bookmarks and replace them with the default bookmarks. It will also reset the theme and view options. Use with care: removed bookmarks can only be restored by re-entering their source prefix and name or URL!
 
 # Development
 You'll need [Node.js](https://nodejs.org/en) for development. Assuming you have Node installed:
