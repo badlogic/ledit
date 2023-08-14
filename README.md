@@ -87,4 +87,4 @@ npm install
 npm run build
 ```
 
-Copy the contents of the `site/` folder to a web server. That's it.
+Copy the contents of the `site/` folder to a web server.
