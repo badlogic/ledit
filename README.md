@@ -77,8 +77,8 @@ Here's how you can do it with Chrome/Safari/Firefox on the desktop.
 
 1. Open  `https://www.youtube.com/feed/subscriptions` in your browser. You must be logged in.
 2. On the right side, locate the list of subscriptions and click "Show x more" so all your subscriptions are visible in the list. ![docs/expand-subs.png](docs/expand-subs.png)
-3. In the same browser tab, while viewing your subscriptions, enter `javascript:"https://marioslab.io/projects/ledit/#yt/" + Array.from(document.querySelectorAll('a[id="endpoint"]')).filter((link) => link.getAttribute("href") && link.getAttribute("href").startsWith("/@")).map((link) => link.getAttribute("href").substring(2)).join("+")` in the browser address bar and press enter. You should see a link to `https://marioslab.io/projects/ledit`
-4. Copy the link and open it in another tab. You are now browsing your subscriptions on ledit. Click the bookmark icon in the top left to bookmark them.
+3. In the same browser tab, while viewing your subscriptions, enter `javascript:"https://marioslab.io/projects/ledit/#yt/" + Array.from(document.querySelectorAll('a[id="endpoint"]')).filter((link) => link.getAttribute("href") && link.getAttribute("href").startsWith("/@")).map((link) => link.getAttribute("href").substring(2)).join("+")` in the browser address bar and press enter. You should see a link to `https://marioslab.io/projects/ledit`. **NOTE:** copy & pasting the above may omit the `javascript:` part when pasting into the browser address bar. You have to manually add it once pasted.
+4. Copy the link and open it in another tab. If you have hundreds of subscriptions, the initial loading will take a while. Subsequent loading will be much faster! You are now browsing your subscriptions on ledit. Click the bookmark icon in the top left to bookmark them.
 
 
 # Development
