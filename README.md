@@ -31,7 +31,7 @@ Depending on the source, you can sort or filter the currently displayed feed. Us
 ## Post previews
 A post may have preview content, such as the text of a self-post on Reddit, images, videos, and so on.
 
-If the preview content is very large, ledit will limit its height. Click the "Show more" button to expand the preview content to its full height. Click the contents of the expanded preview to collapse it again.
+If the preview content is very large, ledit will limit its height. Click the "Show more" button or anywhere in the visible part of the preview to expand it to its full height. Click the contents of the expanded preview again to collapse it again.
 
 If the preview content is an image gallery, ledit will display an gallery icon together with the number of images in the gallery at the bottom of the post. Click the image itself (not the icon) to expand the gallery. Click any image in the gallery to collapse the gallery again.
 
