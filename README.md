@@ -87,9 +87,7 @@ Most likely, yes. Post preview content is directly rendered as returned by the s
 I suggest to use a browser that can prevent or at least minimize this kind of tracking. [Firefox](https://www.mozilla.org/en-US/firefox/new/) is a great option on both desktop and mobile!
 
 ### Is there a way to import my YouTube subscriptions?
-Well, yes, but it's not for the faint of heart :)
-
-Here's how you can do it with Chrome/Safari/Firefox on the desktop.
+Yes!
 
 1. Open  `https://www.youtube.com/feed/subscriptions` in your browser. You must be logged in.
 2. On the right side, locate the list of subscriptions and click "Show x more" so all your subscriptions are visible in the list. ![docs/expand-subs.png](docs/expand-subs.png)
@@ -102,7 +100,6 @@ Yes!
 1. Go to `https://www.reddit.com/subreddits/` and make sure you are logged into Reddit.
 2. In your browser address bar, enter `javascript:document.querySelector(".subscription-box").querySelector("a").getAttribute("href").replace("https://www.reddit.com/", "https://marioslab.io/projects/ledit/#")` and hit enter. **NOTE:** copy & pasting the above may omit the `javascript:` part when pasting into the browser address bar. You have to manually add it once pasted.
 3. Copy the link and open it in another tab. You are now browsing your Reddit subscriptions on ledit. Click the bookmark icon in the top left to bookmark them.
-
 
 # Development
 You'll need [Node.js](https://nodejs.org/en) for development. Assuming you have Node installed:
