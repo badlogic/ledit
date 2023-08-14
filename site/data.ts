@@ -55,12 +55,13 @@ export function getSource(): Source {
    return source;
 }
 
-export type SourcePrefix = "r/" | "hn/" | "rss/";
+export type SourcePrefix = "r/" | "hn/" | "rss/" | "yt/";
 export function sourcePrefixLabel(source: SourcePrefix) {
    switch(source) {
       case "r/": return "Reddit";
       case "hn/": return "Hackernews"
       case "rss/": return "RSS"
+      case "yt/": return "YouTube"
       default:
          assertNever(source);
    }

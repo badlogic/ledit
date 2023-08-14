@@ -272,3 +272,8 @@ export const navigationGuard = new NavigationGuard();
 export function assertNever(x: never) {
    throw new Error("Unexpected object: " + x);
  }
+
+ export function proxyFetch(url: string) {
+   const baseUrl = window.location.host.includes("localhost") ? "http://localhost:3000/proxy/?url=" : "https://marioslab.io/proxy/?url=";
+   return fetch(baseUrl + encodeURI(url));
+ }

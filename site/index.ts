@@ -8,22 +8,40 @@ import { navigate } from "./utils";
 import { RedditSource } from "./reddit";
 import { HackerNewsSource } from "./hackernews";
 import { RssSource } from "./rss";
-import { setSource } from "./data";
+import { SourcePrefix, setSource } from "./data";
+import { YoutubeSource } from "./youtube";
+
+function loadDefaultBookmark() {
+   const defaultBookmark = getSettings().bookmarks.find((bookmark) => bookmark.isDefault == true);
+   navigate(defaultBookmark ? bookmarkToHash(defaultBookmark) : "r/all");
+}
 
 applySettings();
 if (window.location.hash.length == 0) {
-   const defaultBookmark = getSettings().bookmarks.find((bookmark) => bookmark.isDefault == true);
-   navigate(defaultBookmark ? bookmarkToHash(defaultBookmark) : "r/all");
+   loadDefaultBookmark();
 } else {
-  const hash = window.location.hash;
-   if (hash.startsWith("#r/")) {
-      setSource(new RedditSource());
-   } else if (hash.startsWith("#hackernews/") || hash.startsWith("#hn")) {
-      setSource(new HackerNewsSource());
-   } else if (hash.startsWith("#rss/")) {
-      setSource(new RssSource());
+   const hash = window.location.hash.substring(1);
+   const tokens = hash.split("/");
+   if (tokens.length == 1) {
+      loadDefaultBookmark();
    } else {
-      setSource(new RedditSource());
+      const source = (tokens[0] + "/") as SourcePrefix;
+      switch (source) {
+         case "r/":
+            setSource(new RedditSource());
+            break;
+         case "hn/":
+            setSource(new HackerNewsSource());
+            break;
+         case "rss/":
+            setSource(new RssSource());
+            break;;
+         case "yt/":
+            setSource(new YoutubeSource());
+            break;
+         default:
+            setSource(new RedditSource());
+      }
    }
 
    window.addEventListener("hashchange", () => {

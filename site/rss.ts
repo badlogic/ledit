@@ -1,6 +1,6 @@
 import { FeedEntry, extractFromXml } from "@extractus/feed-extractor";
 import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
-import { dom, makeCollapsible, removeTrailingEmptyParagraphs } from "./utils";
+import { dom, makeCollapsible, proxyFetch, removeTrailingEmptyParagraphs } from "./utils";
 import { parse, isValid } from 'date-fns';
 
 function parseFeedDate(dateString: string): Date {
@@ -27,8 +27,7 @@ function parseFeedDate(dateString: string): Date {
    return new Date();
  }
 
-export class RssSource implements Source {
-   extractChannelImage(rss: Document) {
+ function getChannelImage(rss: Document) {
       const channelImageNode = rss.querySelector("channel > image > url");
       if (channelImageNode) {
          const imageUrl = channelImageNode.textContent;
@@ -38,7 +37,8 @@ export class RssSource implements Source {
       }
    }
 
-   async getRssPosts(url: string): Promise<Post[]> {
+export class RssSource implements Source {
+   public static async getRssPosts(url: string): Promise<Post[]> {
       const options = {
          useISODateFormat: false,
          getExtraEntryFields: (feedEntry: any) => {
@@ -77,10 +77,10 @@ export class RssSource implements Source {
          },
       };
 
-      const response = await fetch("https://marioslab.io/proxy?url=" + encodeURI(url));
+      const response = await proxyFetch(url);
       const text = await response.text();
       const rss = await new window.DOMParser().parseFromString(text, "text/xml");
-      const channelImageUrl = this.extractChannelImage(rss);
+      const channelImageUrl = getChannelImage(rss);
       const result = extractFromXml(text, options);
       if (!result || !result.entries) return [];
 
@@ -113,7 +113,7 @@ export class RssSource implements Source {
       const urls = this.getFeed().split("+");
       const promises: Promise<Post[]>[] = [];
       for (const url of urls) {
-         promises.push(this.getRssPosts(url));
+         promises.push(RssSource.getRssPosts(url));
       }
 
       const promisesResult = await Promise.all(promises);
