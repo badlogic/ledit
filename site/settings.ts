@@ -132,6 +132,10 @@ export class SettingsView extends View {
 
       // Populate bookmarks
       const bySource = new Map<SourcePrefix, Bookmark[]>();
+      bySource.set("hn/", []);
+      bySource.set("r/", []);
+      bySource.set("rss/", []);
+      bySource.set("yt/", []);
       for (const bookmark of settings.bookmarks) {
          let source = bySource.get(bookmark.source);
          if (!source) bySource.set(bookmark.source, (source = []));

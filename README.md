@@ -101,6 +101,11 @@ Yes!
 2. In your browser address bar, enter `javascript:document.querySelector(".subscription-box").querySelector("a").getAttribute("href").replace("https://www.reddit.com/", "https://marioslab.io/projects/ledit/#")` and hit enter. **NOTE:** copy & pasting the above may omit the `javascript:` part when pasting into the browser address bar. You have to manually add it once pasted.
 3. Copy the link and open it in another tab. You are now browsing your Reddit subscriptions on ledit. Click the bookmark icon in the top left to bookmark them.
 
+### Is there a way to import my RSS feeds?
+That depends. All you need is the list of RSS feed URLs. Most RSS feed readers should be able to export them in a plain text format.
+
+Once you have your list, open the settings via the icon in the top left corner of ledit. Click `New bookmark` under the RSS section. Give your bookmark a name, then past your list of RSS feed URLs in the text area. They need to be separated either by a `,` or a new line. Save the bookmark, then open it. That's it!
+
 # Development
 You'll need [Node.js](https://nodejs.org/en) for development. Assuming you have Node installed:
 
