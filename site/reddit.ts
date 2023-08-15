@@ -190,8 +190,12 @@ export class RedditSource implements Source {
                }
             }
          }
+         const url = redditPost.data.url.startsWith("/r/") ? "https://www.reddit.com" + redditPost.data.url : redditPost.data.url;
+         let domain = url.includes("redd.it") || url.includes("reddit.com") ? "" : new URL(url).host;
          return {
-            url: redditPost.data.url.startsWith("/r/") ? "https://www.reddit.com" + redditPost.data.url : redditPost.data.url,
+            url,
+            domain,
+            feed: redditPost.data.subreddit,
             title: redditPost.data.title,
             isSelf: redditPost.data.is_self,
             isGallery: redditPost.data.is_gallery,
@@ -199,7 +203,6 @@ export class RedditSource implements Source {
             author: redditPost.data.author,
             authorUrl: "https://www.reddit.com/u/" + redditPost.data.author,
             createdAt: redditPost.data.created_utc,
-            feed: redditPost.data.subreddit,
             score: redditPost.data.score,
             numComments: redditPost.data.num_comments,
             redditPost,
@@ -294,26 +297,6 @@ export class RedditSource implements Source {
                ${images.map((img, index) => `<img src="${img.u}" ${index > 0 ? 'class="hidden"' : ""}>`).join("")}
             </div>
          `);
-         const imagesDom = galleryDom[0].querySelectorAll("img");
-         const imageClickListener = () => {
-            let scrolled = false;
-            imagesDom.forEach((img, index) => {
-               if (index == 0) return;
-               if (img.classList.contains("hidden")) {
-                  img.classList.remove("hidden");
-               } else {
-                  img.classList.add("hidden");
-                  if (scrolled) return;
-                  scrolled = true;
-                  if (imagesDom[0].getBoundingClientRect().top < 16 * 4) {
-                     window.scrollTo({ top: imagesDom[0].getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
-                  }
-               }
-            });
-         };
-         for (let i = 0; i < imagesDom.length; i++) {
-            imagesDom[i].addEventListener("click", imageClickListener);
-         }
          return galleryDom;
       }
 

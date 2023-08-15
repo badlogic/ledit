@@ -7,6 +7,7 @@ export interface Posts {
 
 export interface Post {
    url: string;
+   domain: string;
    title: string;
    isSelf: boolean;
    isGallery: boolean;

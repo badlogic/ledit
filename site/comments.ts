@@ -66,8 +66,11 @@ export class CommentView extends View {
                </span>
                <span>• </span>
                <span class="comment-data">${dateToText(comment.createdAt * 1000)}</span>
-               <span>• </span>
-               <span class="comment-points">${comment.score} pts</span>
+               ${comment.score >= 0 ? /*html*/`
+                  <span>• </span>
+                  <span class="comment-points">${comment.score} pts</span>
+               `
+               : ""}
                <span>• </span>
                <a class="comment-reply" href="${comment.url}" target="_blank">Reply</a>
          </div>

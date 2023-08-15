@@ -169,6 +169,12 @@ export class MastodonSource implements Source {
 
          const post = {
             url: postUrl,
+            domain: new URL(postToView.uri).host,
+            feed: `${
+               avatarImageUrl
+                  ? `<img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">`
+                  : userInfo.username + "@" + userInfo.host
+            }`,
             title: "",
             isSelf: false,
             isGallery: numImages > 1,
@@ -176,11 +182,6 @@ export class MastodonSource implements Source {
             author: postToView.account.display_name,
             authorUrl: authorUrl,
             createdAt: new Date(postToView.created_at).getTime() / 1000,
-            feed: `${
-               avatarImageUrl
-                  ? `<img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">`
-                  : userInfo.username + "@" + userInfo.host
-            }`,
             score: postToView.favourites_count,
             numComments: postToView.replies_count,
             mastodonPost,
@@ -242,12 +243,17 @@ export class MastodonSource implements Source {
       for (const reply of context.descendants) {
          MastodonSource.localizeMastodonPostIds(reply, userInfo);
          let replyUrl = reply.url;
+         const avatarImageUrl = reply.account.avatar_static;
          const comment = {
             url: replyUrl,
-            author: reply.account.display_name!,
+            author: avatarImageUrl ? /*html*/`
+               <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(1 * var(--ledit-font-size));">
+               <span>${reply.account.display_name}</span>
+            `
+            : reply.account.display_name!,
             authorUrl: reply.account.url,
             createdAt: new Date(reply.created_at).getTime() / 1000,
-            score: 0,
+            score: -1,
             html: [... this.getMediaDiv(reply)],
             replies: [],
             mastodonComment: reply,
@@ -309,26 +315,6 @@ export class MastodonSource implements Source {
                   ${images.map((img, index) => `<img src="${img}" ${index > 0 ? 'class="hidden"' : ""}>`).join("")}
                </div>
             `)[0];
-            const imagesDom = galleryDom.querySelectorAll("img");
-            const imageClickListener = () => {
-               let scrolled = false;
-               imagesDom.forEach((img, index) => {
-                  if (index == 0) return;
-                  if (img.classList.contains("hidden")) {
-                     img.classList.remove("hidden");
-                  } else {
-                     img.classList.add("hidden");
-                     if (scrolled) return;
-                     scrolled = true;
-                     if (imagesDom[0].getBoundingClientRect().top < 16 * 4) {
-                        window.scrollTo({ top: imagesDom[0].getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
-                     }
-                  }
-               });
-            };
-            for (let i = 0; i < imagesDom.length; i++) {
-               imagesDom[i].addEventListener("click", imageClickListener);
-            }
             mediaDiv.append(galleryDom);
          }
          if (videos.length >= 1) {

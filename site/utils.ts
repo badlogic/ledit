@@ -1,3 +1,4 @@
+import videojs from "video.js";
 import { getSource } from "./data";
 
 export function dateToText(utcTimestamp: number): string {

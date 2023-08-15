@@ -109,9 +109,7 @@ export class PostView extends View {
    }
 
    render() {
-      const source = getSource();
       const post = this.post;
-      const showUrl = !post.isSelf && !post.url.includes("redd.it") && !post.url.includes("www.reddit.com");
       const showFeed = getSource().getFeed().toLowerCase() != post.feed.toLowerCase();
       const collapse = getSettings().collapseSeenPosts && PostsView.seenPosts.has(post.url) ? "post-seen" : "";
       this.innerHTML = /*html*/ `
@@ -120,44 +118,44 @@ export class PostView extends View {
          <div class="post-meta">
             ${
                showFeed
-                  ? /*html*/ `<a href="${post.url}" target="_blank"><span class="post-feed">${post.feed}</span></a><span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>`
+                  ? /*html*/ `
+                     <a href="${post.url}" target="_blank">
+                        <span class="post-feed">${post.feed}</span>
+                     </a>
+                     <span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>`
                   : ""
             }
-            <span class="post-date">${dateToText(post.createdAt * 1000)}</span>
+            <span class="post-date"><a href="${post.url}" target="_blank">${dateToText(post.createdAt * 1000)}</a></span>
             ${post.author.length != 0 ? `<span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>` : ""}
             <span class="post-author"><a href="${post.authorUrl}" target="_blank">${post.author}</a></span>
-            ${showUrl ? `<span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>` : ""}
-            ${showUrl ? `<span class="post-url">${new URL(post.url).host}</span>` : ""}
+            ${
+               post.domain
+                  ? /*html*/ `
+                  <span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>
+                  <span class="post-url">${post.domain}</span>
+               `
+                  : ""
+            }
          </div>
          <div x-id="media" class="post-media"></div>
          <div x-id="buttonsRow" class="post-buttons">
             ${
-               post.numComments > -1 ? /*html*/ `
-                  <div x-id="comments" class="post-comments-toggle">
+               post.numComments > -1
+                  ? /*html*/ `
+                  <div x-id="commentsToggle" class="post-comments-toggle">
                      <span class="svg-icon color-fill">${svgSpeeBubble}</span>
                      <span>${addCommasToNumber(post.numComments)}</span>
                   </div>
                `
-               : ""
+                  : ""
             }
             ${
                post.isGallery
                   ? /*html*/ `
-                  <div x-id="gallery" class="post-gallery-toggle">
+                  <div x-id="galleryToggle" class="post-gallery-toggle">
                      <span class="svg-icon color-fill">${svgImages}</span>
                      <span>${post.numGalleryImages}</span>
                   </div>`
-                  : ""
-            }
-            ${
-               post.title.trim().length == 0
-                  ?
-                  /*html*/ `
-                     <div class="post-external-link">
-                        <span class="svg-icon color-fill">${svgLink}</span>
-                        <a x-id="link" href="${post.url}" target="_blank" style="color: var(--ledit-color);">Link</a>
-                     </div>
-                  `
                   : ""
             }
             ${
@@ -177,25 +175,44 @@ export class PostView extends View {
       const elements = this.elements<{
          media: Element;
          buttonsRow: Element;
-         comments: Element | null;
-         gallery: Element | null;
+         commentsToggle: Element | null;
+         galleryToggle: Element | null;
          link: Element | null;
       }>();
 
       onVisibleOnce(this, () => {
          console.log("Showing media of " + this.post.title);
-         elements.media.append(new MediaView(this.post));
+         const mediaDiv = new MediaView(this.post);
+         elements.media.append(mediaDiv);
+         const imagesDom = mediaDiv.querySelector(".media-image-gallery")?.querySelectorAll("img");
+         if (imagesDom) {
+            const imageClickListener = () => {
+               let scrolled = false;
+               imagesDom.forEach((img, index) => {
+                  if (index == 0) return;
+                  if (img.classList.contains("hidden")) {
+                     img.classList.remove("hidden");
+                  } else {
+                     img.classList.add("hidden");
+                     if (scrolled) return;
+                     scrolled = true;
+                     if (imagesDom[0].getBoundingClientRect().top < 16 * 4) {
+                        window.scrollTo({ top: imagesDom[0].getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
+                     }
+                  }
+               });
+            };
+            for (let i = 0; i < imagesDom.length; i++) {
+               imagesDom[i].addEventListener("click", imageClickListener);
+            }
+            elements.galleryToggle?.addEventListener("click", () => {
+               imageClickListener();
+            })
+         }
       });
 
-      if (elements.link) {
-         elements.link.addEventListener("click", (event) => {
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-         });
-      }
-
       if (post.numComments > 0) {
-         elements.buttonsRow.addEventListener("click", () => {
+         elements.commentsToggle?.addEventListener("click", () => {
             this.toggleComments();
          });
 
