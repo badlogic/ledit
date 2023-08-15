@@ -29,7 +29,7 @@
   background: var(--ledit-background-dim);
 }
 
-.post-seen .post-media,
+.post-seen .post-content,
 .post-seen .post-buttons {
   display: none;
 }
@@ -140,6 +140,7 @@
   padding: var(--ledit-padding) 0;
   gap: var(--ledit-padding);
   font-size: var(--ledit-font-size-small);
+  margin-top: -1em;
 }
 
 .post-mastodon-prelude a {
@@ -173,6 +174,7 @@
   display: flex;
   font-size: var(--ledit-font-size-mid);
   gap: var(--ledit-padding);
+  z-index: 10;
 }
 
 .post-buttons * {

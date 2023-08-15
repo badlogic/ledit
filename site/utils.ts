@@ -1,5 +1,6 @@
 import videojs from "video.js";
 import { getSource } from "./data";
+import { svgImages } from "./svg";
 
 export function dateToText(utcTimestamp: number): string {
    const now = Date.now();
@@ -283,8 +284,8 @@ export function assertNever(x: never) {
    embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string },
    loop: boolean
 ): Element {
-   let videoDom = dom(/*html*/ `<div class="media">
-     <video-js controls fluid class="video-js" style="width: 100%; max-height: 75vh" ${loop ? "loop" : ""} data-setup="{}">
+   let videoDom = dom(/*html*/ `<div class="content">
+     <video-js controls class="video-js" style="width: 100%; max-height: 75vh; object-fit: contain;" ${loop ? "loop" : ""} data-setup="{}">
          <source src="${embed.dash_url}">
          <source src="${embed.hls_url}">
          <source src="${embed.fallback_url}">
@@ -319,4 +320,44 @@ export function assertNever(x: never) {
       }
    });
    return videoDom;
+}
+
+export function renderGallery(imageUrls: string[]): { gallery: Element, toggle: Element } {
+   const galleryDom = dom(/*html*/ `
+                           <div class="content-image-gallery">
+                              ${imageUrls.map((img, index) => `<img src="${img}" ${index > 0 ? 'class="hidden"' : ""}>`).join("")}
+                           </div>
+                        `)[0];
+   const imageDoms = galleryDom.querySelectorAll("img");
+   const imageClickListener = () => {
+      let scrolled = false;
+      imageDoms.forEach((img, index) => {
+         if (index == 0) return;
+         if (img.classList.contains("hidden")) {
+            img.classList.remove("hidden");
+         } else {
+            img.classList.add("hidden");
+            if (scrolled) return;
+            scrolled = true;
+            if (imageDoms[0].getBoundingClientRect().top < 16 * 4) {
+               window.scrollTo({ top: imageDoms[0].getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
+            }
+         }
+      });
+   };
+
+   for (let i = 0; i < imageDoms.length; i++) {
+      imageDoms[i].addEventListener("click", imageClickListener);
+   }
+
+   const toggle = dom(/*html*/`
+      <div class="post-gallery-toggle">
+         <span class="svg-icon color-fill">${svgImages}</span>
+         <span>${imageUrls.length}</span>
+      </div>
+   `)[0];
+   toggle.addEventListener("click", () => {
+      imageClickListener();
+   })
+   return { gallery: galleryDom, toggle: toggle };
 }

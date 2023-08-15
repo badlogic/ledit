@@ -1,5 +1,5 @@
 import { encodeHTML } from "entities";
-import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
+import { Comment, ContentDom as ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { dom, htmlDecode, makeCollapsible } from "./utils";
 
 interface HNPost {
@@ -57,8 +57,6 @@ export class HackerNewsSource implements Source {
             url: hnPost.url ?? "https://news.ycombinator.com/item?id=" + hnPost.id,
             title: hnPost.title,
             isSelf: hnPost.text ? true : false,
-            isGallery: false,
-            numGalleryImages: 0,
             author: hnPost.by,
             authorUrl: "https://news.ycombinator.com/user?id=" + hnPost.by,
             createdAt: hnPost.time,
@@ -139,7 +137,7 @@ export class HackerNewsSource implements Source {
             authorUrl: `https://news.ycombinator.com/user?id=${hnComment.author}`,
             createdAt: hnComment.created_at_i,
             score: 0,
-            html: encodeHTML("<p>" + hnComment.comment_text.replace(/<p>/g, '<p></p>')),
+            content: encodeHTML("<p>" + hnComment.comment_text.replace(/<p>/g, '<p></p>')),
             replies: [] as Comment[],
          } as Comment;
          if (hnComment.replies) {
@@ -154,25 +152,18 @@ export class HackerNewsSource implements Source {
       return comments;
    }
 
-   getMediaDom(post: Post): Element[] {
+   getContentDom(post: Post): ContentDom {
       if (post.isSelf) {
          let text = ((post as any).hnPost as HNPost).text;
          text = encodeHTML(text);
          let selfPost = dom(`<div class="post-self-preview">${htmlDecode(text)}</div>`)[0];
 
-         // Ensure links in self text open a new tab
-         let links = selfPost.querySelectorAll("a")!;
-         for (let i = 0; i < links.length; i++) {
-            let link = links[i];
-            link.setAttribute("target", "_blank");
-         }
-
          requestAnimationFrame(() => {
             makeCollapsible(selfPost, 4.5);
          })
-         return [selfPost];
+         return {elements: [selfPost], toggles: []};
       }
-      return [];
+      return {elements: [], toggles: []};
    }
    getFeed(): string {
       return "";

@@ -1,24 +1,24 @@
-.media {
+.content {
    margin: calc(var(--ledit-padding) * -2);
    margin-bottom: 0;
    margin-top: 0;
 }
 
-.media > video-js {
+.content > video-js {
    cursor: pointer;
 }
 
-.media-image-gallery {
+.content-image-gallery {
    left: calc(var(--ledit-margin) * -1);
    position: relative;
    width: calc(100% + var(--ledit-margin) * 2);
 }
 
-.media-image-gallery > img {
+.content-image-gallery > img {
    cursor: pointer;
 }
 
-.media-image-gallery > img, .media > img {
+.content-image-gallery > img, .content > img {
    width: 100%;
    max-height: 75vh;
    object-fit: contain;

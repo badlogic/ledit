@@ -1,5 +1,5 @@
 import { FeedEntry, extractFromXml } from "@extractus/feed-extractor";
-import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
+import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { dom, makeCollapsible, proxyFetch, removeTrailingEmptyParagraphs } from "./utils";
 import { parse, isValid } from "date-fns";
 
@@ -91,9 +91,8 @@ export class RssSource implements Source {
             posts.push({
                url: entry.link,
                title: entry.title,
+               domain: new URL(entry.link).host,
                isSelf: true,
-               isGallery: false,
-               numGalleryImages: -1,
                author: "",
                authorUrl: "",
                createdAt: parseFeedDate(entry.published as any as string).getTime() / 1000,
@@ -102,8 +101,8 @@ export class RssSource implements Source {
                      ? `<img src="${channelImageUrl}" style="max-height: calc(1.5 * var(--ledit-font-size));"></img>`
                      : new URL(url).hostname
                }`,
-               score: -1,
-               numComments: -1,
+               score: null,
+               numComments: null,
                xmlItem: entry,
             } as Post);
          }
@@ -134,11 +133,11 @@ export class RssSource implements Source {
       throw new Error("Method not implemented.");
    }
 
-   getMediaDom(post: Post): Element[] {
+   getContentDom(post: Post): ContentDom {
       const xmlItem = (post as any).xmlItem as FeedEntry;
-      if (!xmlItem) return [];
+      if (!xmlItem) return {elements: [], toggles: []};
       const description = (xmlItem as any).html ?? xmlItem.description;
-      if (!description) return [];
+      if (!description) return {elements: [], toggles: []};
       let imageUrl = null;
 
       const enclosure = (xmlItem as any).enclosure;
@@ -151,29 +150,22 @@ export class RssSource implements Source {
          imageUrl = mediaContent.url;
       }
 
-      const mediaDiv = dom(
+      const content = dom(
          `<div class="post-rss-preview">${
             imageUrl ? `<img src="${imageUrl}" class="post-rss-preview-image" style="flex: 0; max-width: 150px !important;">` : ""
          } <div>${removeTrailingEmptyParagraphs(description)}</div></div>`
       )[0];
-      mediaDiv.querySelectorAll("script").forEach((script) => {
+      content.querySelectorAll("script").forEach((script) => {
          script.remove();
       });
-      mediaDiv.querySelectorAll("iframe").forEach((iframe) => {
+      content.querySelectorAll("iframe").forEach((iframe) => {
          iframe.remove();
       });
 
-      // Ensure links in self text open a new tab
-      let links = mediaDiv.querySelectorAll("a")!;
-      for (let i = 0; i < links.length; i++) {
-         let link = links[i];
-         link.setAttribute("target", "_blank");
-      }
-
       requestAnimationFrame(() => {
-         makeCollapsible(mediaDiv, 8);
+         makeCollapsible(content, 8);
       });
-      return [mediaDiv];
+      return {elements: [content], toggles: []};
    }
 
    getFeed(): string {

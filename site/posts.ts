@@ -2,7 +2,7 @@ import "./posts.css";
 import { svgDownArrow, svgImages, svgLink, svgLoader, svgSpeeBubble, svgUpArrow } from "./svg/index";
 import { addCommasToNumber, dateToText, dom, intersectsViewport, navigationGuard, onVisibleOnce } from "./utils";
 import { View } from "./view";
-import { MediaView } from "./media";
+import { ContentView } from "./content";
 import { CommentsView } from "./comments";
 import { getSettings, saveSettings } from "./settings";
 import { Post, Posts, Source, getSource } from "./data";
@@ -137,10 +137,10 @@ export class PostView extends View {
                   : ""
             }
          </div>
-         <div x-id="media" class="post-media"></div>
+         <div x-id="content" class="post-content"></div>
          <div x-id="buttonsRow" class="post-buttons">
             ${
-               post.numComments > -1
+               post.numComments
                   ? /*html*/ `
                   <div x-id="commentsToggle" class="post-comments-toggle">
                      <span class="svg-icon color-fill">${svgSpeeBubble}</span>
@@ -149,69 +149,33 @@ export class PostView extends View {
                `
                   : ""
             }
-            ${
-               post.isGallery
-                  ? /*html*/ `
-                  <div x-id="galleryToggle" class="post-gallery-toggle">
-                     <span class="svg-icon color-fill">${svgImages}</span>
-                     <span>${post.numGalleryImages}</span>
-                  </div>`
-                  : ""
-            }
-            ${
-               post.score == -1
-                  ? ""
-                  : /*html*/ `<div class="post-points">
-               <span class="svgIcon color-fill">${svgUpArrow}</span>
-               <span>${addCommasToNumber(post.score)}</span>
-               <span class="svg-icon color-fill">${svgDownArrow}</span>
-            </div>`
-            }
+            <div x-id="contentToggles"></div>
          </div>
          <div x-id="comments"></div>
       </div>
       `;
 
       const elements = this.elements<{
-         media: Element;
+         content: Element;
          buttonsRow: Element;
          commentsToggle: Element | null;
-         galleryToggle: Element | null;
+         contentToggles: Element;
          link: Element | null;
       }>();
 
       onVisibleOnce(this, () => {
-         console.log("Showing media of " + this.post.title);
-         const mediaDiv = new MediaView(this.post);
-         elements.media.append(mediaDiv);
-         const imagesDom = mediaDiv.querySelector(".media-image-gallery")?.querySelectorAll("img");
-         if (imagesDom) {
-            const imageClickListener = () => {
-               let scrolled = false;
-               imagesDom.forEach((img, index) => {
-                  if (index == 0) return;
-                  if (img.classList.contains("hidden")) {
-                     img.classList.remove("hidden");
-                  } else {
-                     img.classList.add("hidden");
-                     if (scrolled) return;
-                     scrolled = true;
-                     if (imagesDom[0].getBoundingClientRect().top < 16 * 4) {
-                        window.scrollTo({ top: imagesDom[0].getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
-                     }
-                  }
-               });
-            };
-            for (let i = 0; i < imagesDom.length; i++) {
-               imagesDom[i].addEventListener("click", imageClickListener);
-            }
-            elements.galleryToggle?.addEventListener("click", () => {
-               imageClickListener();
-            })
+         console.log("Showing content of " + this.post.title);
+         const content = new ContentView(this.post);
+
+         for (const toggle of content.toggles) {
+            elements.contentToggles.parentElement?.insertBefore(toggle, elements.contentToggles);
          }
+         elements.contentToggles.remove();
+         elements.content.append(content);
+         if (!post.numComments && content.toggles.length == 0) elements.buttonsRow.classList.add("hidden");
       });
 
-      if (post.numComments > 0) {
+      if (post.numComments && post.numComments > 0) {
          elements.commentsToggle?.addEventListener("click", () => {
             this.toggleComments();
          });
@@ -222,8 +186,6 @@ export class PostView extends View {
             }
          });
       }
-
-      if (post.numComments == -1 && post.numGalleryImages == -1) elements.buttonsRow.classList.add("hidden");
 
       if (collapse) {
          const expand = (event: MouseEvent) => {

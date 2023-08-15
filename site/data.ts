@@ -10,14 +10,11 @@ export interface Post {
    domain: string;
    title: string;
    isSelf: boolean;
-   isGallery: boolean;
-   numGalleryImages: number;
    author: string;
    authorUrl: string;
    createdAt: number;
    feed: string;
-   score: number;
-   numComments: number;
+   numComments: number | null;
 }
 
 export interface Comment {
@@ -25,8 +22,8 @@ export interface Comment {
    author: string;
    authorUrl: string;
    createdAt: number;
-   score: number;
-   html: string | Element[];
+   score: number | null;
+   content: string | ContentDom;
    replies: Comment[];
 }
 
@@ -35,10 +32,15 @@ export interface SortingOption {
    label: string;
 }
 
+export interface ContentDom {
+   elements: Element[];
+   toggles: Element[];
+}
+
 export interface Source {
    getPosts(after: string | null): Promise<Posts>,
    getComments(post: Post): Promise<Comment[]>,
-   getMediaDom(post: Post): Element[],
+   getContentDom(post: Post): ContentDom,
    getFeed(): string,
    getSourcePrefix(): SourcePrefix,
    getSortingOptions(): SortingOption[],

@@ -17,6 +17,7 @@ interface Settings {
    seenIds: string[];
    theme: string;
    collapseSeenPosts: boolean;
+   showOnlyMastodonRoots: boolean;
 }
 
 let settings: Settings | null = null;
@@ -48,6 +49,7 @@ export const defaultSettings = {
    seenIds: [],
    theme: "light",
    collapseSeenPosts: true,
+   showOnlyMastodonRoots: false,
 } as Settings;
 
 export function bookmarkToHash(bookmark: Bookmark) {
@@ -107,6 +109,10 @@ export class SettingsView extends View {
                      <div style="flex: 1">Collapse seen posts</div>
                      <div class="svg-icon box ${getSettings().collapseSeenPosts ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
                     </div>
+                    <div x-id="showOnlyMastodonRoots" class="settings-row">
+                     <div style="flex: 1">Show Mastodon top-level posts only</div>
+                     <div class="svg-icon box ${getSettings().showOnlyMastodonRoots ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
+                    </div>
                     <div x-id="hideSeen" class="settings-row">
                      <span style="flex: 1">Hide seen posts (experimental)</span>
                     </div>
@@ -127,6 +133,7 @@ export class SettingsView extends View {
          hideSeen: Element;
          themes: Element;
          collapseSeen: Element;
+         showOnlyMastodonRoots: Element;
          reset: Element;
       }>();
 
@@ -154,13 +161,15 @@ export class SettingsView extends View {
                   <div x-id="makeDefaultFeed" class="box">
                      <span class="svg-icon ${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</span>
                   </div>
-                  ${bookmark.source == "hn/" ?
-                  /*html*/`<div x-id="editFeed" class="box">
+                  ${
+                     bookmark.source == "hn/"
+                        ? /*html*/ `<div x-id="editFeed" class="box">
                      <span class="svg-icon color-fill"></span>
-                  </div>` :
-                  /*html*/`<div x-id="editFeed" class="box">
+                  </div>`
+                        : /*html*/ `<div x-id="editFeed" class="box">
                      <span class="svg-icon color-fill">${svgPencil}</span>
-                  </div>`}
+                  </div>`
+                  }
                   <div x-id="deleteFeed" class="box">
                      <span class="svg-icon color-fill">${svgMinus}</span>
                   </div>
@@ -200,7 +209,9 @@ export class SettingsView extends View {
             elements.bookmarks.append(bookmarkDiv);
          }
          if (source != "hn/") {
-            const addBookmarkDiv = dom(`<div class="settings-row" style="margin-left: var(--ledit-padding);"><span class="svg-icon color-fill">${svgBookmark}</span>Add feed</div>`)[0];
+            const addBookmarkDiv = dom(
+               `<div class="settings-row" style="margin-left: var(--ledit-padding);"><span class="svg-icon color-fill">${svgBookmark}</span>Add feed</div>`
+            )[0];
             elements.bookmarks.append(addBookmarkDiv);
             addBookmarkDiv.addEventListener("click", () => {
                const newBookmark: Bookmark = {
@@ -255,6 +266,15 @@ export class SettingsView extends View {
          });
          saveSettings();
          this.render();
+      });
+
+      // Show Mastodon roots only toggle
+      elements.showOnlyMastodonRoots.addEventListener("click", (event) => {
+         event.stopPropagation();
+         getSettings().showOnlyMastodonRoots = !getSettings().showOnlyMastodonRoots;
+         saveSettings();
+         this.render();
+         window.location.reload();
       });
 
       // Reset to defaults
@@ -383,7 +403,10 @@ export class BookmarkEditor extends View {
             alert(`Please specify one or more ${sourcePrefixToFeedLabel(this.bookmark.source)}, separated by commas or line breaks.`);
             return;
          }
-         const feedIds = feedIdsValue.split(/[,\n]+/).filter((feedId) => feedId != undefined && feedId != null && feedId.trim().length != 0).map((feedId) => feedId.trim());
+         const feedIds = feedIdsValue
+            .split(/[,\n]+/)
+            .filter((feedId) => feedId != undefined && feedId != null && feedId.trim().length != 0)
+            .map((feedId) => feedId.trim());
          if (feedIds.length == 0) {
             alert(`Please specify one or more ${sourcePrefixToFeedLabel(this.bookmark.source)}, separated by commas or line breaks.`);
             return;
@@ -397,7 +420,7 @@ export class BookmarkEditor extends View {
          }
          saveSettings();
          this.close();
-      })
+      });
 
       // Prevent clicking in input elements to dismiss editor
       elements.editor.addEventListener("click", (event: Event) => {

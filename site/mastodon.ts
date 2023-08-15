@@ -1,6 +1,7 @@
-import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
+import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { RedditSource } from "./reddit";
-import { dom, proxyFetch, renderVideo } from "./utils";
+import { getSettings } from "./settings";
+import { dom, proxyFetch, renderGallery, renderVideo } from "./utils";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
 
@@ -151,25 +152,18 @@ export class MastodonSource implements Source {
       const json = await response.json();
       const mastodonPosts = json as MastodonPost[];
       const posts: Post[] = [];
+      const onlyShowRoots = getSettings().showOnlyMastodonRoots;
       for (const mastodonPost of mastodonPosts) {
          this.localizeMastodonPostIds(mastodonPost, userInfo);
          let postToView = mastodonPost.reblog ?? mastodonPost;
-
-         let numImages = 0;
-         if (postToView.media_attachments) {
-            for (const media of postToView.media_attachments) {
-               if (media.type == "image") {
-                  numImages++;
-               }
-            }
-         }
+         if (onlyShowRoots && postToView.in_reply_to_account_id) continue;
          const avatarImageUrl = postToView.account.avatar_static;
          let postUrl = postToView.url;
          let authorUrl = postToView.account.url;
 
          const post = {
             url: postUrl,
-            domain: new URL(postToView.uri).host,
+            domain: postToView.account.username + "@" + new URL(postToView.uri).host,
             feed: `${
                avatarImageUrl
                   ? `<img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">`
@@ -177,8 +171,6 @@ export class MastodonSource implements Source {
             }`,
             title: "",
             isSelf: false,
-            isGallery: numImages > 1,
-            numGalleryImages: numImages,
             author: postToView.account.display_name,
             authorUrl: authorUrl,
             createdAt: new Date(postToView.created_at).getTime() / 1000,
@@ -235,7 +227,6 @@ export class MastodonSource implements Source {
       }
       const response = await fetch(`https://${host}/api/v1/statuses/${statusId}/context`);
       const context = (await response.json()) as { descendants: MastodonPost[] };
-      console.log(JSON.stringify(context, null, 2));
 
       const roots: Comment[] = [];
       const comments: Comment[] = [];
@@ -244,6 +235,7 @@ export class MastodonSource implements Source {
          MastodonSource.localizeMastodonPostIds(reply, userInfo);
          let replyUrl = reply.url;
          const avatarImageUrl = reply.account.avatar_static;
+         const content = this.getContent(reply);
          const comment = {
             url: replyUrl,
             author: avatarImageUrl ? /*html*/`
@@ -253,8 +245,8 @@ export class MastodonSource implements Source {
             : reply.account.display_name!,
             authorUrl: reply.account.url,
             createdAt: new Date(reply.created_at).getTime() / 1000,
-            score: -1,
-            html: [... this.getMediaDiv(reply)],
+            score: null,
+            content,
             replies: [],
             mastodonComment: reply,
          } as Comment;
@@ -273,12 +265,13 @@ export class MastodonSource implements Source {
       return roots;
    }
 
-   getMediaDom(post: Post): Element[] {
+   getContentDom(post: Post): ContentDom {
       let mastodonPost = (post as any).mastodonPost as MastodonPost;
-      return this.getMediaDiv(mastodonPost);
+      return this.getContent(mastodonPost);
    }
 
-   getMediaDiv(mastodonPost: MastodonPost): Element[] {
+   getContent(mastodonPost: MastodonPost): ContentDom {
+      const toggles: Element[] = [];
       let postToView = mastodonPost.reblog ?? mastodonPost;
       let prelude = "";
       if (mastodonPost.reblog) {
@@ -293,7 +286,7 @@ export class MastodonSource implements Source {
          </a>
          `;
       }
-      const mediaDiv = dom(`<div class="post-media">${prelude}${postToView.content}</div>`)[0];
+      const content = dom(`<div class="post-content">${prelude}${postToView.content}</div>`)[0];
 
       if (postToView.media_attachments.length > 0) {
          const images: string[] = [];
@@ -310,16 +303,13 @@ export class MastodonSource implements Source {
          }
 
          if (images.length >= 1) {
-            const galleryDom = dom(/*html*/ `
-               <div class="media-image-gallery">
-                  ${images.map((img, index) => `<img src="${img}" ${index > 0 ? 'class="hidden"' : ""}>`).join("")}
-               </div>
-            `)[0];
-            mediaDiv.append(galleryDom);
+            const gallery = renderGallery(images)
+            content.append(gallery.gallery);
+            if (images.length > 1) toggles.push(gallery.toggle);
          }
          if (videos.length >= 1) {
             for (const video of videos) {
-               mediaDiv.append(
+               content.append(
                   renderVideo(
                      {
                         width: video.meta.original?.width ?? 0,
@@ -338,7 +328,7 @@ export class MastodonSource implements Source {
       if (postToView.card) {
          // FIXME render cards
       }
-      return [mediaDiv];
+      return {elements: [content], toggles};
    }
 
    getFeed(): string {

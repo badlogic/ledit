@@ -1,4 +1,4 @@
-import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
+import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { RssSource } from "./rss";
 import { dom, proxyFetch } from "./utils";
 
@@ -53,10 +53,10 @@ export class YoutubeSource implements Source {
       return [];
    }
 
-   getMediaDom(post: Post): Element[] {
+   getContentDom(post: Post): ContentDom {
       const url = post.url.split("=");
-      if (url.length != 2) return [];
-      return dom(`<iframe src="https://www.youtube.com/embed/${url[1]}?feature=oembed&amp;enablejsapi=1" style="width: 100%; aspect-ratio: 16/9;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" title="Russ Abbot in Married for Life"></iframe>`);
+      if (url.length != 2) return {elements: [], toggles: []};
+      return {elements: dom(`<iframe src="https://www.youtube.com/embed/${url[1]}?feature=oembed&amp;enablejsapi=1" style="width: 100%; aspect-ratio: 16/9;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" title="Russ Abbot in Married for Life"></iframe>`), toggles: []};
    }
 
    getFeed(): string {

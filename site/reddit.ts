@@ -2,8 +2,9 @@ import "video.js/dist/video-js.min.css";
 import videojs from "video.js";
 import Player from "video.js/dist/types/player";
 
-import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
-import { dom, htmlDecode, intersectsViewport, makeCollapsible, navigationGuard, onAddedToDOM, onTapped, renderVideo } from "./utils";
+import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
+import { addCommasToNumber, dom, htmlDecode, intersectsViewport, makeCollapsible, navigationGuard, onAddedToDOM, onTapped, renderGallery, renderVideo } from "./utils";
+import { svgDownArrow, svgUpArrow } from "./svg";
 
 let count = 0;
 interface RedditPosts {
@@ -182,14 +183,6 @@ export class RedditSource implements Source {
       }
 
       const convertPost = (redditPost: RedditPost) => {
-         let numGalleryImages = 0;
-         if (redditPost.data.is_gallery) {
-            for (const imageKey of Object.keys(redditPost.data.media_metadata)) {
-               if (redditPost.data.media_metadata[imageKey].p) {
-                  numGalleryImages++;
-               }
-            }
-         }
          const url = redditPost.data.url.startsWith("/r/") ? "https://www.reddit.com" + redditPost.data.url : redditPost.data.url;
          let domain = url.includes("redd.it") || url.includes("reddit.com") ? "" : new URL(url).host;
          return {
@@ -198,8 +191,6 @@ export class RedditSource implements Source {
             feed: redditPost.data.subreddit,
             title: redditPost.data.title,
             isSelf: redditPost.data.is_self,
-            isGallery: redditPost.data.is_gallery,
-            numGalleryImages,
             author: redditPost.data.author,
             authorUrl: "https://www.reddit.com/u/" + redditPost.data.author,
             createdAt: redditPost.data.created_utc,
@@ -237,7 +228,7 @@ export class RedditSource implements Source {
             authorUrl: `http://www.reddit.com/u/${redditComment.data.author}`,
             createdAt: redditComment.data.created_utc,
             score: redditComment.data.score,
-            html: redditComment.data.body_html,
+            content: redditComment.data.body_html,
             replies: [] as Comment[],
          } as Comment;
          if (redditComment.data.replies != "" && redditComment.data.replies !== undefined) {
@@ -257,25 +248,26 @@ export class RedditSource implements Source {
       return comments;
    }
 
-   getMediaDom(canonicalPost: Post): Element[] {
+   getContentDom(canonicalPost: Post): ContentDom {
       const post = (canonicalPost as any).redditPost;
       const postsWidth = document.querySelector(".posts")!.clientWidth; // account for padding in post
-
+      const toggles: Element[] = [];
+      const points = dom( /*html*/`
+         <div class="post-points">
+            <span class="svgIcon color-fill">${svgUpArrow}</span>
+            <span>${addCommasToNumber(post.data.score)}</span>
+            <span class="svg-icon color-fill">${svgDownArrow}</span>
+         </div>
+      `)[0];
+      toggles.push(points);
       // Self post, show text, dim it, cap vertical size, and make it expand on click.
       if (post.data.is_self) {
          let selfPost = dom(`<div class="post-self-preview">${htmlDecode(post.data.selftext_html ?? "")}</div>`)[0];
 
-         // Ensure links in self text open a new tab
-         let links = selfPost.querySelectorAll("a")!;
-         for (let i = 0; i < links.length; i++) {
-            let link = links[i];
-            link.setAttribute("target", "_blank");
-         }
-
          requestAnimationFrame(() => {
             makeCollapsible(selfPost, 4.5);
          });
-         return [selfPost];
+         return {elements: [selfPost], toggles};
       }
 
       // Gallery
@@ -292,17 +284,15 @@ export class RedditSource implements Source {
                if (image) images.push(image);
             }
          }
-         const galleryDom = dom(/*html*/ `
-            <div class="media-image-gallery">
-               ${images.map((img, index) => `<img src="${img.u}" ${index > 0 ? 'class="hidden"' : ""}>`).join("")}
-            </div>
-         `);
-         return galleryDom;
+         const imageUrls = images.map((img) => img.u);
+         const gallery = renderGallery(imageUrls);
+         toggles.unshift(gallery.toggle)
+         return {elements: [gallery.gallery], toggles};
       }
 
       // Reddit hosted video
       if (post.data.secure_media && post.data.secure_media.reddit_video) {
-         return [renderVideo(post.data.secure_media.reddit_video, false)];
+         return {elements: [renderVideo(post.data.secure_media.reddit_video, false)], toggles};
       }
 
       // External embed like YouTube Vimeo
@@ -317,7 +307,7 @@ export class RedditSource implements Source {
                   .replace(`height="${embed.height}"`, `height="${embedHeight}"`)
                   .replace("position:absolute;", "")
             );
-            let embedDom = dom(`<div class="media" style="width: ${embedWidth}px; height: ${embedHeight}px;">${embedUrl}</div>`)[0];
+            let embedDom = dom(`<div class="content" style="width: ${embedWidth}px; height: ${embedHeight}px;">${embedUrl}</div>`)[0];
             // Make YouTube videos stop if they scroll out of frame.
             if (embed.content.includes("youtube")) {
                // Pause when out of view
@@ -327,18 +317,18 @@ export class RedditSource implements Source {
                      videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
                   }
                });
-               return [embedDom];
+               return {elements: [embedDom], toggles};
             }
          } else {
-            return dom(
-               `<div class="media" style="width: ${embedWidth}px; height: ${embedHeight}px;"><iframe width="${embedWidth}" height="${embedHeight}" src="${embed.media_domain_url}"></iframe></div>`
-            );
+            return {elements: dom(
+               `<div class="content" style="width: ${embedWidth}px; height: ${embedHeight}px;"><iframe width="${embedWidth}" height="${embedHeight}" src="${embed.media_domain_url}"></iframe></div>`
+            ), toggles};
          }
       }
 
       // Plain old .gif
       if (post.data.url.endsWith(".gif")) {
-         return dom(`<div class="media"><img src="${post.data.url}"></img></div>`);
+         return {elements: dom(`<div class="content"><img src="${post.data.url}"></img></div>`), toggles};
       }
 
       // Image, pick the one that's one size above the current posts width so pinch zooming
@@ -349,18 +339,18 @@ export class RedditSource implements Source {
             image = img;
             if (img.width > postsWidth) break;
          }
-         if (!image) return [document.createElement("div")];
-         if (!post.data.preview.reddit_video_preview?.fallback_url) return dom(`<div class="media"><img src="${image.url}"></img></div>`);
-         return [renderVideo(post.data.preview.reddit_video_preview, post.data.preview.reddit_video_preview.is_gif)];
+         if (!image) return {elements: [document.createElement("div")], toggles};
+         if (!post.data.preview.reddit_video_preview?.fallback_url) return {elements: dom(`<div class="content"><img src="${image.url}"></img></div>`), toggles};
+         return {elements: [renderVideo(post.data.preview.reddit_video_preview, post.data.preview.reddit_video_preview.is_gif)], toggles};
       }
 
       // Fallback to thumbnail which is super low-res.
       const missingThumbnailTags = new Set<String>(["self", "nsfw", "default", "image", "spoiler"]);
       const thumbnailUrl = post.data.thumbnail.includes("://") ? post.data.thumbnail : "";
       if (post.data.thumbnail && !missingThumbnailTags.has(post.data.thumbnail)) {
-         return dom(`<div class="media"><img src="${thumbnailUrl}"></img></div>`);
+         return {elements: dom(`<div class="content"><img src="${thumbnailUrl}"></img></div>`), toggles};
       }
-      return [document.createElement("div")];
+      return {elements: [document.createElement("div")], toggles};
    }
 
    getFeed() {
