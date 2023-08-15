@@ -9,6 +9,8 @@ import minus from "./minus.svg"
 // @ts-ignore
 import plus from "./plus.svg"
 // @ts-ignore
+import bookmark from "./bookmark.svg"
+// @ts-ignore
 import upArrow from "./uparrow.svg"
 // @ts-ignore
 import downArrow from "./downarrow.svg"
@@ -26,12 +28,15 @@ import check from "./check.svg"
 import heart from "./heart.svg"
 // @ts-ignore
 import pencil from "./pencil.svg"
+// @ts-ignore
+import link from "./link.svg"
 
 export const svgBurger = burger;
 export const svgCircle = circle;
 export const svgLoader = loader;
 export const svgMinus = minus;
 export const svgPlus = plus;
+export const svgBookmark = bookmark;
 export const svgUpArrow = upArrow;
 export const svgDownArrow = downArrow;
 export const svgSpeeBubble = speeBubble;
@@ -41,3 +46,4 @@ export const svgClose = close;
 export const svgCheck = check;
 export const svgHeart = heart;
 export const svgPencil = pencil;
+export const svgLink = link;

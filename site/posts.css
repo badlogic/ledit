@@ -134,6 +134,18 @@
   font-size: var(--ledit-font-size);
 }
 
+.post-mastodon-prelude {
+  display: flex;
+  align-items: center;
+  padding: var(--ledit-padding) 0;
+  gap: var(--ledit-padding);
+  font-size: var(--ledit-font-size-small);
+}
+
+.post-mastodon-prelude a {
+  color: var(--ledit-color-dim) !important;
+}
+
 .post-url {
   overflow: hidden;
   white-space: pre;
@@ -187,7 +199,7 @@
 }
 
 
-.post-gallery-toggle, .post-comments-toggle, .post-points {
+.post-external-link, .post-gallery-toggle, .post-comments-toggle, .post-points {
   display: flex;
   align-items: center;
 }

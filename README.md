@@ -119,6 +119,8 @@ This will start a local web server that serves the files in `site/` on http://lo
 
 If you use VS Code (you should), then open the `ledit/` folder and run the `ledit` launch configuration. A browser window will open, showing what's served on http://localhost:8080. You can then set breakpoints, change code and save in VS Code, and see your changes applied instantly.
 
+The main entry point is `site/index.ts`. Each source has an implementation in the corresponding file, e.g. Reddit is implemented in [reddit.ts](site/reddit.ts). The various parts of the UI are (sort of) implemented in corresponding `.ts/.css` files as kind of sort of web components.
+
 # Deployment
 ```
 npm install

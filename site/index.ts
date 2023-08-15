@@ -10,6 +10,7 @@ import { HackerNewsSource } from "./hackernews";
 import { RssSource } from "./rss";
 import { SourcePrefix, setSource } from "./data";
 import { YoutubeSource } from "./youtube";
+import { MastodonSource } from "./mastodon";
 
 function loadDefaultBookmark() {
    const defaultBookmark = getSettings().bookmarks.find((bookmark) => bookmark.isDefault == true);
@@ -38,6 +39,9 @@ if (window.location.hash.length == 0) {
             break;;
          case "yt/":
             setSource(new YoutubeSource());
+            break;
+         case "m/":
+            setSource(new MastodonSource());
             break;
          default:
             setSource(new RedditSource());

@@ -3,7 +3,7 @@ import videojs from "video.js";
 import Player from "video.js/dist/types/player";
 
 import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
-import { dom, htmlDecode, intersectsViewport, makeCollapsible, navigationGuard, onAddedToDOM, onTapped } from "./utils";
+import { dom, htmlDecode, intersectsViewport, makeCollapsible, navigationGuard, onAddedToDOM, onTapped, renderVideo } from "./utils";
 
 let count = 0;
 interface RedditPosts {
@@ -290,10 +290,10 @@ export class RedditSource implements Source {
             }
          }
          const galleryDom = dom(/*html*/ `
-          <div class="media-image-gallery">
-             ${images.map((img, index) => `<img src="${img.u}" ${index > 0 ? 'class="hidden"' : ""}>`).join("")}
-          </div>
-       `);
+            <div class="media-image-gallery">
+               ${images.map((img, index) => `<img src="${img.u}" ${index > 0 ? 'class="hidden"' : ""}>`).join("")}
+            </div>
+         `);
          const imagesDom = galleryDom[0].querySelectorAll("img");
          const imageClickListener = () => {
             let scrolled = false;
@@ -319,7 +319,7 @@ export class RedditSource implements Source {
 
       // Reddit hosted video
       if (post.data.secure_media && post.data.secure_media.reddit_video) {
-         return [RedditSource.renderVideo(post.data.secure_media.reddit_video, false)];
+         return [renderVideo(post.data.secure_media.reddit_video, false)];
       }
 
       // External embed like YouTube Vimeo
@@ -368,7 +368,7 @@ export class RedditSource implements Source {
          }
          if (!image) return [document.createElement("div")];
          if (!post.data.preview.reddit_video_preview?.fallback_url) return dom(`<div class="media"><img src="${image.url}"></img></div>`);
-         return [RedditSource.renderVideo(post.data.preview.reddit_video_preview, post.data.preview.reddit_video_preview.is_gif)];
+         return [renderVideo(post.data.preview.reddit_video_preview, post.data.preview.reddit_video_preview.is_gif)];
       }
 
       // Fallback to thumbnail which is super low-res.
@@ -378,48 +378,6 @@ export class RedditSource implements Source {
          return dom(`<div class="media"><img src="${thumbnailUrl}"></img></div>`);
       }
       return [document.createElement("div")];
-   }
-
-   static renderVideo(
-      embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string },
-      loop: boolean
-   ): Element {
-      let videoDom = dom(/*html*/ `<div class="media">
-        <video-js controls fluid class="video-js" style="width: 100%;" ${loop ? "loop" : ""} data-setup="{}">
-            <source src="${embed.dash_url}">
-            <source src="${embed.hls_url}">
-            <source src="${embed.fallback_url}">
-        </video-js>
-      </div>`)[0];
-      onAddedToDOM(videoDom, () => {
-         const videoDiv = videoDom.querySelector("video-js");
-         if (videoDiv) {
-            const video = videojs(videoDiv);
-            var videoElement = video.el().querySelector("video")!;
-
-            // Toggle pause/play on click
-            const togglePlay = function () {
-               if (video.paused()) {
-                  video.play();
-               } else {
-                  video.pause();
-               }
-            };
-            videoElement.addEventListener("clicked", togglePlay);
-            onTapped(videoElement, togglePlay);
-
-            // Pause when out of view
-            document.addEventListener("scroll", () => {
-               if (videoElement && videoElement === document.pictureInPictureElement) {
-                  return;
-               }
-               if (!video.paused() && !intersectsViewport(videoElement)) {
-                  video.pause();
-               }
-            });
-         }
-      });
-      return videoDom;
    }
 
    getFeed() {

@@ -1,5 +1,5 @@
 import "./posts.css";
-import { svgDownArrow, svgImages, svgLoader, svgSpeeBubble, svgUpArrow } from "./svg/index";
+import { svgDownArrow, svgImages, svgLink, svgLoader, svgSpeeBubble, svgUpArrow } from "./svg/index";
 import { addCommasToNumber, dateToText, dom, intersectsViewport, navigationGuard, onVisibleOnce } from "./utils";
 import { View } from "./view";
 import { MediaView } from "./media";
@@ -127,34 +127,48 @@ export class PostView extends View {
             ${post.author.length != 0 ? `<span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>` : ""}
             <span class="post-author"><a href="${post.authorUrl}" target="_blank">${post.author}</a></span>
             ${showUrl ? `<span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>` : ""}
-            ${
-               showUrl
-                  ? `<span class="post-url">${
-                       new URL(post.url).host
-                    }</span>`
-                  : ""
-            }
+            ${showUrl ? `<span class="post-url">${new URL(post.url).host}</span>` : ""}
          </div>
          <div x-id="media" class="post-media"></div>
          <div x-id="buttonsRow" class="post-buttons">
-            <div x-id="toggleComments" class="post-comments-toggle">
-               <span class="svg-icon color-fill">${svgSpeeBubble}</span>
-               <span>${addCommasToNumber(post.numComments)}</span>
-            </div>
+            ${
+               post.numComments > -1 ? /*html*/ `
+                  <div x-id="comments" class="post-comments-toggle">
+                     <span class="svg-icon color-fill">${svgSpeeBubble}</span>
+                     <span>${addCommasToNumber(post.numComments)}</span>
+                  </div>
+               `
+               : ""
+            }
             ${
                post.isGallery
                   ? /*html*/ `
-            <div class="post-gallery-toggle">
-               <span class="svg-icon color-fill">${svgImages}</span>
-               <span>${post.numGalleryImages}</span>
-            </div>`
+                  <div x-id="gallery" class="post-gallery-toggle">
+                     <span class="svg-icon color-fill">${svgImages}</span>
+                     <span>${post.numGalleryImages}</span>
+                  </div>`
                   : ""
             }
-            <div class="post-points">
+            ${
+               post.title.trim().length == 0
+                  ?
+                  /*html*/ `
+                     <div class="post-external-link">
+                        <span class="svg-icon color-fill">${svgLink}</span>
+                        <a x-id="link" href="${post.url}" target="_blank" style="color: var(--ledit-color);">Link</a>
+                     </div>
+                  `
+                  : ""
+            }
+            ${
+               post.score == -1
+                  ? ""
+                  : /*html*/ `<div class="post-points">
                <span class="svgIcon color-fill">${svgUpArrow}</span>
                <span>${addCommasToNumber(post.score)}</span>
                <span class="svg-icon color-fill">${svgDownArrow}</span>
-            </div>
+            </div>`
+            }
          </div>
          <div x-id="comments"></div>
       </div>
@@ -163,7 +177,9 @@ export class PostView extends View {
       const elements = this.elements<{
          media: Element;
          buttonsRow: Element;
-         comments: Element;
+         comments: Element | null;
+         gallery: Element | null;
+         link: Element | null;
       }>();
 
       onVisibleOnce(this, () => {
@@ -171,16 +187,26 @@ export class PostView extends View {
          elements.media.append(new MediaView(this.post));
       });
 
-      elements.buttonsRow.addEventListener("click", () => {
-         this.toggleComments();
-      });
+      if (elements.link) {
+         elements.link.addEventListener("click", (event) => {
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+         });
+      }
 
-      document.addEventListener("keydown", (event) => {
-         if (event.key === "Escape" || event.keyCode === 27) {
-            if (elements.buttonsRow.classList.contains("post-buttons-sticky") && intersectsViewport(elements.buttonsRow)) this.toggleComments();
-         }
-      });
-      if (post.numComments == -1) elements.buttonsRow.classList.add("hidden");
+      if (post.numComments > 0) {
+         elements.buttonsRow.addEventListener("click", () => {
+            this.toggleComments();
+         });
+
+         document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" || event.keyCode === 27) {
+               if (elements.buttonsRow.classList.contains("post-buttons-sticky") && intersectsViewport(elements.buttonsRow)) this.toggleComments();
+            }
+         });
+      }
+
+      if (post.numComments == -1 && post.numGalleryImages == -1) elements.buttonsRow.classList.add("hidden");
 
       if (collapse) {
          const expand = (event: MouseEvent) => {
@@ -213,7 +239,7 @@ export class PostView extends View {
                window.scrollTo({ top: scrollTo });
             });
          }
-      }
+      };
 
       const navListener = () => {
          if (intersectsViewport(elements.buttonsRow)) {
@@ -221,7 +247,7 @@ export class PostView extends View {
             return false;
          }
          return true;
-      }
+      };
 
       if (elements.comments.children.length == 0) {
          // Show the comments

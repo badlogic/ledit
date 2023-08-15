@@ -277,3 +277,45 @@ export function assertNever(x: never) {
    const baseUrl = window.location.host.includes("localhost") ? "http://localhost:3000/proxy/?url=" : "https://marioslab.io/proxy/?url=";
    return fetch(baseUrl + encodeURI(url));
  }
+
+ export function renderVideo(
+   embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string },
+   loop: boolean
+): Element {
+   let videoDom = dom(/*html*/ `<div class="media">
+     <video-js controls fluid class="video-js" style="width: 100%; max-height: 75vh" ${loop ? "loop" : ""} data-setup="{}">
+         <source src="${embed.dash_url}">
+         <source src="${embed.hls_url}">
+         <source src="${embed.fallback_url}">
+     </video-js>
+   </div>`)[0];
+   onAddedToDOM(videoDom, () => {
+      const videoDiv = videoDom.querySelector("video-js");
+      if (videoDiv) {
+         const video = videojs(videoDiv);
+         var videoElement = video.el().querySelector("video")!;
+
+         // Toggle pause/play on click
+         const togglePlay = function () {
+            if (video.paused()) {
+               video.play();
+            } else {
+               video.pause();
+            }
+         };
+         videoElement.addEventListener("clicked", togglePlay);
+         onTapped(videoElement, togglePlay);
+
+         // Pause when out of view
+         document.addEventListener("scroll", () => {
+            if (videoElement && videoElement === document.pictureInPictureElement) {
+               return;
+            }
+            if (!video.paused() && !intersectsViewport(videoElement)) {
+               video.pause();
+            }
+         });
+      }
+   });
+   return videoDom;
+}

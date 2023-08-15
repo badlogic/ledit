@@ -25,7 +25,7 @@ export interface Comment {
    authorUrl: string;
    createdAt: number;
    score: number;
-   html: string;
+   html: string | Element[];
    replies: Comment[];
 }
 
@@ -55,13 +55,14 @@ export function getSource(): Source {
    return source;
 }
 
-export type SourcePrefix = "r/" | "hn/" | "rss/" | "yt/";
+export type SourcePrefix = "r/" | "hn/" | "rss/" | "yt/" | "m/";
 export function sourcePrefixLabel(source: SourcePrefix) {
    switch(source) {
       case "r/": return "Reddit";
       case "hn/": return "Hackernews"
       case "rss/": return "RSS"
       case "yt/": return "YouTube"
+      case "m/": return "Mastodon"
       default:
          assertNever(source);
    }

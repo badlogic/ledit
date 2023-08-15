@@ -1,41 +1,41 @@
 import { FeedEntry, extractFromXml } from "@extractus/feed-extractor";
 import { Comment, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { dom, makeCollapsible, proxyFetch, removeTrailingEmptyParagraphs } from "./utils";
-import { parse, isValid } from 'date-fns';
+import { parse, isValid } from "date-fns";
 
 function parseFeedDate(dateString: string): Date {
    // Common RSS and Atom date formats (RFC 822 and RFC 3339)
    const possibleFormats = [
-     "EEE, dd MMM yyyy HH:mm:ss xx", // RFC 822
-     "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",  // RFC 3339 with milliseconds
-     "yyyy-MM-dd'T'HH:mm:ssxxx",      // RFC 3339 without milliseconds
-     "yyyy-MM-dd'T'HH:mm:ss'Z'",      // RFC 3339 UTC format
+      "EEE, dd MMM yyyy HH:mm:ss xx", // RFC 822
+      "yyyy-MM-dd'T'HH:mm:ss.SSSxxx", // RFC 3339 with milliseconds
+      "yyyy-MM-dd'T'HH:mm:ssxxx", // RFC 3339 without milliseconds
+      "yyyy-MM-dd'T'HH:mm:ss'Z'", // RFC 3339 UTC format
    ];
 
    for (const format of possibleFormats) {
-     try {
-       const parsedDate = parse(dateString, format, new Date());
-       if (isValid(parsedDate)) {
-         return parsedDate;
-       }
-     } catch (error) {
-       // Parsing failed with the current format, continue trying others
-     }
+      try {
+         const parsedDate = parse(dateString, format, new Date());
+         if (isValid(parsedDate)) {
+            return parsedDate;
+         }
+      } catch (error) {
+         // Parsing failed with the current format, continue trying others
+      }
    }
 
    console.error("Unable to parse feed date:", dateString);
    return new Date();
- }
+}
 
- function getChannelImage(rss: Document) {
-      const channelImageNode = rss.querySelector("channel > image > url");
-      if (channelImageNode) {
-         const imageUrl = channelImageNode.textContent;
-         return imageUrl;
-      } else {
-         return null;
-      }
+function getChannelImage(rss: Document) {
+   const channelImageNode = rss.querySelector("channel > image > url");
+   if (channelImageNode) {
+      const imageUrl = channelImageNode.textContent;
+      return imageUrl;
+   } else {
+      return null;
    }
+}
 
 export class RssSource implements Source {
    public static async getRssPosts(url: string): Promise<Post[]> {
@@ -77,36 +77,41 @@ export class RssSource implements Source {
          },
       };
 
-      const response = await proxyFetch(url);
-      const text = await response.text();
-      const rss = await new window.DOMParser().parseFromString(text, "text/xml");
-      const channelImageUrl = getChannelImage(rss);
-      const result = extractFromXml(text, options);
-      if (!result || !result.entries) return [];
+      try {
+         const response = await proxyFetch(url);
+         const text = await response.text();
+         const rss = await new window.DOMParser().parseFromString(text, "text/xml");
+         const channelImageUrl = getChannelImage(rss);
+         const result = extractFromXml(text, options);
+         if (!result || !result.entries) return [];
 
-      const posts: Post[] = [];
-      for (const entry of result.entries) {
-         if (!entry.link || !entry.published) continue;
-         posts.push({
-            url: entry.link,
-            title: entry.title,
-            isSelf: true,
-            isGallery: false,
-            numGalleryImages: 0,
-            author: "",
-            authorUrl: "",
-            createdAt: parseFeedDate(entry.published as any as string).getTime() / 1000,
-            feed: `${
-               channelImageUrl
-                  ? `<img src="${channelImageUrl}" style="max-height: calc(1.5 * var(--ledit-font-size));"></img>`
-                  : new URL(url).hostname
-            }`,
-            score: -1,
-            numComments: -1,
-            xmlItem: entry,
-         } as Post);
+         const posts: Post[] = [];
+         for (const entry of result.entries) {
+            if (!entry.link || !entry.published) continue;
+            posts.push({
+               url: entry.link,
+               title: entry.title,
+               isSelf: true,
+               isGallery: false,
+               numGalleryImages: -1,
+               author: "",
+               authorUrl: "",
+               createdAt: parseFeedDate(entry.published as any as string).getTime() / 1000,
+               feed: `${
+                  channelImageUrl
+                     ? `<img src="${channelImageUrl}" style="max-height: calc(1.5 * var(--ledit-font-size));"></img>`
+                     : new URL(url).hostname
+               }`,
+               score: -1,
+               numComments: -1,
+               xmlItem: entry,
+            } as Post);
+         }
+         return posts;
+      } catch (e) {
+         console.error("Couldn't get RSS feed " + url, e);
+         return [];
       }
-      return posts;
    }
 
    async getPosts(after: string | null): Promise<Posts> {

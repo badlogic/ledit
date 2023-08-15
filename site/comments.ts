@@ -72,7 +72,6 @@ export class CommentView extends View {
                <a class="comment-reply" href="${comment.url}" target="_blank">Reply</a>
          </div>
          <div x-id="text" class="comment-text">
-               ${htmlDecode(comment.html)}
          </div>
          <div x-id="replies" class="comment-replies"></div>
          <div x-id="repliesCount" class="comment-replies-count hidden"></div>
@@ -96,6 +95,14 @@ export class CommentView extends View {
       for (const reply of comment.replies) {
          const replyDom = new CommentView(reply, this.opName);
          elements.replies.append(replyDom);
+      }
+
+      if (typeof comment.html === "string") {
+         elements.text.innerHTML = htmlDecode(comment.html)!;
+      } else {
+         for (const el of comment.html as Element[]) {
+            elements.text.append(el);
+         }
       }
 
       const toggleCollapsed = (event: MouseEvent) => {

@@ -1,6 +1,6 @@
 import { SourcePrefix, sourcePrefixLabel } from "./data";
 import "./settings.css";
-import { svgCheck, svgClose, svgGithub, svgHeart, svgMinus, svgPencil } from "./svg/index";
+import { svgCheck, svgClose, svgGithub, svgHeart, svgMinus, svgPencil, svgBookmark } from "./svg/index";
 import { assertNever, dom, navigate, navigationGuard } from "./utils";
 import { View } from "./view";
 
@@ -98,7 +98,7 @@ export class SettingsView extends View {
             <div x-id="container" class="settings-container">
                 <div class="settings">
                     <div x-id="close" class="settings-row-close"><span class="svg-icon color-fill">${svgClose}</span></div>
-                    <div class="settings-row-header">Bookmarks</div>
+                    <div class="settings-row-header">Feed Bookmarks</div>
                     <div x-id="bookmarks"></div>
                     <div class="settings-row-header">Theme</div>
                     <div x-id="themes"></div>
@@ -136,6 +136,7 @@ export class SettingsView extends View {
       bySource.set("r/", []);
       bySource.set("rss/", []);
       bySource.set("yt/", []);
+      bySource.set("m/", []);
       for (const bookmark of settings.bookmarks) {
          let source = bySource.get(bookmark.source);
          if (!source) bySource.set(bookmark.source, (source = []));
@@ -199,7 +200,7 @@ export class SettingsView extends View {
             elements.bookmarks.append(bookmarkDiv);
          }
          if (source != "hn/") {
-            const addBookmarkDiv = dom(`<div class="settings-row" style="margin-left: var(--ledit-padding)">New bookmark</div>`)[0];
+            const addBookmarkDiv = dom(`<div class="settings-row" style="margin-left: var(--ledit-padding);"><span class="svg-icon color-fill">${svgBookmark}</span>Add feed</div>`)[0];
             elements.bookmarks.append(addBookmarkDiv);
             addBookmarkDiv.addEventListener("click", () => {
                const newBookmark: Bookmark = {
@@ -321,7 +322,9 @@ function sourcePrefixToFeedLabel(source: SourcePrefix) {
       case "rss/":
          return "RSS feeds";
       case "yt/":
-         return "YouTube feeds";
+         return "YouTube channels";
+      case "m/":
+         return "Mastodon accounts";
       default:
          assertNever(source);
    }
