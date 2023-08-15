@@ -34,6 +34,10 @@
   display: none;
 }
 
+.post-content > :last-child {
+  margin-bottom: 0;
+}
+
 .post-loading {
   text-align: center;
   margin: var(--ledit-margin);
@@ -208,4 +212,20 @@
 
 .post-points {
   margin-left: auto;
+}
+
+.post-mastodon-poll {
+
+}
+
+.post-mastodon-poll-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.post-mastodon-poll-summary {
+  margin-top: var(--ledit-margin);
+  font-size: var(--ledit-font-size-small);
+  color: var(--ledit-color-dim);
 }

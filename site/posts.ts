@@ -126,8 +126,15 @@ export class PostView extends View {
                   : ""
             }
             <span class="post-date"><a href="${post.url}" target="_blank">${dateToText(post.createdAt * 1000)}</a></span>
-            ${post.author.length != 0 ? `<span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>` : ""}
-            <span class="post-author"><a href="${post.authorUrl}" target="_blank">${post.author}</a></span>
+            ${
+               post.author && post.authorUrl
+                  ? /*html*/ `
+               <span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>
+               <span class="post-author">
+                  <a href="${post.authorUrl}" target="_blank">${post.author}</a>
+               </span>`
+                  : ""
+            }
             ${
                post.domain
                   ? /*html*/ `

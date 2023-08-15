@@ -30,6 +30,10 @@ import heart from "./heart.svg"
 import pencil from "./pencil.svg"
 // @ts-ignore
 import link from "./link.svg"
+// @ts-ignore
+import star from "./star.svg"
+// @ts-ignore
+import reblog from "./reblog.svg"
 
 export const svgBurger = burger;
 export const svgCircle = circle;
@@ -47,3 +51,5 @@ export const svgCheck = check;
 export const svgHeart = heart;
 export const svgPencil = pencil;
 export const svgLink = link;
+export const svgStar = star;
+export const svgReblog = reblog;

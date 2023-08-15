@@ -91,10 +91,10 @@ export class RssSource implements Source {
             posts.push({
                url: entry.link,
                title: entry.title,
-               domain: new URL(entry.link).host,
+               domain: null,
                isSelf: true,
-               author: "",
-               authorUrl: "",
+               author: null,
+               authorUrl: null,
                createdAt: parseFeedDate(entry.published as any as string).getTime() / 1000,
                feed: `${
                   channelImageUrl

@@ -7,11 +7,11 @@ export interface Posts {
 
 export interface Post {
    url: string;
-   domain: string;
+   domain: string | null;
    title: string;
    isSelf: boolean;
-   author: string;
-   authorUrl: string;
+   author: string | null;
+   authorUrl: string | null;
    createdAt: number;
    feed: string;
    numComments: number | null;

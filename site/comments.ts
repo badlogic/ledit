@@ -14,7 +14,7 @@ export class CommentsView extends View {
       super();
       this.render();
       this.classList.add("comments");
-      this.opName = post.author;
+      this.opName = post.author!;
       (async () => this.loadComments(post))();
    }
 

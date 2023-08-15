@@ -1,7 +1,8 @@
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { RedditSource } from "./reddit";
 import { getSettings } from "./settings";
-import { dom, proxyFetch, renderGallery, renderVideo } from "./utils";
+import { svgCircle, svgDownArrow, svgReblog, svgStar, svgUpArrow } from "./svg";
+import { addCommasToNumber, dom, proxyFetch, renderGallery, renderVideo } from "./utils";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
 
@@ -51,6 +52,12 @@ interface MastodonMedia {
 
 interface MastodonCard {}
 
+interface MastodonPoll {
+   options: {title: string, votes_count: number }[];
+   voters_count: number;
+   votes_count: number;
+}
+
 interface MastodonPost {
    account: MastodonAccount;
    content: string;
@@ -63,6 +70,7 @@ interface MastodonPost {
    in_reply_to_id: string | null;
    media_attachments: MastodonMedia[];
    metions: MastodonMention;
+   poll: MastodonPoll;
    reblog: MastodonPost | null;
    reblogs_count: number;
    replies_count: number;
@@ -271,8 +279,19 @@ export class MastodonSource implements Source {
    }
 
    getContent(mastodonPost: MastodonPost): ContentDom {
-      const toggles: Element[] = [];
       let postToView = mastodonPost.reblog ?? mastodonPost;
+      const toggles: Element[] = [];
+
+      const points = dom( /*html*/`
+      <div class="post-points">
+         <span class="svgIcon color-fill">${svgReblog}</span>
+         <span>${addCommasToNumber(postToView.reblogs_count)}</span>
+         <span class="svgIcon color-fill">${svgStar}</span>
+         <span>${addCommasToNumber(postToView.favourites_count)}</span>
+      </div>
+      `)[0];
+      toggles.push(points);
+
       let prelude = "";
       if (mastodonPost.reblog) {
          const avatarImageUrl = mastodonPost.account.avatar_static;
@@ -287,6 +306,16 @@ export class MastodonSource implements Source {
          `;
       }
       const content = dom(`<div class="post-content">${prelude}${postToView.content}</div>`)[0];
+
+
+      if (postToView.poll) {
+         const pollDiv = dom(`<div class="post-mastodon-poll"></div>`)[0];
+         for (const option of postToView.poll.options) {
+            pollDiv.append(dom(`<div class="post-mastodon-poll-option svgIcon color-fill">${svgCircle}${option.title}</div>`)[0]);
+         }
+         pollDiv.append(dom(`<div class="post-mastodon-poll-summary">${postToView.poll.votes_count} votes, ${postToView.poll.voters_count} voters</div>`)[0]);
+         content.append(pollDiv);
+      }
 
       if (postToView.media_attachments.length > 0) {
          const images: string[] = [];
@@ -328,6 +357,7 @@ export class MastodonSource implements Source {
       if (postToView.card) {
          // FIXME render cards
       }
+
       return {elements: [content], toggles};
    }
 
