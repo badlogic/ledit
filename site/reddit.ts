@@ -191,7 +191,7 @@ export class RedditSource implements Source {
             }
          }
          return {
-            url: redditPost.data.url,
+            url: redditPost.data.url.startsWith("/r/") ? "https://www.reddit.com" + redditPost.data.url : redditPost.data.url,
             title: redditPost.data.title,
             isSelf: redditPost.data.is_self,
             isGallery: redditPost.data.is_gallery,
