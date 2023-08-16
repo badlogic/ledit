@@ -113,6 +113,10 @@ blockquote {
    fill: var(--ledit-default-check-color);
 }
 
+.color-gold-fill {
+   fill: rgb(255, 123, 0);;
+}
+
 @media (max-width: 767px) {
    .posts,
    .comments,

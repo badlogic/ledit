@@ -3,6 +3,7 @@ import { RedditSource } from "./reddit";
 import { getSettings } from "./settings";
 import { svgCircle, svgDownArrow, svgReblog, svgStar, svgUpArrow } from "./svg";
 import { addCommasToNumber, dom, proxyFetch, renderGallery, renderVideo } from "./utils";
+import { View } from "./view";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
 
@@ -64,6 +65,7 @@ interface MastodonPost {
    card: MastodonCard;
    created_at: string;
    edited_at: string | null;
+   favourited: boolean;
    favourites_count: number;
    id: string;
    in_reply_to_account_id: string | null;
@@ -72,6 +74,7 @@ interface MastodonPost {
    metions: MastodonMention;
    poll: MastodonPoll;
    reblog: MastodonPost | null;
+   reblogged: boolean;
    reblogs_count: number;
    replies_count: number;
    sensitive: boolean;
@@ -286,7 +289,7 @@ export class MastodonSource implements Source {
          this.localizeMastodonPostIds(reply, userInfo);
          let replyUrl = reply.url;
          const avatarImageUrl = reply.account.avatar_static;
-         const content = this.getContent(reply);
+         const content = this.getPostContent(reply, userInfo);
          const comment = {
             url: replyUrl,
             author: avatarImageUrl
@@ -320,124 +323,95 @@ export class MastodonSource implements Source {
    getContentDom(post: Post): ContentDom {
       if (!post.contentOnly) {
          let mastodonPost = (post as any).mastodonPost as MastodonPost;
-         return this.getContent(mastodonPost);
+         return this.getPostContent(mastodonPost, (post as any).userInfo);
       } else {
-         const notification = (post as any).notification as MastodonNotification;
-         this.localizeMastodonAccountIds(notification.account, (post as any).userInfo);
-         let html = "";
-         switch (notification.type) {
-            case "mention":
-               this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
-               html = /*html*/ `
-                  <div class="inline-row">
-                     <span class="svgIcon color-fill">${svgStar}</span>
-                     <a href="${notification.account.url}" class="inline-row">
-                        <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
-                        <span>${getAccountName(notification.account)}</span>
-                     </a>
-                     <a href="${notification.status!.url}">mentioned you</a>
-                  </div>
-                  <div class="post-notification-text">${notification.status?.content}</div>
-                  `;
-               break;
-            case "status":
-               break;
-            case "reblog":
-               this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
-               html = /*html*/ `
-                  <div class="inline-row">
-                     <span class="svgIcon color-fill">${svgReblog}</span>
-                     <a href="${notification.account.url}" class="inline-row">
-                        <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
-                        <span>${getAccountName(notification.account)}</span>
-                     </a>
-                     <a href="${notification.status!.url}">reblogged you</a>
-                  </div>
-                  <div class="post-notification-text">${notification.status?.content}</div>
-                  `;
-               break;
-            case "follow":
-               html = /*html*/ `
-               <div class="inline-row" style="margin-bottom: -1em">
-                  <a href="${notification.account.url}" class="inline-row">
-                     <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
-                     <span>${getAccountName(notification.account)}</span>
-                  </a>
-                  <span>follows you</span>
-               </div>`;
-               break;
-            case "follow_request":
-               html = /*html*/ `
-               <div class="inline-row" style="margin-bottom: -1em">
-                  <a href="${notification.account.url}" class="inline-row">
-                     <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
-                     <span>${getAccountName(notification.account)}</span>
-                  </a>
-                  <span>wants to follow you</span>
-               </div>`;
-               break;
-               break;
-            case "favourite":
-               this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
-               html = /*html*/ `
-                  <div class="inline-row">
-                     <span class="svgIcon color-fill">${svgStar}</span>
-                     <a href="${notification.account.url}" class="inline-row">
-                        <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
-                        <span>${getAccountName(notification.account)}</span>
-                     </a>
-                     <a href="${notification.status!.url}">favorited your post</a>
-                  </div>
-                  <div class="post-notification-text">${notification.status?.content}</div>
-                  `;
-               break;
-            case "poll":
-               this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
-               html = /*html*/ `
-                  <div class="inline-row">
-                     <span class="svgIcon color-fill">${svgReblog}</span>
-                     <a href="${notification.account.url}" class="inline-row">
-                        <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
-                        <span>${getAccountName(notification.account)}'s</span>
-                     </a>
-                     <a href="${notification.status!.url}">poll has ended</a>
-                  </div>
-                  <div class="post-notification-text">${notification.status?.content}</div>
-                  `;
-               break;
-            case "update":
-               this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
-               html = /*html*/ `
-                  <div class="inline-row">
-                     <span class="svgIcon color-fill">${svgReblog}</span>
-                     <a href="${notification.account.url}" class="inline-row">
-                        <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
-                        <span>${getAccountName(notification.account)}'s</span>
-                     </a>
-                     <a href="${notification.status!.url}">post was edited</a>
-                  </div>
-                  <div class="post-notification-text">${notification.status?.content}</div>
-                  `;
-               break;
-         }
-         const content = dom(`<div class="post-content" style="margin-bottom: var(--ledit-margin);">${html}</div>`)[0];
-         return { elements: [content], toggles: [] };
+         return this.getNotificationContent(post);
       }
    }
 
-   getContent(mastodonPost: MastodonPost): ContentDom {
+   getPostContent(mastodonPost: MastodonPost, userInfo: MastodonUserInfo): ContentDom {
       let postToView = mastodonPost.reblog ?? mastodonPost;
       const toggles: Element[] = [];
 
       const points = dom(/*html*/ `
       <div class="post-points">
-         <span class="svgIcon color-fill">${svgReblog}</span>
-         <span>${addCommasToNumber(postToView.reblogs_count)}</span>
-         <span class="svgIcon color-fill">${svgStar}</span>
-         <span>${addCommasToNumber(postToView.favourites_count)}</span>
+         <div x-id="boost">
+            <span x-id="boostIcon" class="svgIcon ${postToView.reblogged ? "color-gold-fill" : "color-fill"}">${svgReblog}</span>
+            <span x-id="boostCount">${addCommasToNumber(postToView.reblogs_count)}</span>
+         </div>
+         <div x-id="favourite">
+            <span x-id="favouriteIcon" class="svgIcon ${postToView.favourited ? "color-gold-fill" : "color-fill"}">${svgStar}</span>
+            <span x-id="favouriteCount">${addCommasToNumber(postToView.favourites_count)}</span>
+         </div>
       </div>
       `)[0];
+      if (userInfo.bearer) {
+         const pointsElements = View.elements<{
+            boost: HTMLElement,
+            boostIcon: HTMLElement,
+            boostCount: HTMLElement,
+            favourite: HTMLElement,
+            favouriteIcon: HTMLElement,
+            favouriteCount: HTMLElement
+         }>(points)
+         pointsElements.boost.addEventListener("click", async () => {
+            postToView.reblogged = !postToView.reblogged;
+            const url = `https://${userInfo.host}/api/v1/statuses/${postToView.id}/${postToView.reblogged ? "reblog" : "unreblog"}`;
+            const options = {
+               method: "POST",
+               headers: {
+                  Authorization: "Bearer " + userInfo.bearer,
+               },
+            };
+            const response = await fetch(url, options);
+            if (response.status != 200) {
+               alert("Coulnd't (un)reblog post");
+               return;
+            }
+
+            if (postToView.reblogged) postToView.reblogs_count++;
+            else postToView.reblogs_count--;
+            pointsElements.boostCount.innerHTML = addCommasToNumber(postToView.reblogs_count);
+
+            if (postToView.reblogged) {
+               pointsElements.boostIcon.classList.remove("color-fill");
+               pointsElements.boostIcon.classList.add("color-gold-fill");
+            } else {
+               pointsElements.boostIcon.classList.remove("color-gold-fill");
+               pointsElements.boostIcon.classList.add("color-fill");
+            }
+         });
+
+         pointsElements.favourite.addEventListener("click", async () => {
+            postToView.favourited = !postToView.favourited;
+            const url = `https://${userInfo.host}/api/v1/statuses/${postToView.id}/${postToView.favourited ? "favourite" : "unfavourite"}`;
+            const options = {
+               method: "POST",
+               headers: {
+                  Authorization: "Bearer " + userInfo.bearer,
+               },
+            };
+            const response = await fetch(url, options);
+            if (response.status != 200) {
+               alert("Coulnd't (un)favourite post");
+               return;
+            }
+            if (postToView.favourited) postToView.favourites_count++;
+            else postToView.favourites_count--;
+            pointsElements.favouriteCount.innerHTML = addCommasToNumber(postToView.favourites_count);
+
+            if (postToView.favourited) {
+               pointsElements.favouriteIcon.classList.remove("color-fill");
+               pointsElements.favouriteIcon.classList.add("color-gold-fill");
+            } else {
+               pointsElements.favouriteIcon.classList.remove("color-gold-fill");
+               pointsElements.favouriteIcon.classList.add("color-fill");
+            }
+         });
+      }
+
       toggles.push(points);
+
 
       let prelude = "";
       if (mastodonPost.reblog) {
@@ -507,6 +481,106 @@ export class MastodonSource implements Source {
       }
 
       return { elements: [content], toggles };
+   }
+
+   getNotificationContent(post: Post) {
+      const notification = (post as any).notification as MastodonNotification;
+      this.localizeMastodonAccountIds(notification.account, (post as any).userInfo);
+      let html = "";
+      switch (notification.type) {
+         case "mention":
+            this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
+            html = /*html*/ `
+                  <div class="inline-row">
+                     <a href="${notification.account.url}" class="inline-row">
+                        <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+                        <span>${getAccountName(notification.account)}</span>
+                     </a>
+                     <a href="${notification.status!.url}">mentioned you</a>
+                  </div>
+                  <div class="post-notification-text">${notification.status?.content}</div>
+                  `;
+            break;
+         case "status":
+            break;
+         case "reblog":
+            this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
+            html = /*html*/ `
+                  <div class="inline-row">
+                     <span class="svgIcon color-gold-fill">${svgReblog}</span>
+                     <a href="${notification.account.url}" class="inline-row">
+                        <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+                        <span>${getAccountName(notification.account)}</span>
+                     </a>
+                     <a href="${notification.status!.url}">reblogged you</a>
+                  </div>
+                  <div class="post-notification-text">${notification.status?.content}</div>
+                  `;
+            break;
+         case "follow":
+            html = /*html*/ `
+               <div class="inline-row" style="margin-bottom: -1em">
+                  <a href="${notification.account.url}" class="inline-row">
+                     <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+                     <span>${getAccountName(notification.account)}</span>
+                  </a>
+                  <span>follows you</span>
+               </div>`;
+            break;
+         case "follow_request":
+            html = /*html*/ `
+               <div class="inline-row" style="margin-bottom: -1em">
+                  <a href="${notification.account.url}" class="inline-row">
+                     <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+                     <span>${getAccountName(notification.account)}</span>
+                  </a>
+                  <span>wants to follow you</span>
+               </div>`;
+            break;
+            break;
+         case "favourite":
+            this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
+            html = /*html*/ `
+                  <div class="inline-row">
+                     <span class="svgIcon color-gold-fill">${svgStar}</span>
+                     <a href="${notification.account.url}" class="inline-row">
+                        <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+                        <span>${getAccountName(notification.account)}</span>
+                     </a>
+                     <a href="${notification.status!.url}">favorited your post</a>
+                  </div>
+                  <div class="post-notification-text">${notification.status?.content}</div>
+                  `;
+            break;
+         case "poll":
+            this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
+            html = /*html*/ `
+                  <div class="inline-row">
+                     <a href="${notification.account.url}" class="inline-row">
+                        <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+                        <span>${getAccountName(notification.account)}'s</span>
+                     </a>
+                     <a href="${notification.status!.url}">poll has ended</a>
+                  </div>
+                  <div class="post-notification-text">${notification.status?.content}</div>
+                  `;
+            break;
+         case "update":
+            this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
+            html = /*html*/ `
+                  <div class="inline-row">
+                     <a href="${notification.account.url}" class="inline-row">
+                        <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+                        <span>${getAccountName(notification.account)}'s</span>
+                     </a>
+                     <a href="${notification.status!.url}">post was edited</a>
+                  </div>
+                  <div class="post-notification-text">${notification.status?.content}</div>
+                  `;
+            break;
+      }
+      const content = dom(`<div class="post-content" style="margin-bottom: var(--ledit-margin);">${html}</div>`)[0];
+      return { elements: [content], toggles: [] };
    }
 
    getFeed(): string {

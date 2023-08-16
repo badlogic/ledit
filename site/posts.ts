@@ -1,5 +1,5 @@
 import "./posts.css";
-import { svgDownArrow, svgImages, svgLink, svgLoader, svgSpeeBubble, svgUpArrow } from "./svg/index";
+import { svgDownArrow, svgImages, svgLink, svgLoader, svgSpeechBubble as svgSpeechBubble, svgUpArrow } from "./svg/index";
 import { addCommasToNumber, dateToText, dom, intersectsViewport, navigationGuard, onVisibleOnce } from "./utils";
 import { View } from "./view";
 import { ContentView } from "./content";
@@ -178,7 +178,7 @@ export class PostView extends View {
                post.numComments
                   ? /*html*/ `
                   <div x-id="commentsToggle" class="post-comments-toggle">
-                     <span class="svg-icon color-fill">${svgSpeeBubble}</span>
+                     <span class="svg-icon color-fill">${svgSpeechBubble}</span>
                      <span>${addCommasToNumber(post.numComments)}</span>
                   </div>
                `

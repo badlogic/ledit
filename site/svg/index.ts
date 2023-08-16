@@ -15,7 +15,7 @@ import upArrow from "./uparrow.svg"
 // @ts-ignore
 import downArrow from "./downarrow.svg"
 // @ts-ignore
-import speeBubble from "./speechbubble.svg"
+import speechBubble from "./speechbubble.svg"
 // @ts-ignore
 import images from "./images.svg"
 // @ts-ignore
@@ -43,7 +43,7 @@ export const svgPlus = plus;
 export const svgBookmark = bookmark;
 export const svgUpArrow = upArrow;
 export const svgDownArrow = downArrow;
-export const svgSpeeBubble = speeBubble;
+export const svgSpeechBubble = speechBubble;
 export const svgImages = images;
 export const svgGithub = github;
 export const svgClose = close;

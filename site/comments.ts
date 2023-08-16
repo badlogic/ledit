@@ -104,6 +104,7 @@ export class CommentView extends View {
          elements.replies.append(replyDom);
       }
 
+      const toggles: Element[] = [];
       if (typeof comment.content === "string") {
          elements.text.innerHTML = htmlDecode(comment.content)!;
       } else {
@@ -114,12 +115,17 @@ export class CommentView extends View {
          for (const toggle of content.toggles) {
             elements.buttons.append(toggle);
          }
+         toggles.push(...content.toggles);
       }
+
 
       const isLink = (element: HTMLElement) => {
          let el: HTMLElement | null = element;
          while (el) {
             if (el.tagName == "A") return true;
+            if (el.classList.contains("content-image-gallery")) return true;
+            if (toggles.indexOf(el) != -1)
+               return true;
             el = el.parentElement;
          }
          return false;
@@ -138,7 +144,8 @@ export class CommentView extends View {
             }
          }
       };
-      this.addEventListener("click", toggleCollapsed);
+      elements.text.addEventListener("click", toggleCollapsed);
+      elements.repliesCount.addEventListener("click", toggleCollapsed);
    }
 }
 customElements.define("ledit-comment", CommentView);
