@@ -215,14 +215,6 @@ class NavigationGuard {
       this.token = null;
    }
 
-   numCallbacks() {
-      let num = 0;
-      for (const callbacks of this.stack) {
-         num += callbacks.length;
-      }
-      return num;
-   }
-
    push() {
       this.stack.push([]);
    }
@@ -270,6 +262,48 @@ class NavigationGuard {
 }
 
 export const navigationGuard = new NavigationGuard();
+
+type EscapeCallback = () => void;
+
+export class EscapeGuard {
+   private stack: EscapeCallback[][] = [[]];
+   private listener;
+
+   constructor() {
+      this.listener = this.handleEscape.bind(this);
+      document.addEventListener("keydown", this.listener);
+   }
+
+   push() {
+      this.stack.push([]);
+   }
+
+   registerCallback(callback: EscapeCallback): void {
+      this.stack[this.stack.length - 1].push(callback);
+   }
+
+   removeCallback(callback: EscapeCallback): void {
+      for (const callbacks of this.stack) {
+         const index = callbacks.indexOf(callback);
+         if (index !== -1) {
+            callbacks.splice(index, 1);
+         }
+      }
+   }
+
+   pop() {
+      this.stack.pop();
+   }
+
+   private handleEscape(event: KeyboardEvent): void {
+      if (this.stack.length == 0) return;
+      for (const callback of this.stack[this.stack.length - 1]) {
+         callback();
+      }
+   }
+}
+
+export const escapeGuard = new EscapeGuard();
 
 export function assertNever(x: never) {
    throw new Error("Unexpected object: " + x);

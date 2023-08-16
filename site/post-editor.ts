@@ -1,7 +1,7 @@
 // @ts-ignore
 import "./post-editor.css";
 import { svgClose, svgImages, svgLoader } from "./svg";
-import { navigationGuard } from "./utils";
+import { escapeGuard, navigationGuard, onAddedToDOM } from "./utils";
 import { View } from "./view";
 
 export class PostEditor extends View {
@@ -25,7 +25,7 @@ export class PostEditor extends View {
           <div x-id="editor" class="post-editor">
             <div x-id="close" class="post-editor-close"><span class="svg-icon color-fill">${svgClose}</span></div>
             <div x-id="headerRow" class="post-editor-header"></div>
-            <textarea x-id="text" class="post-editor-textarea" tabindex="1"></textarea>
+            <textarea x-id="text" class="post-editor-textarea"></textarea>
             <div class="post-editor-buttons">
                <button x-id="addMedia" class="post-editor-button svgIcon color-fill" style="font-size: var(--ledit-font-size-big)">${svgImages}</button>
                <div x-id="charCount" style="margin-left: auto">${this.text?.length ?? 0}/${this.maxChars}</div>
@@ -50,7 +50,7 @@ export class PostEditor extends View {
       elements.headerRow.append(this.header);
       elements.text.value = this.text ?? "";
       elements.text.placeholder = this.placeholder;
-      elements.text.focus();
+      onAddedToDOM(elements.text, () => elements.text.focus());
 
       // Update char count and disable publish button if necessary
       elements.text.addEventListener("input", (event) => {
@@ -104,15 +104,11 @@ export class PostEditor extends View {
       });
 
       // Close when escape is pressed
-      const escapeListener = (event: KeyboardEvent) => {
-         if (event.key === "Escape" || event.keyCode === 27) {
-            event.stopPropagation();
-            event.preventDefault();
-            this.close();
-            document.removeEventListener("keydown", escapeListener);
-         }
-      };
-      document.addEventListener("keydown", escapeListener);
+      escapeGuard.push();
+      escapeGuard.registerCallback(() => {
+         this.close();
+         escapeGuard.pop();
+      })
 
       // Close on back navigation
       const navListener = () => {

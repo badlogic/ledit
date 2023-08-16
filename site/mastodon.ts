@@ -572,7 +572,7 @@ export class MastodonSource implements Source {
             const reply = dom(`<a style="font-size: var(--ledit-font-size-small); cursor: pointer;">Reply</a>`)[0];
             toggles.push(reply);
             reply.addEventListener("click", (event) => {
-               this.showCommentReplyEditor(postToView, userInfo, null);
+               this.showCommentReplyEditor(postToView, userInfo, undefined);
             });
          }
 

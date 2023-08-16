@@ -1,6 +1,6 @@
 import "./posts.css";
 import { svgDownArrow, svgImages, svgLink, svgLoader, svgSpeechBubble as svgSpeechBubble, svgUpArrow } from "./svg/index";
-import { addCommasToNumber, dateToText, dom, intersectsViewport, navigationGuard, onVisibleOnce } from "./utils";
+import { addCommasToNumber, dateToText, dom, escapeGuard, intersectsViewport, navigationGuard, onVisibleOnce } from "./utils";
 import { View } from "./view";
 import { ContentView } from "./content";
 import { CommentsView } from "./comments";
@@ -228,11 +228,10 @@ export class PostView extends View {
             this.toggleComments();
          });
 
-         document.addEventListener("keydown", (event) => {
-            if (event.key === "Escape" || event.keyCode === 27) {
-               if (elements.buttonsRow.classList.contains("post-buttons-sticky") && intersectsViewport(elements.buttonsRow)) this.toggleComments();
-            }
-         });
+         // Close when escape is pressed
+         escapeGuard.registerCallback(() => {
+            if (elements.buttonsRow.classList.contains("post-buttons-sticky") && intersectsViewport(elements.buttonsRow)) this.toggleComments();
+         })
       }
 
       if (collapse) {

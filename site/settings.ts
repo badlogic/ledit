@@ -1,7 +1,7 @@
 import { SourcePrefix, sourcePrefixLabel } from "./data";
 import "./settings.css";
 import { svgCheck, svgClose, svgGithub, svgHeart, svgMinus, svgPencil, svgBookmark } from "./svg/index";
-import { assertNever, dom, navigate, navigationGuard } from "./utils";
+import { assertNever, dom, escapeGuard, navigate, navigationGuard } from "./utils";
 import { View } from "./view";
 
 interface Bookmark {
@@ -297,15 +297,11 @@ export class SettingsView extends View {
       });
 
       // Close when escape is pressed
-      const escapeListener = (event: KeyboardEvent) => {
-         if (event.key === "Escape" || event.keyCode === 27) {
-            event.stopPropagation();
-            event.preventDefault();
-            this.close();
-            document.removeEventListener("keydown", escapeListener);
-         }
-      };
-      document.addEventListener("keydown", escapeListener);
+      escapeGuard.push();
+      escapeGuard.registerCallback(() => {
+         this.close();
+         escapeGuard.pop();
+      })
 
       // Close on back navigation
       const navListener = () => {
@@ -438,15 +434,11 @@ export class BookmarkEditor extends View {
       });
 
       // Close when escape is pressed
-      const escapeListener = (event: KeyboardEvent) => {
-         if (event.key === "Escape" || event.keyCode === 27) {
-            event.stopPropagation();
-            event.preventDefault();
-            this.close();
-            document.removeEventListener("keydown", escapeListener);
-         }
-      };
-      document.addEventListener("keydown", escapeListener);
+      escapeGuard.push();
+      escapeGuard.registerCallback(() => {
+         this.close();
+         escapeGuard.pop();
+      })
 
       // Close on back navigation
       const navListener = () => {
