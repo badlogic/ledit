@@ -231,6 +231,7 @@ export class RedditSource implements Source {
             score: redditComment.data.score,
             content: redditComment.data.body_html,
             replies: [] as Comment[],
+            highlight: false,
          } as Comment;
          if (redditComment.data.replies != "" && redditComment.data.replies !== undefined) {
             for (const reply of redditComment.data.replies.data.children) {

@@ -41,6 +41,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25em;
+  width: 100%;
 }
 
 .comment-points {
@@ -96,7 +97,8 @@
   display: flex;
   font-size: var(--ledit-font-size-small);
   gap: var(--ledit-padding);
-  margin-top: var(--ledit-padding);
+  height: 1em;
+  margin-left: auto;
 }
 
 .comment-buttons * {
@@ -119,3 +121,9 @@
   cursor: pointer;
 }
 
+.comment-highlighted {
+  border: 0.5px solid var(--ledit-color);
+  border-radius: 4px;
+  padding: var(--ledit-padding);
+  background: var(--ledit-background);
+}

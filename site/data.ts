@@ -26,6 +26,7 @@ export interface Comment {
    score: number | null;
    content: string | ContentDom;
    replies: Comment[];
+   highlight: boolean;
 }
 
 export interface SortingOption {

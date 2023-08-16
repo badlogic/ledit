@@ -1,7 +1,7 @@
 import "./comments.css";
 import { Post, Comment, getSource } from "./data";
 import { svgLoader } from "./svg";
-import { dateToText, dom, htmlDecode } from "./utils";
+import { dateToText, dom, htmlDecode, onAddedToDOM, scrollToAndCenter } from "./utils";
 import { View } from "./view";
 
 const commentsCache = new Map<string, Comment[]>();
@@ -58,6 +58,12 @@ export class CommentView extends View {
 
    render() {
       const comment = this.comment;
+      if (comment.highlight) {
+         this.classList.add("comment-highlighted");
+         onAddedToDOM(this, () => {
+            scrollToAndCenter(this);
+         })
+      }
 
       this.innerHTML = /*html*/ `
          <div class="comment-meta">
@@ -76,9 +82,9 @@ export class CommentView extends View {
                }
                <span>• </span>
                <a class="comment-reply" href="${comment.url}">Reply</a>
+               <div x-id="buttons" class="comment-buttons"></div>
          </div>
          <div x-id="text" class="comment-text"></div>
-         <div x-id="buttons" class="comment-buttons"></div>
          <div x-id="replies" class="comment-replies"></div>
          <div x-id="repliesCount" class="comment-replies-count hidden"></div>
       `;

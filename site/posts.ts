@@ -175,7 +175,7 @@ export class PostView extends View {
          <div x-id="content" class="post-content"></div>
          <div x-id="buttonsRow" class="post-buttons">
             ${
-               post.numComments
+               post.numComments != null
                   ? /*html*/ `
                   <div x-id="commentsToggle" class="post-comments-toggle">
                      <span class="svg-icon color-fill">${svgSpeechBubble}</span>

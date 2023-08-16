@@ -2,7 +2,7 @@ import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix }
 import { RedditSource } from "./reddit";
 import { getSettings } from "./settings";
 import { svgCircle, svgDownArrow, svgReblog, svgStar, svgUpArrow } from "./svg";
-import { addCommasToNumber, dom, proxyFetch, renderGallery, renderVideo } from "./utils";
+import { addCommasToNumber, dateToText, dom, proxyFetch, renderGallery, renderVideo } from "./utils";
 import { View } from "./view";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
@@ -203,6 +203,12 @@ export class MastodonSource implements Source {
             let postUrl = postToView.url;
             let authorUrl = postToView.account.url;
 
+            let inReplyToPost: MastodonPost | null = null;
+            if (postToView.in_reply_to_id) {
+               const response = await fetch(`https://${userInfo.host}/api/v1/statuses/${postToView.in_reply_to_id}`);
+               inReplyToPost = await response.json();
+            }
+
             const post = {
                url: postUrl,
                domain: postToView.account.username + "@" + new URL(postToView.uri).host,
@@ -217,11 +223,12 @@ export class MastodonSource implements Source {
                authorUrl: authorUrl,
                createdAt: new Date(postToView.created_at).getTime() / 1000,
                score: postToView.favourites_count,
-               numComments: postToView.replies_count,
+               numComments: postToView.replies_count + (inReplyToPost ? 1 : 0),
                contentOnly: false,
                mastodonPost,
                userInfo,
                id: mastodonPost.id,
+               inReplyToPost
             } as Post;
             posts.push(post);
          }
@@ -280,16 +287,26 @@ export class MastodonSource implements Source {
          statusId = postToView.id;
       }
       const response = await fetch(`https://${host}/api/v1/statuses/${statusId}/context`);
-      const context = (await response.json()) as { descendants: MastodonPost[] };
+      const context = (await response.json()) as { ancestors: MastodonPost[], descendants: MastodonPost[] };
 
       const roots: Comment[] = [];
       const comments: Comment[] = [];
       const commentsById = new Map<string, Comment>();
-      for (const reply of context.descendants) {
+
+      let rootId: string | null = null;
+      const mastodonComments: MastodonPost[] = [];
+      if (context.ancestors && context.ancestors.length > 0) {
+         rootId = context.ancestors[0].id;
+         mastodonComments.push(...context.ancestors);
+         mastodonComments.push(postToView);
+      }
+      mastodonComments.push(...context.descendants);
+
+      for (const reply of mastodonComments) {
          this.localizeMastodonPostIds(reply, userInfo);
          let replyUrl = reply.url;
          const avatarImageUrl = reply.account.avatar_static;
-         const content = this.getPostContent(reply, userInfo);
+         const content = this.getPostContent(reply, null, userInfo);
          const comment = {
             url: replyUrl,
             author: avatarImageUrl
@@ -303,15 +320,17 @@ export class MastodonSource implements Source {
             score: null,
             content,
             replies: [],
+            highlight: reply.id == statusId,
             mastodonComment: reply,
          } as Comment;
-         if (reply.in_reply_to_id == statusId) roots.push(comment);
+         if (!rootId && reply.in_reply_to_id == statusId) roots.push(comment);
+         if (reply.id == rootId) roots.push(comment);
          comments.push(comment);
          commentsById.set(reply.id, comment);
       }
       for (const comment of comments) {
          const mastodonComment = (comment as any).mastodonComment as MastodonPost;
-         if (mastodonComment.in_reply_to_id == statusId) continue;
+         // if (mastodonComment.in_reply_to_id == statusId) continue;
          if (commentsById.get(mastodonComment.in_reply_to_id!)) {
             const other = commentsById.get(mastodonComment.in_reply_to_id!)!;
             other.replies.push(comment);
@@ -322,14 +341,16 @@ export class MastodonSource implements Source {
 
    getContentDom(post: Post): ContentDom {
       if (!post.contentOnly) {
+         let userInfo = (post as any).userInfo;
          let mastodonPost = (post as any).mastodonPost as MastodonPost;
-         return this.getPostContent(mastodonPost, (post as any).userInfo);
+         let inReplyToPost: MastodonPost | null = (post as any).inReplyToPost;
+         return this.getPostContent(mastodonPost, inReplyToPost, userInfo);
       } else {
          return this.getNotificationContent(post);
       }
    }
 
-   getPostContent(mastodonPost: MastodonPost, userInfo: MastodonUserInfo): ContentDom {
+   getPostContent(mastodonPost: MastodonPost, inReplyToPost: MastodonPost | null, userInfo: MastodonUserInfo): ContentDom {
       let postToView = mastodonPost.reblog ?? mastodonPost;
       const toggles: Element[] = [];
 
@@ -426,6 +447,19 @@ export class MastodonSource implements Source {
          </a>
          `;
       }
+
+      if (inReplyToPost) {
+         const avatarImageUrl = inReplyToPost.account.avatar_static;
+         prelude = /*html*/ `
+         <a href="${inReplyToPost.url}" target="_blank" style="color: var(--ledit-color-dim);">
+            <div class="post-mastodon-prelude">
+                  <span>In reply to</span>
+                  <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+                  <span>${getAccountName(inReplyToPost.account)}</span>
+            </div>
+         </a>
+         `;
+      }
       const content = dom(`<div class="post-content">${prelude}${postToView.content}</div>`)[0];
 
       if (postToView.poll) {
@@ -496,7 +530,7 @@ export class MastodonSource implements Source {
                         <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                         <span>${getAccountName(notification.account)}</span>
                      </a>
-                     <a href="${notification.status!.url}">mentioned you</a>
+                     <a href="${notification.status!.url}">mentioned you ${dateToText(new Date(notification.created_at).getTime())} ago</a>
                   </div>
                   <div class="post-notification-text">${notification.status?.content}</div>
                   `;
@@ -512,7 +546,7 @@ export class MastodonSource implements Source {
                         <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                         <span>${getAccountName(notification.account)}</span>
                      </a>
-                     <a href="${notification.status!.url}">reblogged you</a>
+                     <a href="${notification.status!.url}">reblogged you ${dateToText(new Date(notification.created_at).getTime())} ago</a>
                   </div>
                   <div class="post-notification-text">${notification.status?.content}</div>
                   `;
@@ -524,7 +558,7 @@ export class MastodonSource implements Source {
                      <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                      <span>${getAccountName(notification.account)}</span>
                   </a>
-                  <span>follows you</span>
+                  <span>followed you ${dateToText(new Date(notification.created_at).getTime())} ago</span>
                </div>`;
             break;
          case "follow_request":
@@ -547,7 +581,7 @@ export class MastodonSource implements Source {
                         <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                         <span>${getAccountName(notification.account)}</span>
                      </a>
-                     <a href="${notification.status!.url}">favorited your post</a>
+                     <a href="${notification.status!.url}">favorited your post ${dateToText(new Date(notification.created_at).getTime())} ago</a>
                   </div>
                   <div class="post-notification-text">${notification.status?.content}</div>
                   `;
@@ -560,7 +594,7 @@ export class MastodonSource implements Source {
                         <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                         <span>${getAccountName(notification.account)}'s</span>
                      </a>
-                     <a href="${notification.status!.url}">poll has ended</a>
+                     <a href="${notification.status!.url}">poll has ended ${dateToText(new Date(notification.created_at).getTime())} ago</a>
                   </div>
                   <div class="post-notification-text">${notification.status?.content}</div>
                   `;
@@ -573,7 +607,7 @@ export class MastodonSource implements Source {
                         <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                         <span>${getAccountName(notification.account)}'s</span>
                      </a>
-                     <a href="${notification.status!.url}">post was edited</a>
+                     <a href="${notification.status!.url}">post was edited ${dateToText(new Date(notification.created_at).getTime())} ago</a>
                   </div>
                   <div class="post-notification-text">${notification.status?.content}</div>
                   `;

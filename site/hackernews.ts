@@ -141,6 +141,7 @@ export class HackerNewsSource implements Source {
             score: 0,
             content: encodeHTML("<p>" + hnComment.comment_text.replace(/<p>/g, '<p></p>')),
             replies: [] as Comment[],
+            highlight: false,
          } as Comment;
          if (hnComment.replies) {
             for (const reply of hnComment.replies) {
