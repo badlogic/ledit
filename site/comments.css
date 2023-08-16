@@ -22,6 +22,7 @@
   padding-left: var(--ledit-padding);
   margin-left: var(--ledit-padding);
   margin-top: var(--ledit-padding);
+  cursor: pointer;
 }
 
 .comment a {

@@ -150,3 +150,9 @@ blockquote {
    margin-top: var(--ledit-padding);
    cursor: pointer;
 }
+
+.inline-row {
+   display: inline-flex;
+   align-items: center;
+   gap: var(--ledit-padding);
+}

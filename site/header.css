@@ -49,6 +49,8 @@
 
   .header-bookmark-add {
     cursor: pointer;
+    margin-left: auto;
+    padding-right: var(--ledit-padding);
   }
 
   .header select {

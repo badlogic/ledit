@@ -196,6 +196,7 @@ export class RedditSource implements Source {
             createdAt: redditPost.data.created_utc,
             score: redditPost.data.score,
             numComments: redditPost.data.num_comments,
+            contentOnly: false,
             redditPost,
          } as Post;
       };

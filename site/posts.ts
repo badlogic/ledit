@@ -110,6 +110,34 @@ export class PostView extends View {
 
    render() {
       const post = this.post;
+      if (!post.contentOnly) {
+         this.renderFullPost(post);
+      } else {
+         this.innerHTML = /*html*/ `
+            <div class="post">
+               <div x-id="content" class="post-content"></div>
+               <div x-id="contentToggles"></div>
+            </div>
+         `;
+         const elements = this.elements<{
+            content: Element;
+            contentToggles: Element;
+         }>();
+
+         onVisibleOnce(this, () => {
+            console.log("Showing content of " + this.post.title);
+            const content = new ContentView(this.post);
+
+            for (const toggle of content.toggles) {
+               elements.contentToggles.parentElement?.insertBefore(toggle, elements.contentToggles);
+            }
+            elements.contentToggles.remove();
+            elements.content.append(content);
+         });
+      }
+   }
+
+   renderFullPost(post: Post) {
       const showFeed = getSource().getFeed().toLowerCase() != post.feed.toLowerCase();
       const collapse = getSettings().collapseSeenPosts && PostsView.seenPosts.has(post.url) ? "post-seen" : "";
       this.innerHTML = /*html*/ `

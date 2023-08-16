@@ -15,6 +15,7 @@ export interface Post {
    createdAt: number;
    feed: string;
    numComments: number | null;
+   contentOnly: boolean;
 }
 
 export interface Comment {

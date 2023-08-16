@@ -229,3 +229,13 @@
   font-size: var(--ledit-font-size-small);
   color: var(--ledit-color-dim);
 }
+
+.post-notification-text {
+  color: var(--ledit-color-dim) !important;
+  cursor: pointer;
+}
+
+.post-notification-text * {
+  color: var(--ledit-color-dim) !important;
+  margin: var(--ledit-padding) 0;
+}

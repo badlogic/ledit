@@ -16,6 +16,8 @@ export class ContentView extends View {
          this.append(element);
       }
       this.toggles.push(...content.toggles);
+
+      // Ensure all links open a new tab.
       let links = this.querySelectorAll("a")!;
       for (let i = 0; i < links.length; i++) {
          let link = links[i];

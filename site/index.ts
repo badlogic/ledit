@@ -3,7 +3,7 @@ import "./header";
 import "./settings";
 import "./posts";
 import "./comments";
-import { BookmarkEditor, applySettings, bookmarkToHash, getSettings } from "./settings";
+import { applySettings, bookmarkToHash, getSettings } from "./settings";
 import { navigate } from "./utils";
 import { RedditSource } from "./reddit";
 import { HackerNewsSource } from "./hackernews";

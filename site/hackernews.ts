@@ -56,6 +56,7 @@ export class HackerNewsSource implements Source {
          posts.push({
             url: hnPost.url ?? "https://news.ycombinator.com/item?id=" + hnPost.id,
             title: hnPost.title,
+            domain: hnPost.url ? new URL(hnPost.url).host : null,
             isSelf: hnPost.text ? true : false,
             author: hnPost.by,
             authorUrl: "https://news.ycombinator.com/user?id=" + hnPost.by,
@@ -63,8 +64,9 @@ export class HackerNewsSource implements Source {
             feed: "",
             score: hnPost.score,
             numComments: hnPost.descendants ?? 0,
+            contentOnly: false,
             hnPost
-         } as any)
+         } as Post)
       }
 
       return {

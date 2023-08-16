@@ -66,11 +66,14 @@ export class CommentView extends View {
                </span>
                <span>• </span>
                <span class="comment-data">${dateToText(comment.createdAt * 1000)}</span>
-               ${comment.score ? /*html*/`
+               ${
+                  comment.score
+                     ? /*html*/ `
                   <span>• </span>
                   <span class="comment-points">${comment.score} pts</span>
                `
-               : ""}
+                     : ""
+               }
                <span>• </span>
                <a class="comment-reply" href="${comment.url}">Reply</a>
          </div>
@@ -87,6 +90,13 @@ export class CommentView extends View {
          replies: HTMLElement;
          repliesCount: HTMLElement;
       }>();
+
+      // Ensure all links open a new tab.
+      let links = this.querySelectorAll("a")!;
+      for (let i = 0; i < links.length; i++) {
+         let link = links[i];
+         link.setAttribute("target", "_blank");
+      }
 
       elements.repliesCount.innerText = `${comment.replies.length == 1 ? "1 reply" : comment.replies.length + " replies"}`;
       for (const reply of comment.replies) {
@@ -113,7 +123,7 @@ export class CommentView extends View {
             el = el.parentElement;
          }
          return false;
-      }
+      };
       const toggleCollapsed = (event: MouseEvent) => {
          if (!isLink(event.target as HTMLElement)) {
             event.stopPropagation();
@@ -128,8 +138,7 @@ export class CommentView extends View {
             }
          }
       };
-      elements.text.addEventListener("click", toggleCollapsed);
-      elements.repliesCount.addEventListener("click", toggleCollapsed);
+      this.addEventListener("click", toggleCollapsed);
    }
 }
 customElements.define("ledit-comment", CommentView);
