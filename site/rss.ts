@@ -104,6 +104,7 @@ export class RssSource implements Source {
                score: null,
                numComments: null,
                xmlItem: entry,
+               contentOnly: false
             } as Post);
          }
          return posts;

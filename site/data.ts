@@ -27,6 +27,7 @@ export interface Comment {
    content: string | ContentDom;
    replies: Comment[];
    highlight: boolean;
+   replyCallback: ((comment: Comment, commentElement: Element) => void) | undefined;
 }
 
 export interface SortingOption {

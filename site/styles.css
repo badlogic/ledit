@@ -117,26 +117,6 @@ blockquote {
    fill: rgb(255, 123, 0);;
 }
 
-@media (max-width: 767px) {
-   .posts,
-   .comments,
-   .header,
-   .settings {
-      width: 100% !important;
-   }
-
-   .comments > .comment, .post-buttons-sticky {
-      padding: var(--ledit-margin) !important;
-      margin: calc(var(--ledit-padding) * -1.9) !important;
-      margin-bottom: 0 !important;
-      margin-top: 0 !important;
-   }
-
-   .comments > .comment {
-      border-radius: 0px !important;
-   }
-}
-
 .box {
    display: flex;
    align-items: center;
@@ -159,4 +139,56 @@ blockquote {
    display: inline-flex;
    align-items: center;
    gap: var(--ledit-padding);
+}
+
+.fab-container {
+   position: fixed;
+   left: calc(50% - var(--ledit-margin));
+   transform: translateX(-50%);
+   bottom: var(--ledit-margin);
+
+   width: 600px;
+   display: flex;
+   flex-direction: row;
+   justify-content: flex-end;
+   gap: calc(var(--ledit-padding) * 1.5);
+   z-index: 10;
+}
+
+.fab {
+   background: var(--ledit-background-dim);
+   color: #fff; /* Change to desired text color */
+   border: none;
+   border-radius: 50%;
+   width: calc(3 * var(--ledit-font-size));
+   height: calc(3 * var(--ledit-font-size));
+   box-shadow: 0px 1px 3px var(--ledit-shadow-color);
+   cursor: pointer;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   font-size: calc(1.25 * var(--ledit-font-size));
+ }
+
+
+@media (max-width: 767px) {
+   .posts,
+   .comments,
+   .header,
+   .settings,
+   .post-editor,
+   .fab-container {
+      width: 100% !important;
+   }
+
+   .comments > .comment, .post-buttons-sticky {
+      padding: var(--ledit-margin) !important;
+      margin: calc(var(--ledit-padding) * -1.9) !important;
+      margin-bottom: 0 !important;
+      margin-top: 0 !important;
+   }
+
+   .comments > .comment {
+      border-radius: 0px !important;
+   }
 }

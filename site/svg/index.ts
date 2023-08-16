@@ -34,6 +34,10 @@ import link from "./link.svg"
 import star from "./star.svg"
 // @ts-ignore
 import reblog from "./reblog.svg"
+// @ts-ignore
+import bell from "./bell.svg"
+// @ts-ignore
+import attachment from "./attachment.svg"
 
 export const svgBurger = burger;
 export const svgCircle = circle;
@@ -53,3 +57,5 @@ export const svgPencil = pencil;
 export const svgLink = link;
 export const svgStar = star;
 export const svgReblog = reblog;
+export const svgBell = bell;
+export const svgAttachment = attachment;

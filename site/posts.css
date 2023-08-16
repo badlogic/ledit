@@ -34,6 +34,10 @@
   display: none;
 }
 
+.post-content {
+  overflow-wrap: break-word;
+}
+
 .post-content > :last-child {
   margin-bottom: 0;
 }
@@ -187,6 +191,7 @@
   border-radius: 5px;
   font-weight: 400;
   justify-content: center;
+  align-items: center;
   user-select: none;
 }
 
@@ -212,6 +217,7 @@
 
 .post-points {
   margin-left: auto;
+  cursor: pointer;
 }
 
 .post-mastodon-poll {

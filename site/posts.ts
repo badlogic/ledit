@@ -43,6 +43,26 @@ export class PostsView extends View {
       }
    }
 
+   renderPost(post: Post) {
+      const postDiv = new PostView(post);
+      if (PostsView.seenPosts.has(post.url)) {
+         if (PostsView.hideSeen) {
+            postDiv.classList.add("hidden");
+         }
+      }
+
+      onVisibleOnce(postDiv, () => {
+         if (!PostsView.seenPosts.has(post.url)) {
+            PostsView.seenPosts.add(post.url);
+            getSettings().seenIds.push(post.url);
+            saveSettings();
+            console.log("Seen " + post.url);
+         }
+      });
+
+      return postDiv;
+   }
+
    async renderPosts(posts: Posts) {
       const source = getSource();
       if (posts.posts.length == 0) {
@@ -54,23 +74,10 @@ export class PostsView extends View {
       let hiddenPosts = 0;
       for (let i = 0; i < posts.posts.length; i++) {
          const post = posts.posts[i];
-         const postDiv = new PostView(post);
-         if (PostsView.seenPosts.has(post.url)) {
-            if (PostsView.hideSeen) {
-               postDiv.classList.add("hidden");
-               hiddenPosts++;
-            }
-         }
+         const postDiv = this.renderPost(post);
+         if (postDiv.classList.contains("hidden"))
+            hiddenPosts++;
          this.postsDiv.append(postDiv);
-
-         onVisibleOnce(postDiv, () => {
-            if (!PostsView.seenPosts.has(post.url)) {
-               PostsView.seenPosts.add(post.url);
-               getSettings().seenIds.push(post.url);
-               saveSettings();
-               console.log("Seen " + post.url);
-            }
-         });
       }
 
       // Setup infinite scroll
@@ -98,6 +105,12 @@ export class PostsView extends View {
    showError(message: string, e: any | null = null) {
       this.postsDiv.append(dom(`<div class="post-loading">${message}</div>`)[0]);
       if (e) console.error("An error occured: ", e);
+   }
+
+   prependPost(post: Post) {
+      const postDiv = this.renderPost(post);
+      this.postsDiv.insertBefore(postDiv, this.postsDiv.children[0]);
+      window.scrollTo({top: 0});
    }
 }
 customElements.define("ledit-posts", PostsView);
@@ -275,3 +288,4 @@ export class PostView extends View {
    }
 }
 customElements.define("ledit-post", PostView);
+

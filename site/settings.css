@@ -113,5 +113,4 @@
    font-size: var(--ledit-font-size);
    font-weight: 600;
    height: 2em;
-   border-bottom: 0.5px solid var(--ledit-border-color);
 }

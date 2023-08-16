@@ -56,6 +56,11 @@ export class CommentView extends View {
       this.classList.add("comment");
    }
 
+   prependReply(reply: Comment) {
+      const replyDiv = new CommentView(reply, this.opName);
+      this.insertBefore(replyDiv, this.children[0]);
+   }
+
    render() {
       const comment = this.comment;
       if (comment.highlight) {
@@ -81,7 +86,7 @@ export class CommentView extends View {
                      : ""
                }
                <span>• </span>
-               <a class="comment-reply" href="${comment.url}">Reply</a>
+               <a x-id="reply" class="comment-reply" href="${comment.url}">Reply</a>
                <div x-id="buttons" class="comment-buttons"></div>
          </div>
          <div x-id="text" class="comment-text"></div>
@@ -95,6 +100,7 @@ export class CommentView extends View {
          buttons: HTMLElement;
          replies: HTMLElement;
          repliesCount: HTMLElement;
+         reply: HTMLElement;
       }>();
 
       // Ensure all links open a new tab.
@@ -104,12 +110,23 @@ export class CommentView extends View {
          link.setAttribute("target", "_blank");
       }
 
+      // If a reply callback is set, set up a click listener
+      // and prevent the default behaviour.
+      if (comment.replyCallback) {
+         elements.reply.addEventListener("click", (event) => {
+            event.preventDefault();
+            comment.replyCallback!(comment, this);
+         });
+      }
+
+      // Create reply children recursively.
       elements.repliesCount.innerText = `${comment.replies.length == 1 ? "1 reply" : comment.replies.length + " replies"}`;
       for (const reply of comment.replies) {
          const replyDom = new CommentView(reply, this.opName);
          elements.replies.append(replyDom);
       }
 
+      // Add content toggle buttons
       const toggles: Element[] = [];
       if (typeof comment.content === "string") {
          elements.text.innerHTML = htmlDecode(comment.content)!;
@@ -125,6 +142,7 @@ export class CommentView extends View {
       }
 
 
+      // Collapse children on click
       const isLink = (element: HTMLElement) => {
          let el: HTMLElement | null = element;
          while (el) {

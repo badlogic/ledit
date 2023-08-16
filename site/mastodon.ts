@@ -1,8 +1,11 @@
+import { CommentView } from "./comments";
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
+import { PostEditor } from "./post-editor";
+import { PostsView } from "./posts";
 import { RedditSource } from "./reddit";
 import { getSettings } from "./settings";
-import { svgCircle, svgDownArrow, svgReblog, svgStar, svgUpArrow } from "./svg";
-import { addCommasToNumber, dateToText, dom, proxyFetch, renderGallery, renderVideo } from "./utils";
+import { svgBell, svgCircle, svgDownArrow, svgPencil, svgReblog, svgStar, svgUpArrow } from "./svg";
+import { addCommasToNumber, dateToText, dom, navigationGuard, proxyFetch, renderGallery, renderVideo } from "./utils";
 import { View } from "./view";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
@@ -148,6 +151,116 @@ export class MastodonSource implements Source {
       }
    }
 
+   async mastodonPostToPost(mastodonPost: MastodonPost, userInfo: MastodonUserInfo): Promise<Post | null> {
+      const onlyShowRoots = getSettings().showOnlyMastodonRoots;
+      this.localizeMastodonPostIds(mastodonPost, userInfo);
+      let postToView = mastodonPost.reblog ?? mastodonPost;
+      if (onlyShowRoots && postToView.in_reply_to_account_id) return null;
+      const avatarImageUrl = postToView.account.avatar_static;
+      let postUrl = postToView.url;
+      let authorUrl = postToView.account.url;
+
+      let inReplyToPost: MastodonPost | null = null;
+      if (postToView.in_reply_to_id) {
+         const response = await fetch(`https://${userInfo.host}/api/v1/statuses/${postToView.in_reply_to_id}`);
+         if (response.status == 200) inReplyToPost = await response.json();
+      }
+
+      return {
+         url: postUrl,
+         domain: postToView.account.username + "@" + new URL(postToView.uri).host,
+         feed: `${
+            avatarImageUrl
+               ? `<img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">`
+               : userInfo.username + "@" + userInfo.host
+         }`,
+         title: "",
+         isSelf: false,
+         author: getAccountName(postToView.account),
+         authorUrl: authorUrl,
+         createdAt: new Date(postToView.created_at).getTime() / 1000,
+         score: postToView.favourites_count,
+         numComments: postToView.replies_count + (inReplyToPost && postToView.replies_count == 0 ? 1 : 0),
+         contentOnly: false,
+         mastodonPost,
+         userInfo,
+         id: mastodonPost.id,
+         inReplyToPost,
+      } as Post;
+   }
+
+   mastodonPostToComment(reply: MastodonPost, highlight: boolean, userInfo: MastodonUserInfo): Comment {
+      this.localizeMastodonPostIds(reply, userInfo);
+      let replyUrl = reply.url;
+      const avatarImageUrl = reply.account.avatar_static;
+      const content = this.getPostOrCommentContent(reply, null, userInfo, true);
+      return {
+         url: replyUrl,
+         author: avatarImageUrl
+            ? /*html*/ `
+            <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(1 * var(--ledit-font-size));">
+            <span>${getAccountName(reply.account)}</span>
+         `
+            : getAccountName(reply.account),
+         authorUrl: reply.account.url,
+         createdAt: new Date(reply.created_at).getTime() / 1000,
+         score: null,
+         content,
+         replies: [],
+         highlight,
+         mastodonComment: reply,
+         replyCallback: (comment, commentView) => {
+            const mastodonComment = (comment as any).mastodonComment as MastodonPost;
+            this.showCommentReplyEditor(mastodonComment, userInfo, commentView);
+         },
+      } as Comment;
+   }
+
+   showCommentReplyEditor(mastodonComment: MastodonPost, userInfo: MastodonUserInfo, commentView: CommentView | undefined) {
+      let userHandles: string[] = [];
+      const commentHost = new URL(mastodonComment.uri).host;
+      const commentUser = "@" + mastodonComment.account.username + (commentHost == userInfo.host ? "" : "@" + commentHost);
+      if (commentUser) userHandles.push(commentUser);
+      let mentions = mastodonComment.content.match(/@([A-Za-z0-9_]+@?[A-Za-z0-9_]+\.[A-Za-z]+)/g)?.map((handle) => "@" + handle.slice(1));
+      if (mentions) userHandles.push(...mentions);
+      const header = dom(/*html*/ `
+               <div class="post-editor-reply-to">
+                  <div class="inline-row" style="margin-bottom: var(--ledit-padding); color: var(--ledit-color);">
+                        <span>Reply to</span>
+                        <img src="${
+                           mastodonComment.account.avatar_static
+                        }" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+                        <span>${getAccountName(mastodonComment.account)}</span>
+                  </div>
+                  <div>${mastodonComment.content}</div>
+               </div>
+            `)[0];
+      document.body.append(
+         new PostEditor(
+            header,
+            userHandles.length ? userHandles.join(" ") + " " : null,
+            "Type your reply.",
+            500,
+            true,
+            async (text) => {
+               const mastodonReply = await this.publishPost(userInfo, mastodonComment.id, text);
+               if (mastodonReply) {
+                  const reply = await this.mastodonPostToComment(mastodonReply, true, userInfo);
+                  if (!reply) return false;
+                  if (commentView) {
+                     commentView.prependReply(reply);
+                  } else {
+                     // FIXME
+                  }
+               }
+               return mastodonReply != null;
+            },
+            (name, bytes) => {},
+            (name) => {}
+         )
+      );
+   }
+
    async getMastodonUserPosts(mastodonUser: string, after: string | null): Promise<Post[]> {
       if (after == "end") return [];
       const tokens = mastodonUser.split("/");
@@ -194,44 +307,11 @@ export class MastodonSource implements Source {
       if (timeline != "notifications") {
          const mastodonPosts = json as MastodonPost[];
          const posts: Post[] = [];
-         const onlyShowRoots = getSettings().showOnlyMastodonRoots;
          for (const mastodonPost of mastodonPosts) {
-            this.localizeMastodonPostIds(mastodonPost, userInfo);
-            let postToView = mastodonPost.reblog ?? mastodonPost;
-            if (onlyShowRoots && postToView.in_reply_to_account_id) continue;
-            const avatarImageUrl = postToView.account.avatar_static;
-            let postUrl = postToView.url;
-            let authorUrl = postToView.account.url;
-
-            let inReplyToPost: MastodonPost | null = null;
-            if (postToView.in_reply_to_id) {
-               const response = await fetch(`https://${userInfo.host}/api/v1/statuses/${postToView.in_reply_to_id}`);
-               inReplyToPost = await response.json();
-            }
-
-            const post = {
-               url: postUrl,
-               domain: postToView.account.username + "@" + new URL(postToView.uri).host,
-               feed: `${
-                  avatarImageUrl
-                     ? `<img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">`
-                     : userInfo.username + "@" + userInfo.host
-               }`,
-               title: "",
-               isSelf: false,
-               author: getAccountName(postToView.account),
-               authorUrl: authorUrl,
-               createdAt: new Date(postToView.created_at).getTime() / 1000,
-               score: postToView.favourites_count,
-               numComments: postToView.replies_count + (inReplyToPost ? 1 : 0),
-               contentOnly: false,
-               mastodonPost,
-               userInfo,
-               id: mastodonPost.id,
-               inReplyToPost
-            } as Post;
-            posts.push(post);
+            const post = await this.mastodonPostToPost(mastodonPost, userInfo);
+            if (post) posts.push(post);
          }
+         if (timeline == "home") this.showActionButtons(userInfo);
          return posts;
       } else {
          const notifications = json as MastodonNotification[];
@@ -273,7 +353,66 @@ export class MastodonSource implements Source {
       if (urls.length > 1) {
          posts.sort((a, b) => b.createdAt - a.createdAt);
       }
+
       return { posts, after: newAfters!.join("+") };
+   }
+
+   async publishPost(userInfo: MastodonUserInfo, replyToId: string | null, text: string): Promise<MastodonPost | null> {
+      if (!userInfo.bearer) return null;
+      try {
+         const response = await fetch(`https://${userInfo.host}/api/v1/statuses`, {
+            method: "POST",
+            headers: {
+               Authorization: `Bearer ${userInfo.bearer}`,
+               "Content-Type": "application/json",
+            },
+            body: JSON.stringify(replyToId ? { status: text, in_reply_to_id: replyToId } : { status: text }),
+         });
+         const json = await response.json();
+         if (response.status != 200) {
+            console.error(JSON.stringify(json));
+            return null;
+         }
+         return json as MastodonPost;
+      } catch (e) {
+         console.error("Couldn't publish post.", e);
+         return null;
+      }
+   }
+
+   showActionButtons(userInfo: MastodonUserInfo) {
+      if (!userInfo.bearer) return;
+      const actionButtons = dom(`<div class="fab-container"></div>`)[0];
+      const notificationUrl = location.hash.replace("/home", "/notifications").substring(1);
+      const notifications = dom(`<a href="#${notificationUrl}"><div class="fab svgIcon color-fill">${svgBell}</div></a>`)[0];
+      const publish = dom(`<div class="fab svgIcon color-fill">${svgPencil}</div>`)[0];
+
+      const header = dom(`<span>New post</span>`)[0];
+      publish.addEventListener("click", () =>
+         document.body.append(
+            new PostEditor(
+               header,
+               null,
+               "What's going on?",
+               500,
+               true,
+               async (text) => {
+                  const mastodonPost = await this.publishPost(userInfo, null, text);
+                  if (mastodonPost) {
+                     const post = await this.mastodonPostToPost(mastodonPost, userInfo);
+                     if (!post) return false;
+                     const postsView = document.querySelector("ledit-posts") as PostsView;
+                     postsView.prependPost(post);
+                  }
+                  return mastodonPost != null;
+               },
+               (name, buffer) => {},
+               (name) => {}
+            )
+         )
+      );
+      actionButtons.append(publish, notifications);
+      document.body.append(actionButtons);
    }
 
    async getComments(post: Post): Promise<Comment[]> {
@@ -287,7 +426,7 @@ export class MastodonSource implements Source {
          statusId = postToView.id;
       }
       const response = await fetch(`https://${host}/api/v1/statuses/${statusId}/context`);
-      const context = (await response.json()) as { ancestors: MastodonPost[], descendants: MastodonPost[] };
+      const context = (await response.json()) as { ancestors: MastodonPost[]; descendants: MastodonPost[] };
 
       const roots: Comment[] = [];
       const comments: Comment[] = [];
@@ -303,26 +442,7 @@ export class MastodonSource implements Source {
       mastodonComments.push(...context.descendants);
 
       for (const reply of mastodonComments) {
-         this.localizeMastodonPostIds(reply, userInfo);
-         let replyUrl = reply.url;
-         const avatarImageUrl = reply.account.avatar_static;
-         const content = this.getPostContent(reply, null, userInfo);
-         const comment = {
-            url: replyUrl,
-            author: avatarImageUrl
-               ? /*html*/ `
-               <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(1 * var(--ledit-font-size));">
-               <span>${getAccountName(reply.account)}</span>
-            `
-               : getAccountName(reply.account),
-            authorUrl: reply.account.url,
-            createdAt: new Date(reply.created_at).getTime() / 1000,
-            score: null,
-            content,
-            replies: [],
-            highlight: reply.id == statusId,
-            mastodonComment: reply,
-         } as Comment;
+         const comment = this.mastodonPostToComment(reply, reply.id == statusId, userInfo);
          if (!rootId && reply.in_reply_to_id == statusId) roots.push(comment);
          if (reply.id == rootId) roots.push(comment);
          comments.push(comment);
@@ -344,95 +464,15 @@ export class MastodonSource implements Source {
          let userInfo = (post as any).userInfo;
          let mastodonPost = (post as any).mastodonPost as MastodonPost;
          let inReplyToPost: MastodonPost | null = (post as any).inReplyToPost;
-         return this.getPostContent(mastodonPost, inReplyToPost, userInfo);
+         return this.getPostOrCommentContent(mastodonPost, inReplyToPost, userInfo, false);
       } else {
          return this.getNotificationContent(post);
       }
    }
 
-   getPostContent(mastodonPost: MastodonPost, inReplyToPost: MastodonPost | null, userInfo: MastodonUserInfo): ContentDom {
+   getPostOrCommentContent(mastodonPost: MastodonPost, inReplyToPost: MastodonPost | null, userInfo: MastodonUserInfo, isComment: boolean): ContentDom {
       let postToView = mastodonPost.reblog ?? mastodonPost;
       const toggles: Element[] = [];
-
-      const points = dom(/*html*/ `
-      <div class="post-points">
-         <div x-id="boost">
-            <span x-id="boostIcon" class="svgIcon ${postToView.reblogged ? "color-gold-fill" : "color-fill"}">${svgReblog}</span>
-            <span x-id="boostCount">${addCommasToNumber(postToView.reblogs_count)}</span>
-         </div>
-         <div x-id="favourite">
-            <span x-id="favouriteIcon" class="svgIcon ${postToView.favourited ? "color-gold-fill" : "color-fill"}">${svgStar}</span>
-            <span x-id="favouriteCount">${addCommasToNumber(postToView.favourites_count)}</span>
-         </div>
-      </div>
-      `)[0];
-      if (userInfo.bearer) {
-         const pointsElements = View.elements<{
-            boost: HTMLElement,
-            boostIcon: HTMLElement,
-            boostCount: HTMLElement,
-            favourite: HTMLElement,
-            favouriteIcon: HTMLElement,
-            favouriteCount: HTMLElement
-         }>(points)
-         pointsElements.boost.addEventListener("click", async () => {
-            postToView.reblogged = !postToView.reblogged;
-            const url = `https://${userInfo.host}/api/v1/statuses/${postToView.id}/${postToView.reblogged ? "reblog" : "unreblog"}`;
-            const options = {
-               method: "POST",
-               headers: {
-                  Authorization: "Bearer " + userInfo.bearer,
-               },
-            };
-            const response = await fetch(url, options);
-            if (response.status != 200) {
-               alert("Coulnd't (un)reblog post");
-               return;
-            }
-
-            if (postToView.reblogged) postToView.reblogs_count++;
-            else postToView.reblogs_count--;
-            pointsElements.boostCount.innerHTML = addCommasToNumber(postToView.reblogs_count);
-
-            if (postToView.reblogged) {
-               pointsElements.boostIcon.classList.remove("color-fill");
-               pointsElements.boostIcon.classList.add("color-gold-fill");
-            } else {
-               pointsElements.boostIcon.classList.remove("color-gold-fill");
-               pointsElements.boostIcon.classList.add("color-fill");
-            }
-         });
-
-         pointsElements.favourite.addEventListener("click", async () => {
-            postToView.favourited = !postToView.favourited;
-            const url = `https://${userInfo.host}/api/v1/statuses/${postToView.id}/${postToView.favourited ? "favourite" : "unfavourite"}`;
-            const options = {
-               method: "POST",
-               headers: {
-                  Authorization: "Bearer " + userInfo.bearer,
-               },
-            };
-            const response = await fetch(url, options);
-            if (response.status != 200) {
-               alert("Coulnd't (un)favourite post");
-               return;
-            }
-            if (postToView.favourited) postToView.favourites_count++;
-            else postToView.favourites_count--;
-            pointsElements.favouriteCount.innerHTML = addCommasToNumber(postToView.favourites_count);
-
-            if (postToView.favourited) {
-               pointsElements.favouriteIcon.classList.remove("color-fill");
-               pointsElements.favouriteIcon.classList.add("color-gold-fill");
-            } else {
-               pointsElements.favouriteIcon.classList.remove("color-gold-fill");
-               pointsElements.favouriteIcon.classList.add("color-fill");
-            }
-         });
-      }
-
-      toggles.push(points);
-
 
       let prelude = "";
       if (mastodonPost.reblog) {
@@ -513,6 +553,93 @@ export class MastodonSource implements Source {
       if (postToView.card) {
          // FIXME render cards
       }
+
+      // Add points last, so they go right as the only toggle.
+      const points = dom(/*html*/ `
+      <div class="post-points">
+         <div x-id="boost">
+            <span x-id="boostIcon" class="svgIcon ${postToView.reblogged ? "color-gold-fill" : "color-fill"}">${svgReblog}</span>
+            <span x-id="boostCount">${addCommasToNumber(postToView.reblogs_count)}</span>
+         </div>
+         <div x-id="favourite">
+            <span x-id="favouriteIcon" class="svgIcon ${postToView.favourited ? "color-gold-fill" : "color-fill"}">${svgStar}</span>
+            <span x-id="favouriteCount">${addCommasToNumber(postToView.favourites_count)}</span>
+         </div>
+      </div>
+      `)[0];
+      if (userInfo.bearer) {
+         if (!isComment) {
+            const reply = dom(`<a style="font-size: var(--ledit-font-size-small); cursor: pointer;">Reply</a>`)[0];
+            toggles.push(reply);
+            reply.addEventListener("click", (event) => {
+               this.showCommentReplyEditor(postToView, userInfo, null);
+            });
+         }
+
+         const pointsElements = View.elements<{
+            boost: HTMLElement;
+            boostIcon: HTMLElement;
+            boostCount: HTMLElement;
+            favourite: HTMLElement;
+            favouriteIcon: HTMLElement;
+            favouriteCount: HTMLElement;
+         }>(points);
+         pointsElements.boost.addEventListener("click", async () => {
+            postToView.reblogged = !postToView.reblogged;
+            const url = `https://${userInfo.host}/api/v1/statuses/${postToView.id}/${postToView.reblogged ? "reblog" : "unreblog"}`;
+            const options = {
+               method: "POST",
+               headers: {
+                  Authorization: "Bearer " + userInfo.bearer,
+               },
+            };
+            const response = await fetch(url, options);
+            if (response.status != 200) {
+               alert("Coulnd't (un)reblog post");
+               return;
+            }
+
+            if (postToView.reblogged) postToView.reblogs_count++;
+            else postToView.reblogs_count--;
+            pointsElements.boostCount.innerHTML = addCommasToNumber(postToView.reblogs_count);
+
+            if (postToView.reblogged) {
+               pointsElements.boostIcon.classList.remove("color-fill");
+               pointsElements.boostIcon.classList.add("color-gold-fill");
+            } else {
+               pointsElements.boostIcon.classList.remove("color-gold-fill");
+               pointsElements.boostIcon.classList.add("color-fill");
+            }
+         });
+
+         pointsElements.favourite.addEventListener("click", async () => {
+            postToView.favourited = !postToView.favourited;
+            const url = `https://${userInfo.host}/api/v1/statuses/${postToView.id}/${postToView.favourited ? "favourite" : "unfavourite"}`;
+            const options = {
+               method: "POST",
+               headers: {
+                  Authorization: "Bearer " + userInfo.bearer,
+               },
+            };
+            const response = await fetch(url, options);
+            if (response.status != 200) {
+               alert("Coulnd't (un)favourite post");
+               return;
+            }
+            if (postToView.favourited) postToView.favourites_count++;
+            else postToView.favourites_count--;
+            pointsElements.favouriteCount.innerHTML = addCommasToNumber(postToView.favourites_count);
+
+            if (postToView.favourited) {
+               pointsElements.favouriteIcon.classList.remove("color-fill");
+               pointsElements.favouriteIcon.classList.add("color-gold-fill");
+            } else {
+               pointsElements.favouriteIcon.classList.remove("color-gold-fill");
+               pointsElements.favouriteIcon.classList.add("color-fill");
+            }
+         });
+      }
+      toggles.push(points);
 
       return { elements: [content], toggles };
    }
