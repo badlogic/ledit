@@ -168,16 +168,21 @@ export class MastodonSource implements Source {
 
       return {
          url: postUrl,
-         domain: postToView.account.username + "@" + new URL(postToView.uri).host,
+         domain: new URL(postToView.uri).host == userInfo.host ? null : new URL(postToView.uri).host,
          feed: `${
             avatarImageUrl
-               ? `<img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">`
+               ? /*html*/`
+                  <a href="${authorUrl}" style="display: flex; gap: var(--ledit-padding);">
+                     <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">
+                     <span>${getAccountName(postToView.account)}</span>
+                  </a>
+                  `
                : userInfo.username + "@" + userInfo.host
          }`,
          title: "",
          isSelf: false,
-         author: getAccountName(postToView.account),
-         authorUrl: authorUrl,
+         author: null,
+         authorUrl: null,
          createdAt: new Date(postToView.created_at).getTime() / 1000,
          score: postToView.favourites_count,
          numComments: postToView.replies_count + (inReplyToPost && postToView.replies_count == 0 ? 1 : 0),
@@ -216,13 +221,32 @@ export class MastodonSource implements Source {
       } as Comment;
    }
 
+   extractUsernames(element: CommentView | PostView) {
+      const mentionLinks = element instanceof CommentView ? element.querySelectorAll('.comment-text .post-content a.u-url.mention') : element.querySelectorAll('.post > .post-content a.u-url.mention');
+      const usernames: string[] = [];
+
+      mentionLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href) return;
+        const match = href.match(/https?:\/\/([^/]+)\/@([^/]+)/);
+
+        if (match) {
+          const host = match[1];
+          const username = match[2];
+          usernames.push("@" + username + "@" + host);
+        }
+      });
+
+      return usernames;
+    }
+
    showCommentReplyEditor(mastodonComment: MastodonPost, userInfo: MastodonUserInfo, commentOrPostView: CommentView | PostView) {
       let userHandles: string[] = [];
       const commentHost = new URL(mastodonComment.uri).host;
+      userHandles.push(...this.extractUsernames(commentOrPostView));
       const commentUser = "@" + mastodonComment.account.username + (commentHost == userInfo.host ? "" : "@" + commentHost);
       if (commentUser) userHandles.push(commentUser);
-      let mentions = mastodonComment.content.match(/@([A-Za-z0-9_]+@?[A-Za-z0-9_]+\.[A-Za-z]+)/g)?.map((handle) => "@" + handle.slice(1));
-      if (mentions) userHandles.push(...mentions);
+
       const header = dom(/*html*/ `
                <div class="post-editor-reply-to">
                   <div class="inline-row" style="margin-bottom: var(--ledit-padding); color: var(--ledit-color);">

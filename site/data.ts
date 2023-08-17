@@ -1,3 +1,4 @@
+import { CommentView } from "./comments";
 import { assertNever } from "./utils";
 
 export interface Posts {
@@ -27,7 +28,7 @@ export interface Comment {
    content: string | ContentDom;
    replies: Comment[];
    highlight: boolean;
-   replyCallback: ((comment: Comment, commentElement: Element) => void) | undefined;
+   replyCallback: ((comment: Comment, commentElement: CommentView) => void) | undefined;
 }
 
 export interface SortingOption {

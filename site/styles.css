@@ -147,7 +147,7 @@ blockquote {
    transform: translateX(-50%);
    bottom: var(--ledit-margin);
 
-   width: 600px;
+   /*width: 600px;*/
    display: flex;
    flex-direction: row;
    justify-content: flex-end;
