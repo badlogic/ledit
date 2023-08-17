@@ -22,39 +22,52 @@ class BaseGuard<T> {
    }
 
    protected getTop(): T[] {
+      const topZIndex = this.getTopZIndex();
+      const topCallbacks: T[] = [];
+      if (topZIndex >= 0) {
+         topCallbacks.push(...this.callbacks[topZIndex]);
+      }
+      return topCallbacks;
+   }
+
+   protected getTopZIndex(): number {
       const zIndices = Object.keys(this.callbacks)
          .map(Number)
          .sort((a, b) => b - a);
-      const topCallbacks: T[] = [];
+      if (zIndices.length == 0) return -1;
+      return zIndices[0];
+   }
 
-      if (zIndices.length != 0) {
-         topCallbacks.push(...this.callbacks[zIndices[0]]);
-      }
-      return topCallbacks;
+   protected getZIndices() {
+      return Object.keys(this.callbacks)
+         .map(Number)
+         .sort((a, b) => b - a);
    }
 }
 
 export type NavigationCallback = () => boolean;
 
 class NavigationGuard extends BaseGuard<NavigationCallback> {
-   private stack: NavigationCallback[][] = [[]];
-   private listener;
-   private statePushed = false;
+   private statePushed: { [zIndex: number]: boolean } = {};
+   private preventDefault = false;
 
    constructor() {
       super();
       history.scrollRestoration = "manual";
-      this.listener = this.handlePopState.bind(this);
-      window.addEventListener("popstate", this.listener);
-   }
-
-   register(zIndex: number, callback: NavigationCallback): NavigationCallback {
-      super.register(zIndex, callback);
-      if (!this.statePushed) {
-         this.statePushed = true;
-         history.pushState({}, "", null);
-      }
-      return callback;
+      history.pushState(-1, "");
+		history.pushState(0, "");
+      let state = 0;
+      window.addEventListener('popstate', (event: PopStateEvent) => {
+         console.log(history.state);
+			if(state = event.state){
+            console.log(`Going ${state > 0 ? 'next' : 'previous'}`)
+            if (!this.canNavigateBack()) {
+               history.go(1);
+            } else {
+               history.go(-2);
+            }
+			}
+		});
    }
 
    canNavigateBack(): boolean {
@@ -66,15 +79,6 @@ class NavigationGuard extends BaseGuard<NavigationCallback> {
          }
       }
       return canNavigate;
-   }
-
-   private handlePopState(event: PopStateEvent): void {
-      if (!this.canNavigateBack()) {
-         event.preventDefault();
-         history.forward();
-      } else {
-         //
-      }
    }
 }
 
