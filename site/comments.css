@@ -45,7 +45,6 @@
 }
 
 .comment-points {
-  margin-left: auto;
   font-size: var(--ledit-font-size-small);
   display: inline-flex;
   align-items: center;
