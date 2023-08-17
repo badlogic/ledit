@@ -296,9 +296,11 @@ export class EscapeGuard {
    }
 
    private handleEscape(event: KeyboardEvent): void {
-      if (this.stack.length == 0) return;
-      for (const callback of this.stack[this.stack.length - 1]) {
-         callback();
+      if (event.keyCode == 27 || event.key == "Escape") {
+         if (this.stack.length == 0) return;
+         for (const callback of this.stack[this.stack.length - 1]) {
+            callback();
+         }
       }
    }
 }

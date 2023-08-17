@@ -58,7 +58,10 @@ export class CommentView extends View {
 
    prependReply(reply: Comment) {
       const replyDiv = new CommentView(reply, this.opName);
-      this.insertBefore(replyDiv, this.children[0]);
+      const elements = this.elements<{
+         replies: HTMLElement;
+      }>();
+      elements.replies.insertBefore(replyDiv, elements.replies.children[0]);
    }
 
    render() {

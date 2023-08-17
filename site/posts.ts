@@ -3,9 +3,9 @@ import { svgDownArrow, svgImages, svgLink, svgLoader, svgSpeechBubble as svgSpee
 import { addCommasToNumber, dateToText, dom, escapeGuard, intersectsViewport, navigationGuard, onVisibleOnce } from "./utils";
 import { View } from "./view";
 import { ContentView } from "./content";
-import { CommentsView } from "./comments";
+import { CommentView, CommentsView } from "./comments";
 import { getSettings, saveSettings } from "./settings";
-import { Post, Posts, Source, getSource } from "./data";
+import { Post, Posts, Source, getSource, Comment } from "./data";
 
 export class PostsView extends View {
    private readonly postsDiv: Element;
@@ -242,6 +242,15 @@ export class PostView extends View {
             this.removeEventListener("click", expand);
          };
          this.addEventListener("click", expand);
+      }
+   }
+
+   prependComment(comment: Comment) {
+      if (!this.commentsView) {
+         this.toggleComments();
+      } else {
+         const commentDiv = new CommentView(comment, "");
+         this.commentsView.insertBefore(commentDiv, this.commentsView.children[0]);
       }
    }
 

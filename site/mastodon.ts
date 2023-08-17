@@ -1,7 +1,7 @@
 import { CommentView } from "./comments";
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { PostEditor } from "./post-editor";
-import { PostsView } from "./posts";
+import { PostView, PostsView } from "./posts";
 import { RedditSource } from "./reddit";
 import { getSettings } from "./settings";
 import { svgBell, svgCircle, svgDownArrow, svgPencil, svgReblog, svgStar, svgUpArrow } from "./svg";
@@ -216,7 +216,7 @@ export class MastodonSource implements Source {
       } as Comment;
    }
 
-   showCommentReplyEditor(mastodonComment: MastodonPost, userInfo: MastodonUserInfo, commentView: CommentView | undefined) {
+   showCommentReplyEditor(mastodonComment: MastodonPost, userInfo: MastodonUserInfo, commentOrPostView: CommentView | PostView) {
       let userHandles: string[] = [];
       const commentHost = new URL(mastodonComment.uri).host;
       const commentUser = "@" + mastodonComment.account.username + (commentHost == userInfo.host ? "" : "@" + commentHost);
@@ -247,10 +247,10 @@ export class MastodonSource implements Source {
                if (mastodonReply) {
                   const reply = await this.mastodonPostToComment(mastodonReply, true, userInfo);
                   if (!reply) return false;
-                  if (commentView) {
-                     commentView.prependReply(reply);
+                  if (commentOrPostView instanceof CommentView) {
+                     commentOrPostView.prependReply(reply);
                   } else {
-                     // FIXME
+                     commentOrPostView.prependComment(reply);
                   }
                }
                return mastodonReply != null;
@@ -572,7 +572,12 @@ export class MastodonSource implements Source {
             const reply = dom(`<a style="font-size: var(--ledit-font-size-small); cursor: pointer;">Reply</a>`)[0];
             toggles.push(reply);
             reply.addEventListener("click", (event) => {
-               this.showCommentReplyEditor(postToView, userInfo, undefined);
+               let parent = reply.parentElement;
+               while(parent) {
+                  if (parent instanceof PostView) break;
+                  parent = parent.parentElement;
+               }
+               this.showCommentReplyEditor(postToView, userInfo, parent as PostView);
             });
          }
 
