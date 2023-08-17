@@ -2,10 +2,9 @@ import { CommentView } from "./comments";
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { PostEditor } from "./post-editor";
 import { PostView, PostsView } from "./posts";
-import { RedditSource } from "./reddit";
 import { getSettings } from "./settings";
-import { svgBell, svgCircle, svgDownArrow, svgPencil, svgReblog, svgStar, svgUpArrow } from "./svg";
-import { addCommasToNumber, dateToText, dom, navigationGuard, proxyFetch, renderGallery, renderVideo } from "./utils";
+import { svgBell, svgCircle, svgPencil, svgReblog, svgStar } from "./svg";
+import { addCommasToNumber, dateToText, dom, renderGallery, renderVideo } from "./utils";
 import { View } from "./view";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
@@ -248,7 +247,7 @@ export class MastodonSource implements Source {
       if (commentUser) userHandles.push(commentUser);
 
       const header = dom(/*html*/ `
-               <div class="post-editor-reply-to">
+               <div class="editor-supplement">
                   <div class="inline-row" style="margin-bottom: var(--ledit-padding); color: var(--ledit-color);">
                         <span>Reply to</span>
                         <img src="${

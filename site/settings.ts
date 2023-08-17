@@ -1,7 +1,8 @@
 import { SourcePrefix, sourcePrefixLabel } from "./data";
+import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
 import "./settings.css";
 import { svgCheck, svgClose, svgGithub, svgHeart, svgMinus, svgPencil, svgBookmark } from "./svg/index";
-import { assertNever, dom, escapeGuard, navigate, navigationGuard } from "./utils";
+import { assertNever, dom, navigate } from "./utils";
 import { View } from "./view";
 
 interface Bookmark {
@@ -89,6 +90,9 @@ export function resetSettings() {
 }
 
 export class SettingsView extends View {
+   escapeCallback: EscapeCallback | undefined;
+   navigationCallback: NavigationCallback | undefined;
+
    constructor() {
       super();
       this.render();
@@ -297,34 +301,25 @@ export class SettingsView extends View {
       });
 
       // Close when escape is pressed
-      escapeGuard.push();
-      escapeGuard.registerCallback(() => {
+      this.escapeCallback = escapeGuard.register(1000, () => {
          this.close();
-         escapeGuard.pop();
-      })
+      });
 
       // Close on back navigation
-      const navListener = () => {
-         navigationGuard.removeCallback(navListener);
+      this.navigationCallback = navigationGuard.register(1000, () => {
          this.close();
          return false;
-      };
-      navigationGuard.push();
-      navigationGuard.registerCallback(navListener);
+      });
 
       // Prevent underlying posts from scrolling
-      elements.container.addEventListener("wheel", (event) => {
-         if ((event.target as HTMLElement).classList.contains("settings")) {
-            event.preventDefault();
-            event.stopPropagation();
-            this.scrollTop -= (event as any).deltaY;
-         }
-      });
+      document.body.style.overflow = "hidden";
    }
 
    close() {
       this.remove();
-      navigationGuard.pop();
+      navigationGuard.remove(this.navigationCallback!);
+      escapeGuard.remove(this.escapeCallback!);
+      document.body.style.overflow = "";
    }
 }
 customElements.define("ledit-settings", SettingsView);
@@ -347,6 +342,9 @@ function sourcePrefixToFeedLabel(source: SourcePrefix) {
 }
 
 export class BookmarkEditor extends View {
+   escapeCallback: EscapeCallback | undefined;
+   navigationCallback: NavigationCallback | undefined;
+
    constructor(public readonly bookmark: Bookmark, public readonly isNew = false) {
       super();
       this.render();
@@ -354,15 +352,17 @@ export class BookmarkEditor extends View {
 
    render() {
       this.innerHTML = /*html*/ `
-      <div x-id="container" class="settings-container">
-          <div x-id="editor" class="settings">
-            <div x-id="close" class="settings-row-close"><span class="svg-icon color-fill">${svgClose}</span></div>
-            <div class="settings-row-header">${sourcePrefixLabel(this.bookmark.source)} bookmark</div>
-            <div class="settings-row-label">Label</div>
-            <input x-id="label" class="settings-row-input" style="margin-bottom: var(--ledit-padding);" value="${this.bookmark.label}">
-            <div class="settings-row-label" style="margin-bottom: var(--ledit-padding);">${sourcePrefixToFeedLabel(this.bookmark.source)}</div>
-            <textarea x-id="feedIds" class="settings-row-textarea" style="margin-bottom: var(--ledit-margin);"></textarea>
-            <div x-id="save" class="load-more settings-row-label" style="margin: 0 calc(var(--ledit-padding) + var(--ledit-margin)); margin-bottom: var(--ledit-margin);">Save</div>
+      <div x-id="container" class="editor-container">
+          <div x-id="editor" class="editor">
+            <div x-id="close" class="editor-close"><span class="svg-icon color-fill">${svgClose}</span></div>
+            <div class="editor-header">${sourcePrefixLabel(this.bookmark.source)} bookmark</div>
+            <div class="editor-header">Label</div>
+            <input x-id="label" value="${this.bookmark.label}">
+            <div>${sourcePrefixToFeedLabel(this.bookmark.source)}</div>
+            <textarea x-id="feedIds"></textarea>
+            <div class="editor-buttons">
+               <div x-id="save" class="editor-button" style="margin-left: auto;">Save</div>
+            </div>
          </div>
       </div>
       `;
@@ -434,34 +434,26 @@ export class BookmarkEditor extends View {
       });
 
       // Close when escape is pressed
-      escapeGuard.push();
-      escapeGuard.registerCallback(() => {
+      this.escapeCallback = escapeGuard.register(1000, () => {
          this.close();
-         escapeGuard.pop();
-      })
+      });
 
       // Close on back navigation
-      const navListener = () => {
-         navigationGuard.removeCallback(navListener);
+      // Close on back navigation
+      this.navigationCallback = navigationGuard.register(1000, () => {
          this.close();
          return false;
-      };
-      navigationGuard.push();
-      navigationGuard.registerCallback(navListener);
+      });
 
       // Prevent underlying posts from scrolling
-      elements.container.addEventListener("wheel", (event) => {
-         if ((event.target as HTMLElement).classList.contains("settings")) {
-            event.preventDefault();
-            event.stopPropagation();
-            this.scrollTop -= (event as any).deltaY;
-         }
-      });
+      document.body.style.overflow = "hidden";
    }
 
    close() {
       this.remove();
-      navigationGuard.pop();
+      escapeGuard.remove(this.escapeCallback!);
+      navigationGuard.remove(this.navigationCallback);
+      document.body.style.overflow = "";
       document.body.append(new SettingsView());
    }
 }

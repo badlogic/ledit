@@ -1,10 +1,12 @@
-// @ts-ignore
-import "./post-editor.css";
+import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
 import { svgClose, svgImages, svgLoader } from "./svg";
-import { escapeGuard, navigationGuard, onAddedToDOM } from "./utils";
+import { onAddedToDOM } from "./utils";
 import { View } from "./view";
 
 export class PostEditor extends View {
+   escapeCallback: EscapeCallback | undefined;
+   navigationCallback: NavigationCallback | undefined;
+
    constructor(
       public readonly header: Element,
       public readonly text: string | null,
@@ -21,15 +23,15 @@ export class PostEditor extends View {
 
    render() {
       this.innerHTML = /*html*/ `
-      <div x-id="container" class="post-editor-container">
-          <div x-id="editor" class="post-editor">
-            <div x-id="close" class="post-editor-close"><span class="svg-icon color-fill">${svgClose}</span></div>
-            <div x-id="headerRow" class="post-editor-header"></div>
-            <textarea x-id="text" class="post-editor-textarea"></textarea>
-            <div class="post-editor-buttons">
-               <button x-id="addMedia" class="post-editor-button svgIcon color-fill" style="font-size: var(--ledit-font-size-big)">${svgImages}</button>
+      <div x-id="container" class="editor-container">
+          <div x-id="editor" class="editor">
+            <div x-id="close" class="editor-close"><span class="svg-icon color-fill">${svgClose}</span></div>
+            <div x-id="headerRow" class="editor-header"></div>
+            <textarea x-id="text"></textarea>
+            <div class="editor-buttons">
+               <button x-id="addMedia" class="editor-button svgIcon color-fill" style="font-size: var(--ledit-font-size-big)">${svgImages}</button>
                <div x-id="charCount" style="margin-left: auto">${this.text?.length ?? 0}/${this.maxChars}</div>
-               <button x-id="publish" class="post-editor-button">Publish</button>
+               <button x-id="publish" class="editor-button">Publish</button>
                <div x-id="progress" class="svgIcon color-fill hidden">${svgLoader}</div>
             </div>
          </div>
@@ -39,7 +41,7 @@ export class PostEditor extends View {
       const elements = this.elements<{
          container: Element;
          editor: Element;
-         headerRow: Element
+         headerRow: Element;
          close: Element;
          text: HTMLTextAreaElement;
          charCount: Element;
@@ -55,13 +57,15 @@ export class PostEditor extends View {
       // Update char count and disable publish button if necessary
       elements.text.addEventListener("input", (event) => {
          const maxCharsExceeded = elements.text.value.length > this.maxChars;
-         elements.charCount.innerHTML = `<span ${maxCharsExceeded ? `style="color: red;"` : ""}>${elements.text.value.length}/${this.maxChars}</span>`
+         elements.charCount.innerHTML = `<span ${maxCharsExceeded ? `style="color: red;"` : ""}>${elements.text.value.length}/${
+            this.maxChars
+         }</span>`;
          if (maxCharsExceeded) {
             elements.publish.setAttribute("disabled", "");
          } else {
             elements.publish.removeAttribute("disabled");
          }
-      })
+      });
 
       // Publish
       elements.publish.addEventListener("click", async (event) => {
@@ -104,34 +108,25 @@ export class PostEditor extends View {
       });
 
       // Close when escape is pressed
-      escapeGuard.push();
-      escapeGuard.registerCallback(() => {
+      this.escapeCallback = escapeGuard.register(1000, () => {
          this.close();
-         escapeGuard.pop();
-      })
+      });
 
       // Close on back navigation
-      const navListener = () => {
-         navigationGuard.removeCallback(navListener);
+      this.navigationCallback = navigationGuard.register(1000, () => {
          this.close();
          return false;
-      };
-      navigationGuard.push();
-      navigationGuard.registerCallback(navListener);
+      });
 
       // Prevent underlying posts from scrolling
-      elements.container.addEventListener("wheel", (event) => {
-         if ((event.target as HTMLElement).classList.contains("post-editor-container")) {
-            event.preventDefault();
-            event.stopPropagation();
-            this.scrollTop -= (event as any).deltaY;
-         }
-      });
+      document.body.style.overflow = "hidden";
    }
 
    close() {
       this.remove();
-      navigationGuard.pop();
+      escapeGuard.remove(this.escapeCallback!);
+      navigationGuard.remove(this.navigationCallback!);
+      document.body.style.overflow = "";
    }
 }
 customElements.define("ledit-post-editor", PostEditor);

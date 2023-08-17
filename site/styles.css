@@ -114,7 +114,7 @@ blockquote {
 }
 
 .color-gold-fill {
-   fill: rgb(255, 123, 0);;
+   fill: rgb(255, 123, 0);
 }
 
 .box {
@@ -147,12 +147,17 @@ blockquote {
    transform: translateX(-50%);
    bottom: var(--ledit-margin);
 
-   /*width: 600px;*/
+   width: 600px;
    display: flex;
    flex-direction: row;
    justify-content: flex-end;
    gap: calc(var(--ledit-padding) * 1.5);
    z-index: 10;
+   pointer-events: none;
+}
+
+.fab-container * {
+   pointer-events: all;
 }
 
 .fab {
@@ -168,20 +173,20 @@ blockquote {
    justify-content: center;
    align-items: center;
    font-size: calc(1.25 * var(--ledit-font-size));
- }
-
+}
 
 @media (max-width: 767px) {
    .posts,
    .comments,
    .header,
    .settings,
-   .post-editor,
+   .editor,
    .fab-container {
       width: 100% !important;
    }
 
-   .comments > .comment, .post-buttons-sticky {
+   .comments > .comment,
+   .post-buttons-sticky {
       padding: var(--ledit-margin) !important;
       margin: calc(var(--ledit-padding) * -1.9) !important;
       margin-bottom: 0 !important;

@@ -1,4 +1,5 @@
 import "./styles.css";
+import "./editor.css";
 import "./header";
 import "./settings";
 import "./posts";

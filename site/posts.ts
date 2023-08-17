@@ -1,11 +1,12 @@
 import "./posts.css";
 import { svgDownArrow, svgImages, svgLink, svgLoader, svgSpeechBubble as svgSpeechBubble, svgUpArrow } from "./svg/index";
-import { addCommasToNumber, dateToText, dom, escapeGuard, intersectsViewport, navigationGuard, onVisibleOnce } from "./utils";
+import { addCommasToNumber, dateToText, dom, intersectsViewport, onVisibleOnce } from "./utils";
 import { View } from "./view";
 import { ContentView } from "./content";
 import { CommentView, CommentsView } from "./comments";
 import { getSettings, saveSettings } from "./settings";
 import { Post, Posts, Source, getSource, Comment } from "./data";
+import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
 
 export class PostsView extends View {
    private readonly postsDiv: Element;
@@ -116,6 +117,9 @@ export class PostsView extends View {
 customElements.define("ledit-posts", PostsView);
 
 export class PostView extends View {
+   escapeCallback: EscapeCallback | undefined;
+   navigationCallback: NavigationCallback | undefined;
+
    constructor(private readonly post: Post) {
       super();
       this.render();
@@ -229,7 +233,7 @@ export class PostView extends View {
          });
 
          // Close when escape is pressed
-         escapeGuard.registerCallback(() => {
+         escapeGuard.register(0, () => {
             if (elements.buttonsRow.classList.contains("post-buttons-sticky") && intersectsViewport(elements.buttonsRow)) this.toggleComments();
          })
       }
@@ -265,7 +269,7 @@ export class PostView extends View {
       const hideComments = () => {
          // Hide the comments, triggered by a click on the comments button
          this.commentsView?.remove();
-         navigationGuard.removeCallback(navListener);
+         navigationGuard.remove(this.navigationCallback);
 
          elements.buttonsRow.classList.remove("post-buttons-sticky");
          if (elements.buttonsRow.getBoundingClientRect().top < 16 * 4) {
@@ -276,20 +280,18 @@ export class PostView extends View {
          }
       };
 
-      const navListener = () => {
-         if (intersectsViewport(elements.buttonsRow)) {
-            hideComments();
-            return false;
-         }
-         return true;
-      };
-
       if (elements.comments.children.length == 0) {
          // Show the comments
          if (!this.commentsView) this.commentsView = new CommentsView(this.post, this);
          elements.comments.append(this.commentsView);
          elements.buttonsRow.classList.add("post-buttons-sticky");
-         navigationGuard.registerCallback(navListener);
+         this.navigationCallback = navigationGuard.register(0, () => {
+            if (intersectsViewport(elements.buttonsRow)) {
+               hideComments();
+               return false;
+            }
+            return true;
+         });
       } else {
          hideComments();
       }

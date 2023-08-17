@@ -1,4 +1,4 @@
-.post-editor-container {
+.editor-container {
    position: fixed;
    top: 0;
    width: 100%;
@@ -9,11 +9,11 @@
    backdrop-filter: blur(10px);
 }
 
-.post-editor {
+.editor {
    width: 600px;
    margin: 0 auto;
    background: var(--ledit-background-dim);
-   padding: var(--ledit-padding) 0;
+   padding: var(--ledit-margin);
    display: flex;
    flex-direction: column;
    box-shadow: 0px 2px 5px var(--ledit-shadow-color);
@@ -21,32 +21,33 @@
    border-bottom-right-radius: 8px;
 }
 
-.post-editor-close {
+.editor > * {
+   margin-top: var(--ledit-padding);
+}
+
+.editor-close {
    display: flex;
    align-items: center;
-   padding: var(--ledit-margin);
    font-size: var(--ledit-font-size-big);
    height: 1em;
    cursor: pointer;
 }
 
-.post-editor-header {
+.editor-header {
    display: flex;
    flex-direction: row;
    align-items: center;
-   padding: 0 var(--ledit-padding);
    font-size: var(--ledit-font-size);
    font-weight: 600;
 }
 
-.post-editor-reply-to {
-   margin: var(--ledit-padding);
+.editor-supplement {
    font-weight: 400;
    font-size: var(--ledit-font-size);
    color: var(--ledit-color-dim) !important;
 }
 
-.post-editor textarea {
+.editor textarea {
    height: calc(var(--ledit-font-size) * 10);
    font: inherit;
    font-size: var(--ledit-font-size);
@@ -60,20 +61,18 @@
    resize: vertical;
    overflow: auto;
 
-   margin: var(--ledit-padding);
    background: var(--ledit-background);
    border: 1px solid var(--ledit-border-color);
    border-radius: 8px;
 }
 
-.post-editor-buttons {
+.editor-buttons {
    display: flex;
    gap: var(--ledit-padding);
-   padding: var(--ledit-padding);
    align-items: center;
 }
 
-.post-editor-button {
+.editor-button {
    padding: var(--ledit-padding);
    border: 1px solid var(--ledit-border-color);
    background: var(--ledit-background);
