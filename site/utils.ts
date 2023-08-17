@@ -203,56 +203,71 @@ export function removeTrailingEmptyParagraphs(htmlString: string): string {
 
 export function assertNever(x: never) {
    throw new Error("Unexpected object: " + x);
- }
+}
 
- export function proxyFetch(url: string) {
+export function proxyFetch(url: string) {
    const baseUrl = window.location.host.includes("localhost") ? "http://localhost:3000/proxy/?url=" : "https://marioslab.io/proxy/?url=";
    return fetch(baseUrl + encodeURI(url));
- }
+}
 
- export function renderVideo(
+export function renderVideo(
    embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string },
    loop: boolean
 ): Element {
-   let videoDom = dom(/*html*/ `<div class="content">
-     <video-js controls class="video-js" style="width: 100%; max-height: 75vh; object-fit: contain;" ${loop ? "loop" : ""} data-setup="{}">
+   let videoDom = dom(/*html*/ `<div class="content" style="display: flex; justify-content: center; background: #000">
+     <video-js controls class="video-js" style="width: ${embed.width}px;" ${loop ? "loop" : ""} data-setup="{}">
          <source src="${embed.dash_url}">
          <source src="${embed.hls_url}">
          <source src="${embed.fallback_url}">
      </video-js>
    </div>`)[0];
    onAddedToDOM(videoDom, () => {
-      const videoDiv = videoDom.querySelector("video-js");
-      if (videoDiv) {
-         const video = videojs(videoDiv);
-         var videoElement = video.el().querySelector("video")!;
-
-         // Toggle pause/play on click
-         const togglePlay = function () {
-            if (video.paused()) {
-               video.play();
-            } else {
-               video.pause();
-            }
-         };
-         videoElement.addEventListener("clicked", togglePlay);
-         onTapped(videoElement, togglePlay);
-
-         // Pause when out of view
-         document.addEventListener("scroll", () => {
-            if (videoElement && videoElement === document.pictureInPictureElement) {
-               return;
-            }
-            if (!video.paused() && !intersectsViewport(videoElement)) {
-               video.pause();
-            }
-         });
+      const videoDiv = videoDom.querySelector("video-js")! as HTMLElement;
+      let width = embed.width;
+      let height = embed.height;
+      let maxHeight = window.innerHeight * 0.7;
+      const containerWidth = videoDom.clientWidth;
+      if (width > containerWidth || width < containerWidth) {
+         let aspect = height / width;
+         width = containerWidth;
+         height = aspect * width;
       }
+      if (height > maxHeight) {
+         let scale = maxHeight / height;
+         height = maxHeight;
+         width = width * scale;
+      }
+      videoDiv.style.width = width + "px";
+      videoDiv.style.height = height + "px";
+
+      const video = videojs(videoDiv);
+      var videoElement = video.el().querySelector("video")!;
+
+      // Toggle pause/play on click
+      const togglePlay = function () {
+         if (video.paused()) {
+            video.play();
+         } else {
+            video.pause();
+         }
+      };
+      videoElement.addEventListener("clicked", togglePlay);
+      onTapped(videoElement, togglePlay);
+
+      // Pause when out of view
+      document.addEventListener("scroll", () => {
+         if (videoElement && videoElement === document.pictureInPictureElement) {
+            return;
+         }
+         if (!video.paused() && !intersectsViewport(videoElement)) {
+            video.pause();
+         }
+      });
    });
    return videoDom;
 }
 
-export function renderGallery(imageUrls: string[]): { gallery: Element, toggle: Element } {
+export function renderGallery(imageUrls: string[]): { gallery: Element; toggle: Element } {
    const galleryDom = dom(/*html*/ `
                            <div class="content-image-gallery">
                               ${imageUrls.map((img, index) => `<img src="${img}" ${index > 0 ? 'class="hidden"' : ""}>`).join("")}
@@ -280,7 +295,7 @@ export function renderGallery(imageUrls: string[]): { gallery: Element, toggle: 
       imageDoms[i].addEventListener("click", imageClickListener);
    }
 
-   const toggle = dom(/*html*/`
+   const toggle = dom(/*html*/ `
       <div class="post-gallery-toggle">
          <span class="svg-icon color-fill">${svgImages}</span>
          <span>${imageUrls.length}</span>
@@ -288,7 +303,7 @@ export function renderGallery(imageUrls: string[]): { gallery: Element, toggle: 
    `)[0];
    toggle.addEventListener("click", () => {
       imageClickListener();
-   })
+   });
    return { gallery: galleryDom, toggle: toggle };
 }
 
@@ -296,10 +311,10 @@ export function scrollToAndCenter(element: Element) {
    const windowHeight = window.innerHeight;
    const rect = element.getBoundingClientRect();
    const elementTop = rect.top + window.scrollY;
-   const scrollToPosition = elementTop - (windowHeight / 2);
+   const scrollToPosition = elementTop - windowHeight / 2;
 
    window.scrollTo({
-     top: scrollToPosition,
-     behavior: 'smooth'
+      top: scrollToPosition,
+      behavior: "smooth",
    });
- }
+}
