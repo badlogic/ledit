@@ -167,13 +167,18 @@ export class MastodonSource implements Source {
 
       return {
          url: postUrl,
-         domain: new URL(postToView.uri).host == userInfo.host ? null : new URL(postToView.uri).host,
+         domain: null,
          feed: `${
             avatarImageUrl
-               ? /*html*/`
-                  <a href="${authorUrl}" style="display: flex; gap: var(--ledit-padding);">
+               ? /*html*/ `
+                  <a href="${authorUrl}" target="_blank" style="display: flex; gap: var(--ledit-padding);">
                      <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">
-                     <span>${getAccountName(postToView.account)}</span>
+                     <div>
+                        <span><b>${getAccountName(postToView.account)}</b></span>
+                        <span>${postToView.account.username}@${
+                    new URL(postToView.uri).host == userInfo.host ? null : new URL(postToView.uri).host
+                 }</span>
+                     </div>
                   </a>
                   `
                : userInfo.username + "@" + userInfo.host
@@ -221,23 +226,26 @@ export class MastodonSource implements Source {
    }
 
    extractUsernames(element: CommentView | PostView) {
-      const mentionLinks = element instanceof CommentView ? element.querySelectorAll('.comment-text .post-content a.u-url.mention') : element.querySelectorAll('.post > .post-content a.u-url.mention');
+      const mentionLinks =
+         element instanceof CommentView
+            ? element.querySelectorAll(".comment-text .post-content a.u-url.mention")
+            : element.querySelectorAll(".post > .post-content a.u-url.mention");
       const usernames: string[] = [];
 
-      mentionLinks.forEach(link => {
-        const href = link.getAttribute('href');
-        if (!href) return;
-        const match = href.match(/https?:\/\/([^/]+)\/@([^/]+)/);
+      mentionLinks.forEach((link) => {
+         const href = link.getAttribute("href");
+         if (!href) return;
+         const match = href.match(/https?:\/\/([^/]+)\/@([^/]+)/);
 
-        if (match) {
-          const host = match[1];
-          const username = match[2];
-          usernames.push("@" + username + "@" + host);
-        }
+         if (match) {
+            const host = match[1];
+            const username = match[2];
+            usernames.push("@" + username + "@" + host);
+         }
       });
 
       return usernames;
-    }
+   }
 
    showCommentReplyEditor(mastodonComment: MastodonPost, userInfo: MastodonUserInfo, commentOrPostView: CommentView | PostView) {
       let userHandles: string[] = [];
@@ -596,7 +604,7 @@ export class MastodonSource implements Source {
             toggles.push(reply);
             reply.addEventListener("click", (event) => {
                let parent = reply.parentElement;
-               while(parent) {
+               while (parent) {
                   if (parent instanceof PostView) break;
                   parent = parent.parentElement;
                }
@@ -681,11 +689,13 @@ export class MastodonSource implements Source {
             this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
             html = /*html*/ `
                   <div class="inline-row">
-                     <a href="${notification.account.url}" class="inline-row">
+                     <a href="${notification.account.url}" target="_blank" class="inline-row">
                         <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                         <span>${getAccountName(notification.account)}</span>
                      </a>
-                     <a href="${notification.status!.url}">mentioned you ${dateToText(new Date(notification.created_at).getTime())} ago</a>
+                     <a href="${notification.status!.url}" target="_blank">mentioned you ${dateToText(
+               new Date(notification.created_at).getTime()
+            )} ago</a>
                   </div>
                   <div class="post-notification-text">${notification.status?.content}</div>
                   `;
@@ -697,11 +707,13 @@ export class MastodonSource implements Source {
             html = /*html*/ `
                   <div class="inline-row">
                      <span class="svgIcon color-gold-fill">${svgReblog}</span>
-                     <a href="${notification.account.url}" class="inline-row">
+                     <a href="${notification.account.url}" target="_blank" class="inline-row">
                         <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                         <span>${getAccountName(notification.account)}</span>
                      </a>
-                     <a href="${notification.status!.url}">reblogged you ${dateToText(new Date(notification.created_at).getTime())} ago</a>
+                     <a href="${notification.status!.url}" target="_blank">reblogged you ${dateToText(
+               new Date(notification.created_at).getTime()
+            )} ago</a>
                   </div>
                   <div class="post-notification-text">${notification.status?.content}</div>
                   `;
@@ -709,7 +721,7 @@ export class MastodonSource implements Source {
          case "follow":
             html = /*html*/ `
                <div class="inline-row" style="margin-bottom: -1em">
-                  <a href="${notification.account.url}" class="inline-row">
+                  <a href="${notification.account.url}" target="_blank" class="inline-row">
                      <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                      <span>${getAccountName(notification.account)}</span>
                   </a>
@@ -719,7 +731,7 @@ export class MastodonSource implements Source {
          case "follow_request":
             html = /*html*/ `
                <div class="inline-row" style="margin-bottom: -1em">
-                  <a href="${notification.account.url}" class="inline-row">
+                  <a href="${notification.account.url}" target="_blank" class="inline-row">
                      <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                      <span>${getAccountName(notification.account)}</span>
                   </a>
@@ -732,11 +744,13 @@ export class MastodonSource implements Source {
             html = /*html*/ `
                   <div class="inline-row">
                      <span class="svgIcon color-gold-fill">${svgStar}</span>
-                     <a href="${notification.account.url}" class="inline-row">
+                     <a href="${notification.account.url}" target="_blank" class="inline-row">
                         <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                         <span>${getAccountName(notification.account)}</span>
                      </a>
-                     <a href="${notification.status!.url}">favorited your post ${dateToText(new Date(notification.created_at).getTime())} ago</a>
+                     <a href="${notification.status!.url}" target="_blank">favorited your post ${dateToText(
+               new Date(notification.created_at).getTime()
+            )} ago</a>
                   </div>
                   <div class="post-notification-text">${notification.status?.content}</div>
                   `;
@@ -745,11 +759,13 @@ export class MastodonSource implements Source {
             this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
             html = /*html*/ `
                   <div class="inline-row">
-                     <a href="${notification.account.url}" class="inline-row">
+                     <a href="${notification.account.url}" target="_blank" class="inline-row">
                         <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                         <span>${getAccountName(notification.account)}'s</span>
                      </a>
-                     <a href="${notification.status!.url}">poll has ended ${dateToText(new Date(notification.created_at).getTime())} ago</a>
+                     <a href="${notification.status!.url}" target="_blank">poll has ended ${dateToText(
+               new Date(notification.created_at).getTime()
+            )} ago</a>
                   </div>
                   <div class="post-notification-text">${notification.status?.content}</div>
                   `;
@@ -758,11 +774,13 @@ export class MastodonSource implements Source {
             this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
             html = /*html*/ `
                   <div class="inline-row">
-                     <a href="${notification.account.url}" class="inline-row">
+                     <a href="${notification.account.url}" target="_blank" class="inline-row">
                         <img src="${notification.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
                         <span>${getAccountName(notification.account)}'s</span>
                      </a>
-                     <a href="${notification.status!.url}">post was edited ${dateToText(new Date(notification.created_at).getTime())} ago</a>
+                     <a href="${notification.status!.url}" target="_blank">post was edited ${dateToText(
+               new Date(notification.created_at).getTime()
+            )} ago</a>
                   </div>
                   <div class="post-notification-text">${notification.status?.content}</div>
                   `;

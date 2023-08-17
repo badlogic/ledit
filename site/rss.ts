@@ -1,3 +1,4 @@
+// @ts-ignore
 import { FeedEntry, extractFromXml } from "@extractus/feed-extractor";
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { dom, makeCollapsible, proxyFetch, removeTrailingEmptyParagraphs } from "./utils";
