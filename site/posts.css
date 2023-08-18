@@ -184,6 +184,7 @@
 .post-buttons {
    display: flex;
    gap: var(--ledit-margin);
+   height: calc(var(--ledit-font-size) * 1.5);
 }
 
 .post-button {
