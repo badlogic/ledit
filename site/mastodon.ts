@@ -157,7 +157,7 @@ async function publishPost(userInfo: MastodonUserInfo, replyToId: string | null,
 }
 
 async function reblogPost(post: MastodonPost, userInfo: MastodonUserInfo): Promise<boolean> {
-   const url = `https://${userInfo.host}/api/v1/statuses/${postToView.id}/${postToView.reblogged ? "reblog" : "unreblog"}`;
+   const url = `https://${userInfo.host}/api/v1/statuses/${post.id}/${post.reblogged ? "reblog" : "unreblog"}`;
    const options = {
       method: "POST",
       headers: {
