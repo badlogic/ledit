@@ -669,7 +669,7 @@ export class MastodonSource implements Source {
          const favouriteElements = View.elements<{
             favouriteIcon: HTMLElement;
             favouriteCount: HTMLElement;
-         }>(boost);
+         }>(favourite);
          favourite.addEventListener("click", async () => {
             postToView.favourited = !postToView.favourited;
             const url = `https://${userInfo.host}/api/v1/statuses/${postToView.id}/${postToView.favourited ? "favourite" : "unfavourite"}`;
