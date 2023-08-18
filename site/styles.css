@@ -195,6 +195,7 @@ blockquote {
       margin: calc(var(--ledit-padding) * -1.9) !important;
       margin-bottom: 0 !important;
       margin-top: 0 !important;
+      padding-bottom: var(--ledit-padding) !important;
    }
 
    .comments > .comment {
