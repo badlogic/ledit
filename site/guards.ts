@@ -57,11 +57,10 @@ class NavigationGuard extends BaseGuard<NavigationCallback> {
       window.addEventListener('popstate', (event: PopStateEvent) => {
          console.log(history.state);
 			if(state = event.state){
-            console.log(`Going ${state > 0 ? 'next' : 'previous'}`)
             if (!this.canNavigateBack()) {
                history.go(1);
             } else {
-               history.go(-2);
+               history.go(-1);
             }
 			}
 		});
@@ -69,7 +68,7 @@ class NavigationGuard extends BaseGuard<NavigationCallback> {
 
    register(zIndex: number, callback: NavigationCallback): NavigationCallback {
       if (!this.stateSetup) {
-         history.pushState(-1, "");
+         history.replaceState(-1, "");
          history.pushState(0, "");
          this.stateSetup = true;
       }
