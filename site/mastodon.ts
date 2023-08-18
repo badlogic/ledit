@@ -3,7 +3,7 @@ import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix }
 import { PostEditor } from "./post-editor";
 import { PostView, PostsView } from "./posts";
 import { getSettings } from "./settings";
-import { svgBell, svgCircle, svgPencil, svgReblog, svgStar } from "./svg";
+import { svgBell, svgCircle, svgPencil, svgReblog, svgReply, svgStar } from "./svg";
 import { addCommasToNumber, dateToText, dom, renderGallery, renderVideo } from "./utils";
 import { View } from "./view";
 
@@ -605,12 +605,12 @@ export class MastodonSource implements Source {
 
       // Add points last, so they go right as the only toggle.
       const points = dom(/*html*/ `
-      <div class="post-points">
-         <div x-id="boost">
+      <div style="display: flex; gap: 0.5em; margin-left: auto;">
+         <div x-id="boost" class="${!isComment ? "post-button" : ""}">
             <span x-id="boostIcon" class="svgIcon ${postToView.reblogged ? "color-gold-fill" : "color-fill"}">${svgReblog}</span>
             <span x-id="boostCount">${addCommasToNumber(postToView.reblogs_count)}</span>
          </div>
-         <div x-id="favourite">
+         <div x-id="favourite" class="${!isComment ? "post-button" : ""}">
             <span x-id="favouriteIcon" class="svgIcon ${postToView.favourited ? "color-gold-fill" : "color-fill"}">${svgStar}</span>
             <span x-id="favouriteCount">${addCommasToNumber(postToView.favourites_count)}</span>
          </div>
@@ -618,7 +618,7 @@ export class MastodonSource implements Source {
       `)[0];
       if (userInfo.bearer) {
          if (!isComment) {
-            const reply = dom(`<a style="font-size: var(--ledit-font-size-small); cursor: pointer;">Reply</a>`)[0];
+            const reply = dom(`<a class="svgIcon color-fill post-button"">${svgReply}</a>`)[0];
             toggles.push(reply);
             reply.addEventListener("click", (event) => {
                let parent = reply.parentElement;

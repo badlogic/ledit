@@ -140,7 +140,7 @@
    gap: var(--ledit-padding);
    font-size: var(--ledit-font-size-small);
    margin-bottom: var(--ledit-padding);
-   margin-top: calc(var(--ledit-margin) * -1);
+   margin-top: calc(var(--ledit-padding) * -1);
 }
 
 .post-mastodon-prelude a {
@@ -189,7 +189,7 @@
 .post-button {
    display: flex;
    align-items: center;
-   gap: 0.25em;
+   gap: 0.5em;
    cursor: pointer;
    margin: -1em;
    padding: 1em;

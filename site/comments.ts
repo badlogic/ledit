@@ -1,6 +1,6 @@
 import "./comments.css";
 import { Post, Comment, getSource } from "./data";
-import { svgLoader } from "./svg";
+import { svgLoader, svgReply } from "./svg";
 import { dateToText, dom, htmlDecode, onAddedToDOM, scrollToAndCenter } from "./utils";
 import { View } from "./view";
 
@@ -89,7 +89,7 @@ export class CommentView extends View {
                      : ""
                }
                <span>• </span>
-               <a x-id="reply" class="comment-reply" href="${comment.url}">Reply</a>
+               <a x-id="reply" class="comment-reply svgIcon color-fill" href="${comment.url}">${svgReply}</a>
                <div x-id="buttons" class="comment-buttons"></div>
          </div>
          <div x-id="text" class="comment-text"></div>

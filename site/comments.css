@@ -94,7 +94,7 @@
 
 .comment-buttons {
   display: flex;
-  font-size: var(--ledit-font-size-small);
+  font-size: var(--ledit-font-size);
   gap: var(--ledit-padding);
   height: 1em;
   margin-left: auto;
