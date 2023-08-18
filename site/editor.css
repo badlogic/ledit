@@ -10,7 +10,6 @@
 }
 
 .editor {
-   width: 600px;
    margin: 0 auto;
    background: var(--ledit-background-dim);
    padding: var(--ledit-margin);

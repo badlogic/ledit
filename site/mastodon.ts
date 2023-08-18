@@ -251,12 +251,13 @@ export class MastodonSource implements Source {
          content,
          replies: [],
          highlight,
-         mastodonComment: reply
+         mastodonComment: reply,
       } as Comment;
    }
 
-   extractUsernames(element: CommentView | PostView) {
-      const mentionLinks = element.querySelectorAll(".content-text a.u-url.mention");
+   extractUsernames(mastodonPost: MastodonPost) {
+      const dom = new DOMParser().parseFromString(mastodonPost.content, "text/html");
+      const mentionLinks = dom.querySelectorAll("a.u-url.mention");
       const usernames: string[] = [];
 
       mentionLinks.forEach((link) => {
@@ -312,7 +313,7 @@ export class MastodonSource implements Source {
    showCommentReplyEditor(mastodonComment: MastodonPost, userInfo: MastodonUserInfo, commentOrPostView: CommentView | PostView) {
       let userHandles: string[] = [];
       const commentHost = new URL(mastodonComment.uri).host;
-      userHandles.push(...this.extractUsernames(commentOrPostView));
+      userHandles.push(...this.extractUsernames(mastodonComment));
       const commentUser = "@" + mastodonComment.account.username + (commentHost == userInfo.host ? "" : "@" + commentHost);
       if (commentUser) userHandles.push(commentUser);
 
@@ -456,18 +457,35 @@ export class MastodonSource implements Source {
       let postToView = mastodonPost.reblog ?? mastodonPost;
       let host = new URL(postToView.uri).host;
       let statusId = postToView.uri.split("/").pop();
+      let options = undefined;
       if (userInfo.bearer) {
          host = userInfo.host;
          statusId = postToView.id;
+         options = {
+            headers: {
+               Authorization: `Bearer ${userInfo.bearer}`,
+            }
+         }
       }
-      const response = await fetch(`https://${host}/api/v1/statuses/${statusId}/context`);
-      const context = (await response.json()) as { ancestors: MastodonPost[]; descendants: MastodonPost[] };
 
+      let rootId: string | null = null;
       const roots: Comment[] = [];
       const comments: Comment[] = [];
       const commentsById = new Map<string, Comment>();
 
-      let rootId: string | null = null;
+      let response = await fetch(`https://${host}/api/v1/statuses/${statusId}/context`, options);
+      let context = (await response.json()) as { ancestors: MastodonPost[]; descendants: MastodonPost[] };
+      if (context.ancestors.length > 0) {
+         const root = context.ancestors[0];
+         rootId = root.id;
+         const rootComment = this.mastodonPostToComment(root, root.id == statusId, userInfo);
+         roots.push(rootComment);
+         comments.push(rootComment);
+         commentsById.set(root.id, rootComment);
+         response = await fetch(`https://${host}/api/v1/statuses/${context.ancestors[0].id}/context`, options);
+         context = (await response.json()) as { ancestors: MastodonPost[]; descendants: MastodonPost[] };
+      }
+
       const mastodonComments: MastodonPost[] = [];
       if (context.ancestors && context.ancestors.length > 0) {
          rootId = context.ancestors[0].id;
@@ -532,15 +550,13 @@ export class MastodonSource implements Source {
       }
    }
 
-   getPollDom(post: MastodonPost): HTMLElement | null{
+   getPollDom(post: MastodonPost): HTMLElement | null {
       if (post.poll) {
          const pollDiv = dom(`<div></div>`)[0];
          for (const option of post.poll.options) {
             pollDiv.append(dom(`<div class="mastodon-poll-option color-fill">${svgCircle}${option.title}</div>`)[0]);
          }
-         pollDiv.append(
-            dom(`<div class="mastodon-poll-summary">${post.poll.votes_count} votes, ${post.poll.voters_count} voters</div>`)[0]
-         );
+         pollDiv.append(dom(`<div class="mastodon-poll-summary">${post.poll.votes_count} votes, ${post.poll.voters_count} voters</div>`)[0]);
          return pollDiv;
       }
       return null;
@@ -590,7 +606,7 @@ export class MastodonSource implements Source {
       if (post.card) {
       }
 
-      return mediaDom.children.length > 0 ? {elements: [mediaDom], toggles} : null;
+      return mediaDom.children.length > 0 ? { elements: [mediaDom], toggles } : null;
    }
 
    getPostOrCommentContentDom(
@@ -600,7 +616,7 @@ export class MastodonSource implements Source {
       isComment: boolean
    ): ContentDom {
       let postToView = mastodonPost.reblog ?? mastodonPost;
-      const elements: Element[] = []
+      const elements: Element[] = [];
       const toggles: Element[] = [];
 
       let prelude = "";
@@ -629,11 +645,13 @@ export class MastodonSource implements Source {
          </a>
          `;
       }
-      elements.push(dom(/*html*/ `
+      elements.push(
+         dom(/*html*/ `
          <div class="content-text">
             ${prelude}${postToView.content}
          </div>
-      `)[0]);
+      `)[0]
+      );
       const pollDom = this.getPollDom(postToView);
       if (pollDom) elements.push(pollDom);
       const mediaDom = this.getMediaDom(postToView);
@@ -643,7 +661,6 @@ export class MastodonSource implements Source {
          }
          toggles.push(...mediaDom.toggles);
       }
-
 
       // Add points last, so they go right as the only toggle.
       // FIXME when fetching comments, the reblog and favourited fields aren't sett. reblog is null, favourited is missing entirely.

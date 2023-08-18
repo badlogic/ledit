@@ -307,13 +307,15 @@ export function renderGallery(imageUrls: string[]): { gallery: Element; toggle: 
 }
 
 export function scrollToAndCenter(element: Element) {
-   const windowHeight = window.innerHeight;
-   const rect = element.getBoundingClientRect();
-   const elementTop = rect.top + window.scrollY;
-   const scrollToPosition = elementTop - windowHeight / 2;
+   requestAnimationFrame(() => {
+      const windowHeight = window.innerHeight;
+      const rect = element.getBoundingClientRect();
+      const elementTop = rect.top + window.scrollY;
+      const scrollToPosition = elementTop - windowHeight / 2;
 
-   window.scrollTo({
-      top: scrollToPosition,
-      behavior: "smooth",
+      window.scrollTo({
+         top: scrollToPosition,
+         behavior: "smooth",
+      });
    });
 }

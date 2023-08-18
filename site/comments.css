@@ -17,9 +17,9 @@
 .comment {
   display: block;
   padding-left: var(--ledit-padding);
-  margin-left: var(--ledit-padding);
   margin-top: var(--ledit-padding);
   cursor: pointer;
+  border-left: 1px dotted var(--ledit-border-color);
 }
 
 .comment a {

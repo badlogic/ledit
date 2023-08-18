@@ -1,8 +1,8 @@
 .posts {
    display: flex;
    flex-direction: column;
+   align-items: center;
    gap: calc(var(--ledit-padding) * 1.5);
-   width: 600px;
    margin: auto;
    margin-top: calc(var(--ledit-font-size) * 2.5 + var(--ledit-font-size-big));
 }

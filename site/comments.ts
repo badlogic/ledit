@@ -68,6 +68,7 @@ export class CommentView extends View {
       const comment = this.comment;
       if (comment.highlight) {
          this.classList.add("comment-highlighted");
+         // FIXME this doesn't quite work...
          onAddedToDOM(this, () => {
             scrollToAndCenter(this);
          });
@@ -111,7 +112,7 @@ export class CommentView extends View {
             elements.content.append(el);
          }
          if (content.toggles.length > 0) {
-            const togglesDiv = dom(/*html*/`<div style="display: flex; gap: 1em; margin-left: auto; margin-top: var(--ledit-padding); font-size: var(--ledit-font-size-small);"></div>`)[0];
+            const togglesDiv = dom(/*html*/`<div style="display: flex; gap: 1em; margin-left: auto; margin-top: var(--ledit-padding); font-size: calc(var(--ledit-font-size) * 0.85)"></div>`)[0];
             for (const toggle of content.toggles) {
                togglesDiv.append(toggle);
             }

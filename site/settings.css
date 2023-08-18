@@ -10,7 +10,6 @@
 }
 
 .settings {
-   width: 600px;
    margin: 0 auto;
    background: var(--ledit-background);
    padding: var(--ledit-padding) 0;

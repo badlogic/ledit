@@ -154,7 +154,6 @@ blockquote {
    transform: translateX(-50%);
    bottom: var(--ledit-margin);
 
-   width: 600px;
    display: flex;
    flex-direction: row;
    justify-content: flex-end;
@@ -180,6 +179,10 @@ blockquote {
    justify-content: center;
    align-items: center;
    font-size: calc(1.25 * var(--ledit-font-size));
+}
+
+.header, .post, .settings, .fab-container {
+   width: 600px;
 }
 
 @media (max-width: 600px) {
