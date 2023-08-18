@@ -25,14 +25,14 @@ export class PostEditor extends View {
    render() {
       this.innerHTML = /*html*/ `
           <div x-id="editor" class="editor">
-            <div x-id="close" class="editor-close"><span class="svg-icon color-fill">${svgClose}</span></div>
+            <div x-id="close" class="editor-close"><span class="color-fill">${svgClose}</span></div>
             <div x-id="headerRow" class="editor-header"></div>
             <textarea x-id="text"></textarea>
             <div class="editor-buttons">
-               <button x-id="addMedia" class="editor-button svgIcon color-fill" style="font-size: var(--ledit-font-size-big)">${svgImages}</button>
+               <button x-id="addMedia" class="editor-button color-fill" style="font-size: var(--ledit-font-size-big)">${svgImages}</button>
                <div x-id="charCount" style="margin-left: auto">${this.text?.length ?? 0}/${this.maxChars}</div>
                <button x-id="publish" class="editor-button">Publish</button>
-               <div x-id="progress" class="svgIcon color-fill hidden">${svgLoader}</div>
+               <div x-id="progress" class="color-fill hidden">${svgLoader}</div>
             </div>
          </div>
       `;

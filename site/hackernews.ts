@@ -170,11 +170,11 @@ export class HackerNewsSource implements Source {
 
    getContentDom(post: Post): ContentDom {
       const toggles: Element[] = [];
-      toggles.push(dom(/*html*/`<a href="https://news.ycombinator.com/item?id=${(post as any).hnPost.id}" target="_blank" class="svgIcon color-fill">${svgReply}</a>`)[0]);
+      toggles.push(dom(/*html*/`<a href="https://news.ycombinator.com/item?id=${(post as any).hnPost.id}" target="_blank" class="color-fill">${svgReply}</a>`)[0]);
       if (post.isSelf) {
          let text = ((post as any).hnPost as HNPost).text;
          text = encodeHTML(text);
-         let selfPost = dom(`<div class="post-self-preview">${htmlDecode(text)}</div>`)[0];
+         let selfPost = dom(`<div class="content-text">${htmlDecode(text)}</div>`)[0];
 
          requestAnimationFrame(() => {
             makeCollapsible(selfPost, 4.5);

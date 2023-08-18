@@ -1,4 +1,7 @@
 // @ts-ignore
+import "./rss.css";
+
+// @ts-ignore
 import { FeedEntry, extractFromXml } from "@extractus/feed-extractor";
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { dateToText, dom, makeCollapsible, proxyFetch, removeTrailingEmptyParagraphs } from "./utils";
@@ -161,8 +164,8 @@ export class RssSource implements Source {
       }
 
       const content = dom(
-         `<div class="post-rss-preview">${
-            imageUrl ? `<img src="${imageUrl}" class="post-rss-preview-image" style="flex: 0; max-width: 150px !important;">` : ""
+         `<div class="rss-content">${
+            imageUrl ? `<img src="${imageUrl}" class="rss-content-image" style="flex: 0; max-width: 150px !important;">` : ""
          } <div>${removeTrailingEmptyParagraphs(description)}</div></div>`
       )[0];
       content.querySelectorAll("iframe").forEach((iframe) => iframe.remove());

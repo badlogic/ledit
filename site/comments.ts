@@ -89,7 +89,7 @@ export class CommentView extends View {
                      : ""
                }
                <span>• </span>
-               <a x-id="reply" class="comment-reply svgIcon color-dim-fill" href="${comment.url}">${svgReply}</a>
+               <a x-id="reply" class="comment-reply color-dim-fill" href="${comment.url}">${svgReply}</a>
                <div x-id="buttons" class="comment-buttons"></div>
          </div>
          <div x-id="text" class="comment-text"></div>

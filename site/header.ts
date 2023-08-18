@@ -18,12 +18,12 @@ export class HeaderView extends View {
       this.innerHTML = /*html*/ `
       <div class="header-container">
          <div class="header">
-            <div x-id="showMenu" class="header-menu svgIcon color-fill no-user-select" style="padding-left: var(--ledit-padding);">${svgBurger}</div>
+            <div x-id="showMenu" class="header-menu color-fill no-user-select" style="padding-left: var(--ledit-padding);">${svgBurger}</div>
             <div x-id="feed" class="header-feed">${bookmark ? bookmark.source + bookmark.label : hash}</div>
             <input x-id="feedInput" class="header-feed-input hidden" value="${source.getSourcePrefix()} + ${source.getFeed()}"/>
             <select x-id="sorting" class="header-sorting" tabindex="-1" style="padding-right: var(--ledit-margin);">
             </select>
-            <span x-id="addBookmark" class="header-bookmark-add svgIcon color-fill" style="padding-right: var(--ledit-padding);">${svgPlus}</span>
+            <span x-id="addBookmark" class="header-bookmark-add color-fill" style="padding-right: var(--ledit-padding);">${svgPlus}</span>
          </div>
       </div>
         `;

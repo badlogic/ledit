@@ -103,7 +103,7 @@ export class SettingsView extends View {
       this.innerHTML = /*html*/ `
             <div x-id="container" class="settings-container">
                 <div class="settings">
-                    <div x-id="close" class="settings-row-close"><span class="svg-icon color-fill">${svgClose}</span></div>
+                    <div x-id="close" class="settings-row-close"><span class="color-fill">${svgClose}</span></div>
                     <div class="settings-row-header">Feed Bookmarks</div>
                     <div x-id="bookmarks"></div>
                     <div class="settings-row-header">Theme</div>
@@ -111,11 +111,11 @@ export class SettingsView extends View {
                     <div class="settings-row-header">View options</div>
                     <div x-id="collapseSeen" class="settings-row">
                      <div style="flex: 1">Collapse seen posts</div>
-                     <div class="svg-icon box ${getSettings().collapseSeenPosts ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
+                     <div class="box ${getSettings().collapseSeenPosts ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
                     </div>
                     <div x-id="showOnlyMastodonRoots" class="settings-row">
                      <div style="flex: 1">Show Mastodon top-level posts only</div>
-                     <div class="svg-icon box ${getSettings().showOnlyMastodonRoots ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
+                     <div class="box ${getSettings().showOnlyMastodonRoots ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
                     </div>
                     <div x-id="hideSeen" class="settings-row">
                      <span style="flex: 1">Hide seen posts (experimental)</span>
@@ -123,8 +123,8 @@ export class SettingsView extends View {
                     <div class="settings-row-header">About</div>
 
                     <div class="settings-row"><a href="https://github.com/badlogic/ledit#usage">How does this work?</a></div>
-                    <div class="settings-row"><a href="https://github.com/badlogic/ledit" class="svg-icon color-fill">${svgGithub} GitHub</a></div>
-                    <div class="settings-row"><a href="https://github.com/sponsors/badlogic" class="svg-icon color-fill">${svgHeart} Buy me a coffee</a></div>
+                    <div class="settings-row"><a href="https://github.com/badlogic/ledit" class="color-fill">${svgGithub} GitHub</a></div>
+                    <div class="settings-row"><a href="https://github.com/sponsors/badlogic" class="color-fill">${svgHeart} Buy me a coffee</a></div>
                     <div x-id="reset" class="settings-row">Reset to defaults</div>
                 </div>
             </div>
@@ -163,19 +163,19 @@ export class SettingsView extends View {
                <div class="settings-row" style="margin-left: var(--ledit-padding)">
                   <a x-id="feed" href="#${hash}" style="flex: 1">${bookmark.label}</a>
                   <div x-id="makeDefaultFeed" class="box">
-                     <span class="svg-icon ${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</span>
+                     <span class="${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</span>
                   </div>
                   ${
                      bookmark.source == "hn/"
                         ? /*html*/ `<div x-id="editFeed" class="box">
-                     <span class="svg-icon color-fill"></span>
+                     <span class="color-fill"></span>
                   </div>`
                         : /*html*/ `<div x-id="editFeed" class="box">
-                     <span class="svg-icon color-fill">${svgPencil}</span>
+                     <span class="color-fill">${svgPencil}</span>
                   </div>`
                   }
                   <div x-id="deleteFeed" class="box">
-                     <span class="svg-icon color-fill">${svgMinus}</span>
+                     <span class="color-fill">${svgMinus}</span>
                   </div>
                </div>
             `)[0];
@@ -214,7 +214,7 @@ export class SettingsView extends View {
          }
          if (source != "hn/") {
             const addBookmarkDiv = dom(
-               `<div class="settings-row" style="margin-left: var(--ledit-padding);"><span class="svg-icon color-fill">${svgBookmark}</span>Add feed</div>`
+               `<div class="settings-row" style="margin-left: var(--ledit-padding);"><span class="color-fill">${svgBookmark}</span>Add feed</div>`
             )[0];
             elements.bookmarks.append(addBookmarkDiv);
             addBookmarkDiv.addEventListener("click", () => {
@@ -242,10 +242,10 @@ export class SettingsView extends View {
       for (const theme of ["Dark", "Light"]) {
          const themeDiv = dom(/*html*/ `
          <div class="settings-row">
-           <div style="flex: 1">${theme}</div><div class="svg-icon box color-fill hidden">${svgCheck}</div>
+           <div style="flex: 1">${theme}</div><div class="checkmark box color-fill hidden">${svgCheck}</div>
          </div>`)[0];
          if (settings.theme == theme) {
-            themeDiv.querySelector(".svg-icon")?.classList.remove("hidden");
+            themeDiv.querySelector(".checkmark")?.classList.remove("hidden");
          }
          themeDiv.addEventListener("click", (event) => {
             event.stopPropagation();
@@ -354,7 +354,7 @@ export class BookmarkEditor extends View {
       this.innerHTML = /*html*/ `
       <div x-id="container" class="editor-container">
           <div x-id="editor" class="editor">
-            <div x-id="close" class="editor-close"><span class="svg-icon color-fill">${svgClose}</span></div>
+            <div x-id="close" class="editor-close"><span class="color-fill">${svgClose}</span></div>
             <div class="editor-header">${sourcePrefixLabel(this.bookmark.source)} bookmark</div>
             <div class="editor-header">Label</div>
             <input x-id="label" value="${this.bookmark.label}">

@@ -265,16 +265,16 @@ export class RedditSource implements Source {
       const toggles: Element[] = [];
       const points = dom(/*html*/ `
          <div class="post-points">
-            <span class="svgIcon color-fill">${svgUpArrow}</span>
+            <span class="color-fill">${svgUpArrow}</span>
             <span>${addCommasToNumber(post.data.score)}</span>
-            <span class="svg-icon color-fill">${svgDownArrow}</span>
+            <span class="color-fill">${svgDownArrow}</span>
          </div>
       `)[0];
       toggles.push(points);
 
       // Self post, show text, dim it, cap vertical size, and make it expand on click.
       if (post.data.is_self) {
-         let selfPost = dom(`<div class="post-self-preview">${htmlDecode(post.data.selftext_html ?? "")}</div>`)[0];
+         let selfPost = dom(`<div class="content-text">${htmlDecode(post.data.selftext_html ?? "")}</div>`)[0];
 
          requestAnimationFrame(() => {
             makeCollapsible(selfPost, 4.5);

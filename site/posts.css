@@ -28,7 +28,7 @@
    background: var(--ledit-background-dim);
 }
 
-.post-seen .post-content,
+.post-seen .content,
 .post-seen .post-buttons {
    display: none;
 }
@@ -56,10 +56,6 @@
    color: var(--ledit-color);
 }
 
-.post-feed {
-   font-size: var(--ledit-font-size-small);
-}
-
 .post-meta {
    display: flex;
    color: var(--ledit-color-dim);
@@ -67,118 +63,13 @@
    gap: 0.25em;
 }
 
+.post-meta a {
+   display: flex;
+}
+
 .post-meta span {
    display: flex;
    align-items: center;
-}
-
-.post-self-preview {
-   cursor: pointer;
-   padding: 0 var(--ledit-margin);
-}
-
-.post-rss-preview {
-   display: flex;
-   flex-direction: row;
-   align-items: flex-start;
-   cursor: pointer;
-   padding: 0 var(--ledit-margin);
-   margin-bottom: calc(var(--ledit-padding) * 1.5);
-}
-
-.post-rss-preview > div > p:last-child {
-   margin-bottom: 0;
-}
-
-.post-rss-preview > div {
-   width: 100%;
-}
-
-.post-rss-preview-image {
-   max-width: 150px !important;
-   flex: 0 0 auto; /* Prevent vertical growth and maintain aspect ratio */
-   object-fit: contain;
-   margin-right: var(--ledit-margin);
-}
-
-.post-rss-preview img {
-   max-width: 100% !important;
-   height: auto !important;
-   border-radius: 8px;
-}
-
-.post-rss-preview video {
-   max-width: 100% !important;
-   height: auto !important;
-   border-radius: 8px;
-}
-
-.post-rss-preview svg {
-   width: 1em;
-   height: 1em;
-}
-
-.post-rss-preview h1 {
-   font-size: var(--ledit-font-size);
-}
-
-.post-rss-preview h2 {
-   font-size: var(--ledit-font-size);
-}
-
-.post-rss-preview h3 {
-   font-size: var(--ledit-font-size);
-}
-
-.post-rss-preview h4 {
-   font-size: var(--ledit-font-size);
-}
-
-.post-mastodon-prelude {
-   display: flex;
-   align-items: center;
-   gap: var(--ledit-padding);
-   font-size: var(--ledit-font-size-small);
-   margin-bottom: var(--ledit-padding);
-   margin-top: calc(var(--ledit-padding) * -1);
-}
-
-.post-mastodon-prelude a {
-   color: var(--ledit-color-dim) !important;
-}
-
-.post-mastodon-content {
-   padding-left: var(--ledit-margin);
-   padding-right: var(--ledit-margin);
-   margin-bottom: var(--ledit-padding);
-   margin-top: var(--ledit-padding);
-}
-
-.post-mastodon-content > :last-child {
-   margin-bottom: 0;
-}
-
-.post-url {
-   overflow: hidden;
-   white-space: pre;
-   text-overflow: ellipsis;
-   font-size: var(--ledit-font-size-small);
-   color: var(--ledit-color-dim);
-}
-
-.post-url a {
-   color: var(--ledit-color-dim);
-}
-
-.post-points-comments {
-   display: flex;
-   flex-direction: row;
-   gap: 0.3em;
-}
-
-.post-author > a {
-   font-weight: 400;
-   color: var(--ledit-color-dim);
 }
 
 .post-buttons {
@@ -201,14 +92,6 @@
    height: 1em;
 }
 
-.post-buttons-sticky {
-   position: sticky;
-   top: calc(var(--ledit-font-size) * 2 + var(--ledit-padding) * 2);
-   background: var(--ledit-background);
-   padding-top: var(--ledit-padding);
-   padding-bottom: var(--ledit-padding);
-}
-
 .post-points {
    display: flex;
    align-items: center;
@@ -217,24 +100,21 @@
    cursor: pointer;
 }
 
-.post-mastodon-poll {
-}
-
-.post-mastodon-poll-option {
-   display: flex;
+.post-notification-header {
+   display: inline-flex;
    align-items: center;
-   gap: 0.5em;
-}
-
-.post-mastodon-poll-summary {
-   margin-top: var(--ledit-margin);
-   font-size: var(--ledit-font-size-small);
-   color: var(--ledit-color-dim);
+   gap: 0.25em;
+   margin-bottom: -1em;
+   margin: 0 var(--ledit-margin);
 }
 
 .post-notification-text {
    color: var(--ledit-color-dim) !important;
-   cursor: pointer;
+   margin: 0 var(--ledit-margin);
+}
+
+.post-notification-text > :last-child {
+   margin-bottom: 0 !important;
 }
 
 .post-notification-text * {

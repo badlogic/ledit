@@ -62,13 +62,7 @@
   left: 0 !important;
 }
 
-.comment-text .media {
-  margin: 0 !important;
-}
-
-.comment-text .post-mastodon-content {
-  margin-top: 0 !important;
-  margin-bottom: var(--ledit-padding) !important;
+.comment-text .content-text {
   padding: 0 !important;
 }
 

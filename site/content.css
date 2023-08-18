@@ -1,12 +1,24 @@
 .content {
-   margin: calc(var(--ledit-padding) * -2);
-   display: block;
+   display: flex;
+   flex-direction: column;
+   margin: calc(var(--ledit-margin) * -1);
    margin-bottom: 0;
    margin-top: 0;
+   width: calc(100% + var(--ledit-margin) * 2);
+   justify-content: center;
 }
 
 .content > video-js {
    cursor: pointer;
+}
+
+.content-text {
+   cursor: pointer;
+   padding: 0 var(--ledit-margin);
+}
+
+.content-text :last-child {
+   margin-bottom: 0 !important;
 }
 
 .content-image-gallery > img {

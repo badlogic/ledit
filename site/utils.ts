@@ -213,7 +213,7 @@ export function renderVideo(
    embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string },
    loop: boolean
 ): Element {
-   let videoDom = dom(/*html*/ `<div style="display: flex; justify-content: center; background: #000">
+   let videoDom = dom(/*html*/ `<div style="display: flex; justify-content: center; background: #000; width: 100%">
      <video-js controls class="video-js" style="width: ${embed.width}px;" ${loop ? "loop" : ""} data-setup="{}">
          <source src="${embed.dash_url}">
          <source src="${embed.hls_url}">
@@ -225,7 +225,7 @@ export function renderVideo(
       let width = embed.width;
       let height = embed.height;
       let maxHeight = window.innerHeight * 0.7;
-      const containerWidth = videoDom.clientWidth;
+      const containerWidth = videoDom.parentElement!.clientWidth;
       if (width > containerWidth || width < containerWidth) {
          let aspect = height / width;
          width = containerWidth;
@@ -296,7 +296,7 @@ export function renderGallery(imageUrls: string[]): { gallery: Element; toggle: 
 
    const toggle = dom(/*html*/ `
       <div class="post-button">
-         <span class="svg-icon color-fill">${svgImages}</span>
+         <span class="color-fill">${svgImages}</span>
          <span>${imageUrls.length}</span>
       </div>
    `)[0];

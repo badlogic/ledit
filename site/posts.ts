@@ -75,8 +75,7 @@ export class PostsView extends View {
       for (let i = 0; i < posts.posts.length; i++) {
          const post = posts.posts[i];
          const postDiv = this.renderPost(post);
-         if (postDiv.classList.contains("hidden"))
-            hiddenPosts++;
+         if (postDiv.classList.contains("hidden")) hiddenPosts++;
          this.append(postDiv);
       }
 
@@ -110,7 +109,7 @@ export class PostsView extends View {
    prependPost(post: Post) {
       const postDiv = this.renderPost(post);
       this.insertBefore(postDiv, this.children[0]);
-      window.scrollTo({top: 0});
+      window.scrollTo({ top: 0 });
    }
 }
 customElements.define("ledit-posts", PostsView);
@@ -130,26 +129,13 @@ export class PostView extends View {
       if (!post.contentOnly) {
          this.renderFullPost(post);
       } else {
-         this.innerHTML = /*html*/ `
-            <div class="post">
-               <div x-id="content" class="post-content"></div>
-               <div x-id="contentToggles"></div>
-            </div>
-         `;
-         const elements = this.elements<{
-            content: Element;
-            contentToggles: Element;
-         }>();
-
          onVisibleOnce(this, () => {
             console.log("Showing content of " + this.post.title);
             const content = new ContentView(this.post);
-
+            this.append(content);
             for (const toggle of content.toggles) {
-               elements.contentToggles.parentElement?.insertBefore(toggle, elements.contentToggles);
+               this.append(toggle);
             }
-            elements.contentToggles.remove();
-            elements.content.append(content);
          });
       }
    }
@@ -160,19 +146,18 @@ export class PostView extends View {
       this.innerHTML = /*html*/ `
          ${post.title && post.title.length > 0 ? `<div class="post-title"><a href="${post.url}" target="_blank">${post.title}</a></div>` : ""}
          <div x-id="meta" class="post-meta"></div>
-         <div x-id="content" class="post-content"></div>
+         <div x-id="content"></div>
          <div x-id="buttonsRow" class="post-buttons">
             ${
                post.numComments != null
                   ? /*html*/ `
                   <div x-id="commentsToggle" class="post-button">
-                     <span class="svgIcon color-fill">${svgSpeechBubble}</span>
+                     <span class="color-fill">${svgSpeechBubble}</span>
                      <span>${addCommasToNumber(post.numComments)}</span>
                   </div>
                `
                   : ""
             }
-            <div x-id="contentToggles"></div>
          </div>
       `;
 
@@ -181,7 +166,6 @@ export class PostView extends View {
          content: Element;
          buttonsRow: Element;
          commentsToggle: Element | null;
-         contentToggles: Element;
          link: Element | null;
       }>();
 
@@ -192,13 +176,13 @@ export class PostView extends View {
          const content = new ContentView(this.post);
 
          for (const toggle of content.toggles) {
-            elements.contentToggles.parentElement?.insertBefore(toggle, elements.contentToggles);
+            elements.buttonsRow.append(toggle);
          }
-         elements.contentToggles.remove();
-         elements.content.append(content);
-         if (content.children.length == 0) {
-            elements.content.remove();
+
+         if (content.children.length > 0) {
+            this.insertBefore(content, elements.content);
          }
+         elements.content.remove();
          if (!post.numComments && content.toggles.length == 0) elements.buttonsRow.classList.add("hidden");
       });
 
@@ -210,7 +194,7 @@ export class PostView extends View {
          // Close when escape is pressed
          escapeGuard.register(0, () => {
             if (this.showingComments && intersectsViewport(this.commentsView)) this.toggleComments();
-         })
+         });
       }
 
       if (collapse) {
@@ -273,4 +257,3 @@ export class PostView extends View {
    }
 }
 customElements.define("ledit-post", PostView);
-
