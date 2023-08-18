@@ -175,6 +175,10 @@ export class RssSource implements Source {
       return {elements: [content], toggles: []};
    }
 
+   getCommentMetaDom(comment: Comment, opName: string): HTMLElement[] {
+      return [];
+   }
+
    getFeed(): string {
       const hash = window.location.hash;
       if (hash.length == 0) {

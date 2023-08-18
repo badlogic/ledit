@@ -251,19 +251,12 @@ export class MastodonSource implements Source {
          content,
          replies: [],
          highlight,
-         mastodonComment: reply,
-         replyCallback: (comment, commentView) => {
-            const mastodonComment = (comment as any).mastodonComment as MastodonPost;
-            this.showCommentReplyEditor(mastodonComment, userInfo, commentView);
-         },
+         mastodonComment: reply
       } as Comment;
    }
 
    extractUsernames(element: CommentView | PostView) {
-      const mentionLinks =
-         element instanceof CommentView
-            ? element.querySelectorAll(".comment-text .post-content a.u-url.mention")
-            : element.querySelectorAll(".post > .post-content a.u-url.mention");
+      const mentionLinks = element.querySelectorAll(".content-text a.u-url.mention");
       const usernames: string[] = [];
 
       mentionLinks.forEach((link) => {
@@ -539,6 +532,67 @@ export class MastodonSource implements Source {
       }
    }
 
+   getPollDom(post: MastodonPost): HTMLElement | null{
+      if (post.poll) {
+         const pollDiv = dom(`<div></div>`)[0];
+         for (const option of post.poll.options) {
+            pollDiv.append(dom(`<div class="mastodon-poll-option color-fill">${svgCircle}${option.title}</div>`)[0]);
+         }
+         pollDiv.append(
+            dom(`<div class="mastodon-poll-summary">${post.poll.votes_count} votes, ${post.poll.voters_count} voters</div>`)[0]
+         );
+         return pollDiv;
+      }
+      return null;
+   }
+
+   getMediaDom(post: MastodonPost): ContentDom | null {
+      const toggles: Element[] = [];
+      const mediaDom = dom(`<div style="padding-top: var(--ledit-padding);"></div>`)[0];
+      if (post.media_attachments.length > 0) {
+         const images: string[] = [];
+         const videos: MastodonMedia[] = [];
+
+         for (const media of post.media_attachments) {
+            if (media.type == "image") {
+               images.push(media.url);
+            } else if (media.type == "gifv") {
+               videos.push(media);
+            } else if (media.type == "video") {
+               videos.push(media);
+            }
+         }
+
+         if (images.length >= 1) {
+            const gallery = renderGallery(images);
+            mediaDom.append(gallery.gallery);
+            if (images.length > 1) toggles.push(gallery.toggle);
+         }
+         if (videos.length >= 1) {
+            for (const video of videos) {
+               mediaDom.append(
+                  renderVideo(
+                     {
+                        width: video.meta.original?.width ?? 0,
+                        height: video.meta.original?.height ?? 0,
+                        dash_url: null,
+                        hls_url: null,
+                        fallback_url: video.url,
+                     },
+                     false
+                  )
+               );
+            }
+         }
+      }
+
+      // FIXME render cards
+      if (post.card) {
+      }
+
+      return mediaDom.children.length > 0 ? {elements: [mediaDom], toggles} : null;
+   }
+
    getPostOrCommentContentDom(
       mastodonPost: MastodonPost,
       inReplyToPost: MastodonPost | null,
@@ -546,6 +600,7 @@ export class MastodonSource implements Source {
       isComment: boolean
    ): ContentDom {
       let postToView = mastodonPost.reblog ?? mastodonPost;
+      const elements: Element[] = []
       const toggles: Element[] = [];
 
       let prelude = "";
@@ -574,96 +629,49 @@ export class MastodonSource implements Source {
          </a>
          `;
       }
-      const content = dom(/*html*/ `
+      elements.push(dom(/*html*/ `
          <div class="content-text">
             ${prelude}${postToView.content}
          </div>
-      `)[0];
-
-      if (postToView.poll) {
-         const pollDiv = dom(`<div></div>`)[0];
-         for (const option of postToView.poll.options) {
-            pollDiv.append(dom(`<div class="mastodon-poll-option color-fill">${svgCircle}${option.title}</div>`)[0]);
+      `)[0]);
+      const pollDom = this.getPollDom(postToView);
+      if (pollDom) elements.push(pollDom);
+      const mediaDom = this.getMediaDom(postToView);
+      if (mediaDom) {
+         for (const el of mediaDom.elements) {
+            elements.push(el);
          }
-         pollDiv.append(
-            dom(`<div class="mastodon-poll-summary">${postToView.poll.votes_count} votes, ${postToView.poll.voters_count} voters</div>`)[0]
-         );
-         content.append(pollDiv);
+         toggles.push(...mediaDom.toggles);
       }
 
-      const media = dom(`<div style="padding-top: var(--ledit-padding);"></div>`)[0];
-      if (postToView.media_attachments.length > 0) {
-         const images: string[] = [];
-         const videos: MastodonMedia[] = [];
-
-         for (const media of postToView.media_attachments) {
-            if (media.type == "image") {
-               images.push(media.url);
-            } else if (media.type == "gifv") {
-               videos.push(media);
-            } else if (media.type == "video") {
-               videos.push(media);
-            }
-         }
-
-         if (images.length >= 1) {
-            const gallery = renderGallery(images);
-            media.append(gallery.gallery);
-            if (images.length > 1) toggles.push(gallery.toggle);
-         }
-         if (videos.length >= 1) {
-            for (const video of videos) {
-               media.append(
-                  renderVideo(
-                     {
-                        width: video.meta.original?.width ?? 0,
-                        height: video.meta.original?.height ?? 0,
-                        dash_url: null,
-                        hls_url: null,
-                        fallback_url: video.url,
-                     },
-                     false
-                  )
-               );
-            }
-         }
-      }
-
-      if (postToView.card) {
-         // FIXME render cards
-      }
 
       // Add points last, so they go right as the only toggle.
       // FIXME when fetching comments, the reblog and favourited fields aren't sett. reblog is null, favourited is missing entirely.
-      const boostColor = postToView.reblogged ? "color-gold-fill" : isComment ? "color-dim-fill" : "color-fill";
       const boost = dom(/*html*/ `
-         <div x-id="boost" class="${!isComment ? "post-button" : ""}" style="margin-left: auto;">
-            <span x-id="boostIcon" class="${boostColor}">${svgReblog}</span>
+         <div x-id="boost" class="post-button" style="color: var(--ledit-color); ${!isComment ? "margin-left: auto;" : ""}">
+            <span x-id="boostIcon" class="${postToView.reblogged ? "color-gold-fill" : "color-fill"}">${svgReblog}</span>
             <span x-id="boostCount">${addCommasToNumber(postToView.reblogs_count)}</span>
          </div>
       `)[0];
 
-      const favouriteColor = postToView.favourited ? "color-gold-fill" : isComment ? "color-dim-fill" : "color-fill";
       const favourite = dom(/*html*/ `
-         <div x-id="favourite" class="${!isComment ? "post-button" : ""}">
-            <span x-id="favouriteIcon" class="${favouriteColor}">${svgStar}</span>
+         <div x-id="favourite" class="post-button" style="color: var(--ledit-color);">
+            <span x-id="favouriteIcon" class="${postToView.favourited ? "color-gold-fill" : "color-fill"}">${svgStar}</span>
             <span x-id="favouriteCount">${addCommasToNumber(postToView.favourites_count)}</span>
          </div>
       `)[0];
 
       if (userInfo.bearer) {
-         if (!isComment) {
-            const reply = dom(`<a class="color-fill post-button"">${svgReply}</a>`)[0];
-            toggles.push(reply);
-            reply.addEventListener("click", (event) => {
-               let parent = reply.parentElement;
-               while (parent) {
-                  if (parent instanceof PostView) break;
-                  parent = parent.parentElement;
-               }
-               this.showCommentReplyEditor(postToView, userInfo, parent as PostView);
-            });
-         }
+         const reply = dom(`<a class="color-fill post-button"">${svgReply}</a>`)[0];
+         toggles.push(reply);
+         reply.addEventListener("click", (event) => {
+            let parent = reply.parentElement;
+            while (parent) {
+               if (parent instanceof PostView) break;
+               parent = parent.parentElement;
+            }
+            this.showCommentReplyEditor(postToView, userInfo, parent as PostView);
+         });
 
          const boostElements = View.elements<{
             boostIcon: HTMLElement;
@@ -719,7 +727,7 @@ export class MastodonSource implements Source {
       toggles.push(boost);
       toggles.push(favourite);
 
-      return { elements: media.children.length > 0 ? [content, media] : [content], toggles };
+      return { elements: elements, toggles: toggles };
    }
 
    getNotificationContentDom(post: Post) {
@@ -816,7 +824,16 @@ export class MastodonSource implements Source {
          `;
    }
 
-   getAuthorDomBig(account: MastodonAccount) {}
+   getCommentMetaDom(comment: Comment, opName: string): HTMLElement[] {
+      const metaDom = dom(/*html*/ `
+         <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">
+         <a href="${comment.authorUrl}" target="_blank">${comment.author}</a>
+         </span>
+         <span>•</span>
+         <span>${dateToText(comment.createdAt * 1000)}</span>
+      `);
+      return metaDom;
+   }
 
    getFeed(): string {
       const hash = window.location.hash;

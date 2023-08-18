@@ -1,7 +1,7 @@
 import "video.js/dist/video-js.min.css";
 
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix, getSource } from "./data";
-import { svgDownArrow, svgUpArrow } from "./svg";
+import { svgDownArrow, svgReply, svgUpArrow } from "./svg";
 import { addCommasToNumber, dateToText, dom, htmlDecode, intersectsViewport, makeCollapsible, renderGallery, renderVideo } from "./utils";
 
 let count = 0;
@@ -263,6 +263,8 @@ export class RedditSource implements Source {
       const post = (canonicalPost as any).redditPost;
       const postsWidth = document.querySelector(".posts")!.clientWidth; // account for padding in post
       const toggles: Element[] = [];
+      const reply = dom(/*html*/`<a href="${canonicalPost.url}" target="_blank" class="color-fill">${svgReply}</a>`)[0];
+      toggles.push(reply);
       const points = dom(/*html*/ `
          <div class="post-points">
             <span class="color-fill">${svgUpArrow}</span>
@@ -366,6 +368,19 @@ export class RedditSource implements Source {
          return { elements: dom(`<img src="${thumbnailUrl}"></img>`), toggles };
       }
       return { elements: [document.createElement("div")], toggles };
+   }
+
+   getCommentMetaDom(comment: Comment, opName: string): HTMLElement[] {
+      return dom(/*html*/ `
+         <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">
+         <a href="${comment.authorUrl}" target="_blank">${comment.author}</a>
+         </span>
+         <span>•</span>
+         <span>${dateToText(comment.createdAt * 1000)}</span>
+         <span>•</span>
+         <span>${addCommasToNumber(comment.score!)} pts</span>
+         <a href="${comment.url}" target="_blank" class="color-fill" style="margin-left: auto">${svgReply}</a>
+       `);
    }
 
    getFeed() {

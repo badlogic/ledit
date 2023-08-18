@@ -70,56 +70,28 @@ export class CommentView extends View {
          this.classList.add("comment-highlighted");
          onAddedToDOM(this, () => {
             scrollToAndCenter(this);
-         })
+         });
       }
 
       this.innerHTML = /*html*/ `
-         <div class="comment-meta">
-               <span class="comment-author ${this.opName == comment.author ? "comment-author-op" : ""}">
-                  <a href="${comment.authorUrl}">${comment.author}</a>
-               </span>
-               <span>• </span>
-               <span class="comment-data">${dateToText(comment.createdAt * 1000)}</span>
-               ${
-                  comment.score
-                     ? /*html*/ `
-                  <span>• </span>
-                  <span class="comment-points">${comment.score} pts</span>
-               `
-                     : ""
-               }
-               <span>• </span>
-               <a x-id="reply" class="comment-reply color-dim-fill" href="${comment.url}">${svgReply}</a>
-               <div x-id="buttons" class="comment-buttons"></div>
-         </div>
-         <div x-id="text" class="comment-text"></div>
+         <div x-id="meta" class="comment-meta"></div>
+         <div x-id="content" class="comment-content"></div>
          <div x-id="replies" class="comment-replies"></div>
          <div x-id="repliesCount" class="comment-replies-count hidden"></div>
       `;
 
-      // Add replies and reply count. Setup expand/collapse.
+      // Add meta, content, replies and reply count. Setup expand/collapse.
       const elements = this.elements<{
-         text: HTMLElement;
-         buttons: HTMLElement;
+         meta: HTMLElement;
+         content: HTMLElement;
          replies: HTMLElement;
          repliesCount: HTMLElement;
          reply: HTMLElement;
       }>();
 
-      // Ensure all links open a new tab.
-      let links = this.querySelectorAll("a")!;
-      for (let i = 0; i < links.length; i++) {
-         let link = links[i];
-         link.setAttribute("target", "_blank");
-      }
-
-      // If a reply callback is set, set up a click listener
-      // and prevent the default behaviour.
-      if (comment.replyCallback) {
-         elements.reply.addEventListener("click", (event) => {
-            event.preventDefault();
-            comment.replyCallback!(comment, this);
-         });
+      // Add meta
+      for (const el of getSource().getCommentMetaDom(comment, this.opName)) {
+         elements.meta.append(el);
       }
 
       // Create reply children recursively.
@@ -129,21 +101,31 @@ export class CommentView extends View {
          elements.replies.append(replyDom);
       }
 
-      // Add content toggle buttons
+      // Add content and toggle buttons
       const toggles: Element[] = [];
       if (typeof comment.content === "string") {
-         elements.text.innerHTML = htmlDecode(comment.content)!;
+         elements.content.innerHTML = htmlDecode(comment.content)!;
       } else {
          const content = comment.content;
          for (const el of content.elements) {
-            elements.text.append(el);
+            elements.content.append(el);
          }
-         for (const toggle of content.toggles) {
-            elements.buttons.append(toggle);
+         if (content.toggles.length > 0) {
+            const togglesDiv = dom(/*html*/`<div style="display: flex; gap: 1em; margin-left: auto; margin-top: var(--ledit-padding); font-size: var(--ledit-font-size-small);"></div>`)[0];
+            for (const toggle of content.toggles) {
+               togglesDiv.append(toggle);
+            }
+            this.insertBefore(togglesDiv, elements.replies);
          }
          toggles.push(...content.toggles);
       }
 
+      // Ensure all links open a new tab.
+      let links = elements.content.querySelectorAll("a")!;
+      for (let i = 0; i < links.length; i++) {
+         let link = links[i];
+         link.setAttribute("target", "_blank");
+      }
 
       // Collapse children on click
       const isLink = (element: HTMLElement) => {
@@ -151,8 +133,7 @@ export class CommentView extends View {
          while (el) {
             if (el.tagName == "A") return true;
             if (el.classList.contains("content-image-gallery")) return true;
-            if (toggles.indexOf(el) != -1)
-               return true;
+            if (toggles.indexOf(el) != -1) return true;
             el = el.parentElement;
          }
          return false;
@@ -171,7 +152,7 @@ export class CommentView extends View {
             }
          }
       };
-      elements.text.addEventListener("click", toggleCollapsed);
+      elements.content.addEventListener("click", toggleCollapsed);
       elements.repliesCount.addEventListener("click", toggleCollapsed);
    }
 }

@@ -48,22 +48,34 @@
   gap: 0.2em;
 }
 
-.comment-text {
+.comment-content {
   cursor: pointer;
   overflow-wrap: break-word;
 }
 
-.comment-text p:last-child {
+.comment-content blockquote {
+  margin-block-start: 0;
+  margin-block-end: 0;
+}
+
+.comment-content p:last-child {
   margin-bottom: 0;
 }
 
-.comment-text .content-image-gallery {
+.comment-content .content-image-gallery {
   width: 100% !important;
   left: 0 !important;
 }
 
-.comment-text .content-text {
+.comment-content .content-text {
   padding: 0 !important;
+}
+
+.comment-content h1,
+.comment-content h2,
+.comment.content h3,
+.comment-content h4 {
+  font-size: var(--ledit-font-size);
 }
 
 .comment-author-op > a {
@@ -85,7 +97,7 @@
   gap: 0.5em;
 }
 
-.comment-text > .md p:last-child {
+.comment-content > .md p:last-child {
   margin-block-end: 0;
 }
 
@@ -105,9 +117,6 @@
   font-weight: 400;
   justify-content: center;
   user-select: none;
-}
-
-.comment-replies {
 }
 
 .comment-replies-count {

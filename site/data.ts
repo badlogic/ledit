@@ -28,7 +28,6 @@ export interface Comment {
    content: string | ContentDom;
    replies: Comment[];
    highlight: boolean;
-   replyCallback: ((comment: Comment, commentElement: CommentView) => void) | undefined;
 }
 
 export interface SortingOption {
@@ -46,6 +45,7 @@ export interface Source {
    getComments(post: Post): Promise<Comment[]>,
    getMetaDom(post: Post): HTMLElement[],
    getContentDom(post: Post): ContentDom,
+   getCommentMetaDom(comment: Comment, opName: string): HTMLElement[],
    getFeed(): string,
    getSourcePrefix(): SourcePrefix,
    getSortingOptions(): SortingOption[],

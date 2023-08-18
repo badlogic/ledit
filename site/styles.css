@@ -71,14 +71,17 @@ p {
 }
 
 pre {
-   background: var(--ledit-background-dim);
+   background: var(--ledit-background);
    width: 100%;
    overflow: auto;
+   padding: var(--ledit-padding);
+   border-radius: 8px;
 }
 
 code {
    font-family: var(--ledit-code-font-family);
    font-size: var(--ledit-font-size-small);
+   background: var(--ledit-background);
 }
 
 blockquote {
@@ -179,7 +182,7 @@ blockquote {
    font-size: calc(1.25 * var(--ledit-font-size));
 }
 
-@media (max-width: 767px) {
+@media (max-width: 600px) {
    .posts,
    .comments,
    .header,

@@ -74,6 +74,10 @@ export class YoutubeSource implements Source {
       return {elements: [videoDom], toggles: []};
    }
 
+   getCommentMetaDom(comment: Comment, opName: string): HTMLElement[] {
+      return [];
+   }
+
    getFeed(): string {
       const hash = window.location.hash;
       if (hash.length == 0) {

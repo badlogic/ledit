@@ -22,14 +22,11 @@
    margin-right: var(--ledit-margin);
 }
 
-.rss-content img {
+.rss-content * {
    max-width: 100% !important;
-   height: auto !important;
-   border-radius: 8px;
 }
 
-.rss-content video {
-   max-width: 100% !important;
+.rss-content video, .rss-content img {
    height: auto !important;
    border-radius: 8px;
 }

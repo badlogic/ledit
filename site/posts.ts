@@ -146,7 +146,6 @@ export class PostView extends View {
       this.innerHTML = /*html*/ `
          ${post.title && post.title.length > 0 ? `<div class="post-title"><a href="${post.url}" target="_blank">${post.title}</a></div>` : ""}
          <div x-id="meta" class="post-meta"></div>
-         <div x-id="content"></div>
          <div x-id="buttonsRow" class="post-buttons">
             ${
                post.numComments != null
@@ -163,7 +162,6 @@ export class PostView extends View {
 
       const elements = this.elements<{
          meta: Element;
-         content: Element;
          buttonsRow: Element;
          commentsToggle: Element | null;
          link: Element | null;
@@ -180,9 +178,9 @@ export class PostView extends View {
          }
 
          if (content.children.length > 0) {
-            this.insertBefore(content, elements.content);
+            this.insertBefore(content, elements.buttonsRow);
          }
-         elements.content.remove();
+
          if (!post.numComments && content.toggles.length == 0) elements.buttonsRow.classList.add("hidden");
       });
 
