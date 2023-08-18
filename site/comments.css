@@ -66,6 +66,12 @@
   margin: 0 !important;
 }
 
+.comment-text .post-mastodon-content {
+  margin-top: 0 !important;
+  margin-bottom: var(--ledit-padding) !important;
+  padding: 0 !important;
+}
+
 .comment-author-op > a {
   color: var(--ledit-link-color) !important;
   font-weight: 800;
