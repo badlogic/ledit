@@ -175,10 +175,6 @@ blockquote {
    font-size: calc(1.25 * var(--ledit-font-size));
 }
 
-.remove-last-child-bottom-margin > :last-child {
-   margin-bottom: 0;
-}
-
 @media (max-width: 767px) {
    .posts,
    .comments,

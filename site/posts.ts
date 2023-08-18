@@ -158,7 +158,7 @@ export class PostView extends View {
       const showFeed = getSource().getFeed().toLowerCase() != post.feed.toLowerCase();
       const collapse = getSettings().collapseSeenPosts && PostsView.seenPosts.has(post.url) ? "post-seen" : "";
       this.innerHTML = /*html*/ `
-         <div class="post-title"><a href="${post.url}" target="_blank">${post.title}</a></div>
+         ${post.title && post.title.length > 0 ? `<div class="post-title"><a href="${post.url}" target="_blank">${post.title}</a></div>` : ""}
          <div x-id="meta" class="post-meta"></div>
          <div x-id="content" class="post-content"></div>
          <div x-id="buttonsRow" class="post-buttons">

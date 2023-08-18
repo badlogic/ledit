@@ -545,7 +545,7 @@ export class MastodonSource implements Source {
          `;
       }
       const content = dom(/*html*/`
-         <div class="remove-last-child-bottom-margin" style="padding: 0 var(--ledit-margin);">
+         <div class="post-mastodon-content">
             ${prelude}${postToView.content}
          </div>
       `)[0];
@@ -561,7 +561,7 @@ export class MastodonSource implements Source {
          content.append(pollDiv);
       }
 
-      const media = dom(`<div style="margin-top: var(--ledit-margin);"></div>`)[0];
+      const media = dom(`<div style="padding-top: var(--ledit-padding);"></div>`)[0];
       if (postToView.media_attachments.length > 0) {
          const images: string[] = [];
          const videos: MastodonMedia[] = [];

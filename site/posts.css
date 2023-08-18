@@ -16,6 +16,7 @@
    border-radius: 8px;
    border: 1px solid var(--ledit-border-color);
    box-shadow: 0px 1px 3px var(--ledit-shadow-color);
+   overflow-wrap: break-word;
 }
 
 .post-seen .post-title a {
@@ -30,14 +31,6 @@
 .post-seen .post-content,
 .post-seen .post-buttons {
    display: none;
-}
-
-.post-content {
-   overflow-wrap: break-word;
-}
-
-.post-content > :last-child {
-   margin-bottom: 0;
 }
 
 .post-loading {
@@ -144,14 +137,25 @@
 .post-mastodon-prelude {
    display: flex;
    align-items: center;
-   padding: var(--ledit-padding) 0;
    gap: var(--ledit-padding);
    font-size: var(--ledit-font-size-small);
-   margin-top: -1em;
+   margin-bottom: var(--ledit-padding);
+   margin-top: calc(var(--ledit-margin) * -1);
 }
 
 .post-mastodon-prelude a {
    color: var(--ledit-color-dim) !important;
+}
+
+.post-mastodon-content {
+   padding-left: var(--ledit-margin);
+   padding-right: var(--ledit-margin);
+   margin-bottom: var(--ledit-padding);
+   margin-top: var(--ledit-padding);
+}
+
+.post-mastodon-content > :last-child {
+   margin-bottom: 0;
 }
 
 .post-url {
