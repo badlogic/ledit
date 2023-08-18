@@ -55,7 +55,7 @@ class NavigationGuard extends BaseGuard<NavigationCallback> {
       history.scrollRestoration = "manual";
       let state = 0;
       window.addEventListener('popstate', (event: PopStateEvent) => {
-         console.log(history.state);
+
 			if(state = event.state){
             if (!this.canNavigateBack()) {
                history.go(1);
