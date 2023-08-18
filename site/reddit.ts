@@ -263,7 +263,7 @@ export class RedditSource implements Source {
       const post = (canonicalPost as any).redditPost;
       const postsWidth = document.querySelector(".posts")!.clientWidth; // account for padding in post
       const toggles: Element[] = [];
-      const reply = dom(/*html*/`<a href="${canonicalPost.url}" target="_blank" class="color-fill">${svgReply}</a>`)[0];
+      const reply = dom(/*html*/`<a href="${"https://www.reddit.com" + post.data.permalink}" target="_blank" class="color-fill post-button">${svgReply}</a>`)[0];
       toggles.push(reply);
       const points = dom(/*html*/ `
          <div class="post-points">
@@ -378,8 +378,8 @@ export class RedditSource implements Source {
          <span>•</span>
          <span>${dateToText(comment.createdAt * 1000)}</span>
          <span>•</span>
-         <span>${addCommasToNumber(comment.score!)} pts</span>
-         <a href="${comment.url}" target="_blank" class="color-fill" style="margin-left: auto">${svgReply}</a>
+         <span style="margin-right: 0.25rem">${addCommasToNumber(comment.score!)} pts</span>
+         <a href="${comment.url}" target="_blank" class="color-fill post-button">${svgReply}</a>
        `);
    }
 
