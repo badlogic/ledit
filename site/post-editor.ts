@@ -19,11 +19,11 @@ export class PostEditor extends View {
    ) {
       super();
       this.render();
+      this.classList.add("editor-container");
    }
 
    render() {
       this.innerHTML = /*html*/ `
-      <div x-id="container" class="editor-container">
           <div x-id="editor" class="editor">
             <div x-id="close" class="editor-close"><span class="svg-icon color-fill">${svgClose}</span></div>
             <div x-id="headerRow" class="editor-header"></div>
@@ -35,11 +35,9 @@ export class PostEditor extends View {
                <div x-id="progress" class="svgIcon color-fill hidden">${svgLoader}</div>
             </div>
          </div>
-      </div>
       `;
 
       const elements = this.elements<{
-         container: Element;
          editor: Element;
          headerRow: Element;
          close: Element;
@@ -98,7 +96,7 @@ export class PostEditor extends View {
       });
 
       // Close when container is clicked
-      elements.container.addEventListener("click", () => {
+      this.addEventListener("click", () => {
          this.close();
       });
 

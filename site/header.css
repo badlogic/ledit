@@ -1,5 +1,5 @@
 .header-container {
-    height: 2rem;
+    height: 3rem;
     background: var(--ledit-background);
     padding: var(--ledit-padding) 0;
     font-size: var(--ledit-font-size);
@@ -14,7 +14,6 @@
     width: 600px;
     height: 100%;
     margin: auto;
-    padding-right: var(--ledit-padding);
     display: flex;
     flex-direction: row;
     align-items: center;

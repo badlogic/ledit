@@ -604,18 +604,19 @@ export class MastodonSource implements Source {
       }
 
       // Add points last, so they go right as the only toggle.
-      const points = dom(/*html*/ `
-      <div style="display: flex; gap: 0.5em; margin-left: auto;">
-         <div x-id="boost" class="${!isComment ? "post-button" : ""}">
-            <span x-id="boostIcon" class="svgIcon ${postToView.reblogged ? "color-gold-fill" : "color-fill"}">${svgReblog}</span>
+      const boost = dom(/*html*/`
+         <div x-id="boost" class="${!isComment ? "post-button" : ""}" style="margin-left: auto;">
+            <span x-id="boostIcon" class="svgIcon ${postToView.reblogged ? "color-gold-fill" : (isComment ? "color-dim-fill" : "color-fill")}">${svgReblog}</span>
             <span x-id="boostCount">${addCommasToNumber(postToView.reblogs_count)}</span>
          </div>
+      `)[0];
+      const favourite = dom(/*html*/`
          <div x-id="favourite" class="${!isComment ? "post-button" : ""}">
-            <span x-id="favouriteIcon" class="svgIcon ${postToView.favourited ? "color-gold-fill" : "color-fill"}">${svgStar}</span>
+            <span x-id="favouriteIcon" class="svgIcon ${postToView.favourited ? "color-gold-fill" : (isComment ? "color-dim-fill" : "color-fill")}">${svgStar}</span>
             <span x-id="favouriteCount">${addCommasToNumber(postToView.favourites_count)}</span>
          </div>
-      </div>
       `)[0];
+
       if (userInfo.bearer) {
          if (!isComment) {
             const reply = dom(`<a class="svgIcon color-fill post-button"">${svgReply}</a>`)[0];
@@ -630,15 +631,14 @@ export class MastodonSource implements Source {
             });
          }
 
-         const pointsElements = View.elements<{
-            boost: HTMLElement;
+         const boostElements = View.elements<{
             boostIcon: HTMLElement;
             boostCount: HTMLElement;
-            favourite: HTMLElement;
             favouriteIcon: HTMLElement;
             favouriteCount: HTMLElement;
-         }>(points);
-         pointsElements.boost.addEventListener("click", async () => {
+         }>(boost);
+
+         boost.addEventListener("click", async () => {
             postToView.reblogged = !postToView.reblogged;
             const url = `https://${userInfo.host}/api/v1/statuses/${postToView.id}/${postToView.reblogged ? "reblog" : "unreblog"}`;
             const options = {
@@ -655,18 +655,22 @@ export class MastodonSource implements Source {
 
             if (postToView.reblogged) postToView.reblogs_count++;
             else postToView.reblogs_count--;
-            pointsElements.boostCount.innerHTML = addCommasToNumber(postToView.reblogs_count);
+            boostElements.boostCount.innerHTML = addCommasToNumber(postToView.reblogs_count);
 
             if (postToView.reblogged) {
-               pointsElements.boostIcon.classList.remove("color-fill");
-               pointsElements.boostIcon.classList.add("color-gold-fill");
+               boostElements.boostIcon.classList.remove("color-fill");
+               boostElements.boostIcon.classList.add("color-gold-fill");
             } else {
-               pointsElements.boostIcon.classList.remove("color-gold-fill");
-               pointsElements.boostIcon.classList.add("color-fill");
+               boostElements.boostIcon.classList.remove("color-gold-fill");
+               boostElements.boostIcon.classList.add("color-fill");
             }
          });
 
-         pointsElements.favourite.addEventListener("click", async () => {
+         const favouriteElements = View.elements<{
+            favouriteIcon: HTMLElement;
+            favouriteCount: HTMLElement;
+         }>(boost);
+         favourite.addEventListener("click", async () => {
             postToView.favourited = !postToView.favourited;
             const url = `https://${userInfo.host}/api/v1/statuses/${postToView.id}/${postToView.favourited ? "favourite" : "unfavourite"}`;
             const options = {
@@ -682,18 +686,19 @@ export class MastodonSource implements Source {
             }
             if (postToView.favourited) postToView.favourites_count++;
             else postToView.favourites_count--;
-            pointsElements.favouriteCount.innerHTML = addCommasToNumber(postToView.favourites_count);
+            favouriteElements.favouriteCount.innerHTML = addCommasToNumber(postToView.favourites_count);
 
             if (postToView.favourited) {
-               pointsElements.favouriteIcon.classList.remove("color-fill");
-               pointsElements.favouriteIcon.classList.add("color-gold-fill");
+               favouriteElements.favouriteIcon.classList.remove("color-fill");
+               favouriteElements.favouriteIcon.classList.add("color-gold-fill");
             } else {
-               pointsElements.favouriteIcon.classList.remove("color-gold-fill");
-               pointsElements.favouriteIcon.classList.add("color-fill");
+               favouriteElements.favouriteIcon.classList.remove("color-gold-fill");
+               favouriteElements.favouriteIcon.classList.add("color-fill");
             }
          });
       }
-      toggles.push(points);
+      toggles.push(boost);
+      toggles.push(favourite);
 
       return { elements: media.children.length > 0 ? [content, media] : [content], toggles };
    }

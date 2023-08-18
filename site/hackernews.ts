@@ -1,6 +1,7 @@
 import { encodeHTML } from "entities";
 import { Comment, ContentDom as ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { addCommasToNumber, dateToText, dom, htmlDecode, makeCollapsible } from "./utils";
+import { svgReply } from "./svg";
 
 interface HNPost {
    by: string,
@@ -168,6 +169,8 @@ export class HackerNewsSource implements Source {
    }
 
    getContentDom(post: Post): ContentDom {
+      const toggles: Element[] = [];
+      toggles.push(dom(/*html*/`<a href="https://news.ycombinator.com/item?id=${(post as any).hnPost.id}" target="_blank" class="svgIcon color-fill">${svgReply}</a>`)[0]);
       if (post.isSelf) {
          let text = ((post as any).hnPost as HNPost).text;
          text = encodeHTML(text);
@@ -176,9 +179,9 @@ export class HackerNewsSource implements Source {
          requestAnimationFrame(() => {
             makeCollapsible(selfPost, 4.5);
          })
-         return {elements: [selfPost], toggles: []};
+         return {elements: [selfPost], toggles};
       }
-      return {elements: [], toggles: []};
+      return {elements: [], toggles};
    }
    getFeed(): string {
       return "";
