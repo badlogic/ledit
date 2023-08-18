@@ -48,14 +48,11 @@ class BaseGuard<T> {
 export type NavigationCallback = () => boolean;
 
 class NavigationGuard extends BaseGuard<NavigationCallback> {
-   private statePushed: { [zIndex: number]: boolean } = {};
-   private preventDefault = false;
+   private stateSetup = false;
 
    constructor() {
       super();
       history.scrollRestoration = "manual";
-      history.pushState(-1, "");
-		history.pushState(0, "");
       let state = 0;
       window.addEventListener('popstate', (event: PopStateEvent) => {
          console.log(history.state);
@@ -68,6 +65,15 @@ class NavigationGuard extends BaseGuard<NavigationCallback> {
             }
 			}
 		});
+   }
+
+   register(zIndex: number, callback: NavigationCallback): NavigationCallback {
+      if (!this.stateSetup) {
+         history.pushState(-1, "");
+         history.pushState(0, "");
+         this.stateSetup = true;
+      }
+       return super.register(zIndex, callback);
    }
 
    canNavigateBack(): boolean {
