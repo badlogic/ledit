@@ -219,7 +219,7 @@ export class MastodonSource implements Source {
          feed: "",
          title: "",
          isSelf: false,
-         author: null,
+         author: getAccountName(mastodonPost.account),
          authorUrl: null,
          createdAt: new Date(postToView.created_at).getTime() / 1000,
          score: postToView.favourites_count,
@@ -326,7 +326,7 @@ export class MastodonSource implements Source {
       const header = dom(/*html*/ `
                <div class="editor-supplement">
                   <div class="inline-row" style="margin-bottom: var(--ledit-padding); color: var(--ledit-color);">
-                        <span>Reply to</span>
+                        <span>Replying to</span>
                         <img src="${
                            mastodonComment.account.avatar_static
                         }" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
