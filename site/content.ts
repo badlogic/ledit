@@ -6,12 +6,14 @@ export class ContentView extends View {
    public readonly toggles: Element[] = [];
    constructor(private readonly post: Post) {
       super();
+      this.classList.add("content");
       this.render();
    }
 
    render() {
       const source = getSource();
       const content = source.getContentDom(this.post);
+      content.elements.forEach((element) => element.querySelectorAll("script").forEach((script) => script.remove()));
       for (const element of content.elements) {
          this.append(element);
       }

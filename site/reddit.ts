@@ -1,10 +1,8 @@
 import "video.js/dist/video-js.min.css";
-import videojs from "video.js";
-import Player from "video.js/dist/types/player";
 
-import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
-import { addCommasToNumber, dom, htmlDecode, intersectsViewport, makeCollapsible, navigationGuard, onAddedToDOM, onTapped, renderGallery, renderVideo } from "./utils";
+import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix, getSource } from "./data";
 import { svgDownArrow, svgUpArrow } from "./svg";
+import { addCommasToNumber, dateToText, dom, htmlDecode, intersectsViewport, makeCollapsible, renderGallery, renderVideo } from "./utils";
 
 let count = 0;
 interface RedditPosts {
@@ -250,11 +248,22 @@ export class RedditSource implements Source {
       return comments;
    }
 
+   getMetaDom(post: Post): HTMLElement[] {
+      const feed = getSource().getFeed().toLowerCase();
+      return dom(/*html*/ `
+         ${post.feed.toLowerCase() != feed ? /*html*/ `<a href="https://www.reddit.com/${post.feed}">r/${post.feed}</a><span>•</span>` : ""}
+         <span>${dateToText(post.createdAt * 1000)}</span>
+         <span>•</span>
+         <a href="${post.authorUrl}">${post.author}</a>
+         ${!(post.url.includes("redd.it") || post.url.includes("reddit.com")) ? /*html*/ `<span>•</span><span>${new URL(post.url).host}</span>` : ""}
+      `);
+   }
+
    getContentDom(canonicalPost: Post): ContentDom {
       const post = (canonicalPost as any).redditPost;
       const postsWidth = document.querySelector(".posts")!.clientWidth; // account for padding in post
       const toggles: Element[] = [];
-      const points = dom( /*html*/`
+      const points = dom(/*html*/ `
          <div class="post-points">
             <span class="svgIcon color-fill">${svgUpArrow}</span>
             <span>${addCommasToNumber(post.data.score)}</span>
@@ -262,6 +271,7 @@ export class RedditSource implements Source {
          </div>
       `)[0];
       toggles.push(points);
+
       // Self post, show text, dim it, cap vertical size, and make it expand on click.
       if (post.data.is_self) {
          let selfPost = dom(`<div class="post-self-preview">${htmlDecode(post.data.selftext_html ?? "")}</div>`)[0];
@@ -269,7 +279,7 @@ export class RedditSource implements Source {
          requestAnimationFrame(() => {
             makeCollapsible(selfPost, 4.5);
          });
-         return {elements: [selfPost], toggles};
+         return { elements: [selfPost], toggles };
       }
 
       // Gallery
@@ -288,13 +298,13 @@ export class RedditSource implements Source {
          }
          const imageUrls = images.map((img) => img.u);
          const gallery = renderGallery(imageUrls);
-         toggles.unshift(gallery.toggle)
-         return {elements: [gallery.gallery], toggles};
+         toggles.unshift(gallery.toggle);
+         return { elements: [gallery.gallery], toggles };
       }
 
       // Reddit hosted video
       if (post.data.secure_media && post.data.secure_media.reddit_video) {
-         return {elements: [renderVideo(post.data.secure_media.reddit_video, false)], toggles};
+         return { elements: [renderVideo(post.data.secure_media.reddit_video, false)], toggles };
       }
 
       // External embed like YouTube Vimeo
@@ -309,7 +319,7 @@ export class RedditSource implements Source {
                   .replace(`height="${embed.height}"`, `height="${embedHeight}"`)
                   .replace("position:absolute;", "")
             );
-            let embedDom = dom(`<div class="content" style="width: ${embedWidth}px; height: ${embedHeight}px;">${embedUrl}</div>`)[0];
+            let embedDom = dom(`<div style="width: ${embedWidth}px; height: ${embedHeight}px;">${embedUrl}</div>`)[0];
             // Make YouTube videos stop if they scroll out of frame.
             if (embed.content.includes("youtube")) {
                // Pause when out of view
@@ -319,18 +329,21 @@ export class RedditSource implements Source {
                      videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
                   }
                });
-               return {elements: [embedDom], toggles};
+               return { elements: [embedDom], toggles };
             }
          } else {
-            return {elements: dom(
-               `<div class="content" style="width: ${embedWidth}px; height: ${embedHeight}px;"><iframe width="${embedWidth}" height="${embedHeight}" src="${embed.media_domain_url}"></iframe></div>`
-            ), toggles};
+            return {
+               elements: dom(
+                  `<div style="width: ${embedWidth}px; height: ${embedHeight}px;"><iframe width="${embedWidth}" height="${embedHeight}" src="${embed.media_domain_url}"></iframe></div>`
+               ),
+               toggles,
+            };
          }
       }
 
       // Plain old .gif
       if (post.data.url.endsWith(".gif")) {
-         return {elements: dom(`<div class="content"><img src="${post.data.url}"></img></div>`), toggles};
+         return { elements: dom(`<img src="${post.data.url}"></img>`), toggles };
       }
 
       // Image, pick the one that's one size above the current posts width so pinch zooming
@@ -341,18 +354,18 @@ export class RedditSource implements Source {
             image = img;
             if (img.width > postsWidth) break;
          }
-         if (!image) return {elements: [document.createElement("div")], toggles};
-         if (!post.data.preview.reddit_video_preview?.fallback_url) return {elements: dom(`<div class="content"><img src="${image.url}"></img></div>`), toggles};
-         return {elements: [renderVideo(post.data.preview.reddit_video_preview, post.data.preview.reddit_video_preview.is_gif)], toggles};
+         if (!image) return { elements: [document.createElement("div")], toggles };
+         if (!post.data.preview.reddit_video_preview?.fallback_url) return { elements: dom(`<img src="${image.url}"></img>`), toggles };
+         return { elements: [renderVideo(post.data.preview.reddit_video_preview, post.data.preview.reddit_video_preview.is_gif)], toggles };
       }
 
       // Fallback to thumbnail which is super low-res.
       const missingThumbnailTags = new Set<String>(["self", "nsfw", "default", "image", "spoiler"]);
       const thumbnailUrl = post.data.thumbnail.includes("://") ? post.data.thumbnail : "";
       if (post.data.thumbnail && !missingThumbnailTags.has(post.data.thumbnail)) {
-         return {elements: dom(`<div class="content"><img src="${thumbnailUrl}"></img></div>`), toggles};
+         return { elements: dom(`<img src="${thumbnailUrl}"></img>`), toggles };
       }
-      return {elements: [document.createElement("div")], toggles};
+      return { elements: [document.createElement("div")], toggles };
    }
 
    getFeed() {
@@ -364,19 +377,19 @@ export class RedditSource implements Source {
    }
 
    getSortingOptions(): SortingOption[] {
-    return [
-      { value: "hot", label: "Hot" },
-      { value: "new", label: "New" },
-      { value: "rising", label: "Rising" },
-      { value: "top-today", label: "Top today" },
-      { value: "top-week", label: "Top week" },
-      { value: "top-month", label: "Top month" },
-      { value: "top-year", label: "Top year" },
-      { value: "top-alltime", label: "Top all time" },
-    ]
+      return [
+         { value: "hot", label: "Hot" },
+         { value: "new", label: "New" },
+         { value: "rising", label: "Rising" },
+         { value: "top-today", label: "Top today" },
+         { value: "top-week", label: "Top week" },
+         { value: "top-month", label: "Top month" },
+         { value: "top-year", label: "Top year" },
+         { value: "top-alltime", label: "Top all time" },
+      ];
    }
 
    getSorting(): string {
-       return getSorting();
+      return getSorting();
    }
 }

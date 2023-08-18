@@ -1,6 +1,6 @@
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { RssSource } from "./rss";
-import { dom, proxyFetch } from "./utils";
+import { dateToText, dom, intersectsViewport, proxyFetch } from "./utils";
 
 const channelIds = localStorage.getItem("youtubeCache") ? JSON.parse(localStorage.getItem("youtubeCache")!) : {};
 
@@ -53,10 +53,25 @@ export class YoutubeSource implements Source {
       return [];
    }
 
+   getMetaDom(post: Post): HTMLElement[] {
+      return dom(/*html*/ `
+      <a href="${post.authorUrl}">${post.author}</a>
+      <span>•</span>
+      <span>${dateToText(post.createdAt * 1000)}</span>
+   `);
+   }
+
    getContentDom(post: Post): ContentDom {
       const url = post.url.split("=");
       if (url.length != 2) return {elements: [], toggles: []};
-      return {elements: dom(`<iframe src="https://www.youtube.com/embed/${url[1]}?feature=oembed&amp;enablejsapi=1" style="width: 100%; aspect-ratio: 16/9;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" title="Russ Abbot in Married for Life"></iframe>`), toggles: []};
+
+      const videoDom = dom(`<iframe src="https://www.youtube.com/embed/${url[1]}?feature=oembed&amp;enablejsapi=1" style="width: 100%; aspect-ratio: 16/9;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" title="Russ Abbot in Married for Life"></iframe>`)[0];
+      document.addEventListener("scroll", () => {
+         if (!intersectsViewport(videoDom)) {
+            (videoDom as HTMLIFrameElement).contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
+         }
+      });
+      return {elements: [videoDom], toggles: []};
    }
 
    getFeed(): string {

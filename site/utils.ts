@@ -138,15 +138,14 @@ export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
       const maxHeight = fontSize * maxHeightInLines;
       const clickableAreaHeight = fontSize * 2;
 
-      if (div.clientHeight > maxHeight) {
+      if (div.clientHeight > maxHeight * 1.3) {
          div.style.height = `${maxHeight}px`;
          div.style.overflow = "hidden";
          div.style.marginBottom = "0";
 
-         const loadMoreDiv = document.createElement("div");
-         loadMoreDiv.classList.add("load-more");
-         loadMoreDiv.textContent = "Show more";
-         loadMoreDiv.style.height = `${clickableAreaHeight}px`;
+         const showMoreDiv = dom(/*html*/`
+            <div class="show-more">Show more</div>
+         `)[0];
 
          let collapsed = true;
          const loadMore = (event: MouseEvent) => {
@@ -156,10 +155,10 @@ export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
 
                if (collapsed) {
                   div.style.height = "auto";
-                  loadMoreDiv.style.display = "none";
+                  showMoreDiv.style.display = "none";
                } else {
                   div.style.height = `${maxHeight}px`;
-                  loadMoreDiv.style.display = "";
+                  showMoreDiv.style.display = "";
                   if (div.getBoundingClientRect().top < 16 * 4) {
                      window.scrollTo({ top: div.getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
                   }
@@ -168,9 +167,9 @@ export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
             }
          };
          div.addEventListener("click", loadMore);
-         loadMoreDiv.addEventListener("click", loadMore);
+         showMoreDiv.addEventListener("click", loadMore);
 
-         div.insertAdjacentElement("afterend", loadMoreDiv);
+         div.insertAdjacentElement("afterend", showMoreDiv);
       }
    });
 }
@@ -214,7 +213,7 @@ export function renderVideo(
    embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string },
    loop: boolean
 ): Element {
-   let videoDom = dom(/*html*/ `<div class="content" style="display: flex; justify-content: center; background: #000">
+   let videoDom = dom(/*html*/ `<div style="display: flex; justify-content: center; background: #000">
      <video-js controls class="video-js" style="width: ${embed.width}px;" ${loop ? "loop" : ""} data-setup="{}">
          <source src="${embed.dash_url}">
          <source src="${embed.hls_url}">
@@ -296,7 +295,7 @@ export function renderGallery(imageUrls: string[]): { gallery: Element; toggle: 
    }
 
    const toggle = dom(/*html*/ `
-      <div class="post-gallery-toggle">
+      <div class="post-button">
          <span class="svg-icon color-fill">${svgImages}</span>
          <span>${imageUrls.length}</span>
       </div>

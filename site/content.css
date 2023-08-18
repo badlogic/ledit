@@ -1,17 +1,12 @@
 .content {
    margin: calc(var(--ledit-padding) * -2);
+   display: block;
    margin-bottom: 0;
    margin-top: 0;
 }
 
 .content > video-js {
    cursor: pointer;
-}
-
-.content-image-gallery {
-   left: calc(var(--ledit-margin) * -1);
-   position: relative;
-   width: calc(100% + var(--ledit-margin) * 2);
 }
 
 .content-image-gallery > img {
@@ -23,3 +18,4 @@
    max-height: 75vh;
    object-fit: contain;
 }
+

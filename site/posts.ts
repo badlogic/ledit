@@ -1,15 +1,14 @@
-import "./posts.css";
-import { svgDownArrow, svgImages, svgLink, svgLoader, svgSpeechBubble as svgSpeechBubble, svgUpArrow } from "./svg/index";
-import { addCommasToNumber, dateToText, dom, intersectsViewport, onVisibleOnce } from "./utils";
-import { View } from "./view";
-import { ContentView } from "./content";
 import { CommentView, CommentsView } from "./comments";
-import { getSettings, saveSettings } from "./settings";
-import { Post, Posts, Source, getSource, Comment } from "./data";
+import { ContentView } from "./content";
+import { Comment, Post, Posts, getSource } from "./data";
 import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
+import "./posts.css";
+import { getSettings, saveSettings } from "./settings";
+import { svgLoader, svgSpeechBubble } from "./svg/index";
+import { addCommasToNumber, dom, intersectsViewport, onVisibleOnce } from "./utils";
+import { View } from "./view";
 
 export class PostsView extends View {
-   private readonly postsDiv: Element;
    public static seenPosts = new Set<string>();
    public static hideSeen = false;
    private loadedPages = 1;
@@ -21,20 +20,20 @@ export class PostsView extends View {
    }
    constructor() {
       super();
-      this.append((this.postsDiv = dom(`<div x-id="posts" class="posts"></div>`)[0]));
+      this.classList.add("posts");
       (async () => await this.loadPosts(null))();
    }
 
    async loadPosts(after: string | null) {
       const source = getSource();
       const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
-      this.postsDiv.append(loadingDiv);
+      this.append(loadingDiv);
       try {
          let result = await source.getPosts(after);
          console.log(`Loaded more posts for '${source.getSourcePrefix() + source.getFeed()}'.`);
          if (after) {
             this.loadedPages++;
-            this.postsDiv.append(dom(`<div class="post-loading">Page ${this.loadedPages}</div>`)[0]);
+            this.append(dom(`<div class="post-loading">Page ${this.loadedPages}</div>`)[0]);
          }
          await this.renderPosts(result);
       } catch (e) {
@@ -78,13 +77,13 @@ export class PostsView extends View {
          const postDiv = this.renderPost(post);
          if (postDiv.classList.contains("hidden"))
             hiddenPosts++;
-         this.postsDiv.append(postDiv);
+         this.append(postDiv);
       }
 
       // Setup infinite scroll
       if (posts.after) {
          const loadMoreDiv = dom(`<div class="post-loading">Load more</div>`)[0];
-         this.postsDiv.append(loadMoreDiv);
+         this.append(loadMoreDiv);
          const loadMore = async () => {
             loadMoreDiv.remove();
             await this.loadPosts(posts.after);
@@ -104,13 +103,13 @@ export class PostsView extends View {
    }
 
    showError(message: string, e: any | null = null) {
-      this.postsDiv.append(dom(`<div class="post-loading">${message}</div>`)[0]);
+      this.append(dom(`<div class="post-loading">${message}</div>`)[0]);
       if (e) console.error("An error occured: ", e);
    }
 
    prependPost(post: Post) {
       const postDiv = this.renderPost(post);
-      this.postsDiv.insertBefore(postDiv, this.postsDiv.children[0]);
+      this.insertBefore(postDiv, this.children[0]);
       window.scrollTo({top: 0});
    }
 }
@@ -122,6 +121,7 @@ export class PostView extends View {
 
    constructor(private readonly post: Post) {
       super();
+      this.classList.add("post");
       this.render();
    }
 
@@ -158,43 +158,14 @@ export class PostView extends View {
       const showFeed = getSource().getFeed().toLowerCase() != post.feed.toLowerCase();
       const collapse = getSettings().collapseSeenPosts && PostsView.seenPosts.has(post.url) ? "post-seen" : "";
       this.innerHTML = /*html*/ `
-      <div class="post ${collapse}">
          <div class="post-title"><a href="${post.url}" target="_blank">${post.title}</a></div>
-         <div class="post-meta">
-            ${
-               showFeed
-                  ? /*html*/ `
-                     <a href="${post.url}" target="_blank">
-                        <span class="post-feed">${post.feed}</span>
-                     </a>
-                     <span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>`
-                  : ""
-            }
-            <span class="post-date"><a href="${post.url}" target="_blank">${dateToText(post.createdAt * 1000)}</a></span>
-            ${
-               post.author && post.authorUrl
-                  ? /*html*/ `
-               <span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>
-               <span class="post-author">
-                  <a href="${post.authorUrl}" target="_blank">${post.author}</a>
-               </span>`
-                  : ""
-            }
-            ${
-               post.domain
-                  ? /*html*/ `
-                  <span style="margin: 0 calc(var(--ledit-padding) / 2);">•</span>
-                  <span class="post-url">${post.domain}</span>
-               `
-                  : ""
-            }
-         </div>
+         <div x-id="meta" class="post-meta"></div>
          <div x-id="content" class="post-content"></div>
          <div x-id="buttonsRow" class="post-buttons">
             ${
                post.numComments != null
                   ? /*html*/ `
-                  <div x-id="commentsToggle" class="post-comments-toggle">
+                  <div x-id="commentsToggle" class="post-button">
                      <span class="svg-icon color-fill">${svgSpeechBubble}</span>
                      <span>${addCommasToNumber(post.numComments)}</span>
                   </div>
@@ -203,17 +174,18 @@ export class PostView extends View {
             }
             <div x-id="contentToggles"></div>
          </div>
-         <div x-id="comments"></div>
-      </div>
       `;
 
       const elements = this.elements<{
+         meta: Element;
          content: Element;
          buttonsRow: Element;
          commentsToggle: Element | null;
          contentToggles: Element;
          link: Element | null;
       }>();
+
+      elements.meta.append(...getSource().getMetaDom(post));
 
       onVisibleOnce(this, () => {
          console.log("Showing content of " + this.post.title);
@@ -224,6 +196,9 @@ export class PostView extends View {
          }
          elements.contentToggles.remove();
          elements.content.append(content);
+         if (content.children.length == 0) {
+            elements.content.remove();
+         }
          if (!post.numComments && content.toggles.length == 0) elements.buttonsRow.classList.add("hidden");
       });
 
@@ -234,7 +209,7 @@ export class PostView extends View {
 
          // Close when escape is pressed
          escapeGuard.register(0, () => {
-            if (elements.buttonsRow.classList.contains("post-buttons-sticky") && intersectsViewport(elements.buttonsRow)) this.toggleComments();
+            if (this.showingComments && intersectsViewport(this.commentsView)) this.toggleComments();
          })
       }
 
@@ -258,20 +233,20 @@ export class PostView extends View {
       }
    }
 
+   showingComments = false;
    commentsView: CommentsView | null = null;
 
    toggleComments() {
       const elements = this.elements<{
-         comments: Element;
          buttonsRow: Element;
       }>();
 
       const hideComments = () => {
+         this.showingComments = false;
          // Hide the comments, triggered by a click on the comments button
          this.commentsView?.remove();
          navigationGuard.remove(this.navigationCallback);
 
-         elements.buttonsRow.classList.remove("post-buttons-sticky");
          if (elements.buttonsRow.getBoundingClientRect().top < 16 * 4) {
             requestAnimationFrame(() => {
                const scrollTo = elements.buttonsRow.getBoundingClientRect().top + window.pageYOffset - 16 * 4;
@@ -280,13 +255,13 @@ export class PostView extends View {
          }
       };
 
-      if (elements.comments.children.length == 0) {
+      if (!this.showingComments) {
          // Show the comments
+         this.showingComments = true;
          if (!this.commentsView) this.commentsView = new CommentsView(this.post, this);
-         elements.comments.append(this.commentsView);
-         elements.buttonsRow.classList.add("post-buttons-sticky");
+         this.append(this.commentsView);
          this.navigationCallback = navigationGuard.register(0, () => {
-            if (intersectsViewport(elements.buttonsRow)) {
+            if (intersectsViewport(this.commentsView)) {
                hideComments();
                return false;
             }

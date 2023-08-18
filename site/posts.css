@@ -1,247 +1,234 @@
 .posts {
-  width: 600px;
-  margin: auto;
-  margin-top: calc(var(--ledit-font-size) * 2.5 + var(--ledit-font-size-big));
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--ledit-padding) * 1.5);
+   display: flex;
+   flex-direction: column;
+   gap: calc(var(--ledit-padding) * 1.5);
+   width: 600px;
+   margin: auto;
+   margin-top: calc(var(--ledit-font-size) * 2.5 + var(--ledit-font-size-big));
 }
 
 .post {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ledit-padding);
-  padding: var(--ledit-margin);
-  padding-bottom: 0;
-  border-radius: 8px;
-  background: var(--ledit-background);
-  margin: auto;
-  border: 1px solid var(--ledit-border-color);
-  box-shadow: 0px 1px 3px var(--ledit-shadow-color);
+   display: flex;
+   flex-direction: column;
+   gap: var(--ledit-padding);
+   padding: var(--ledit-margin);
+   background: var(--ledit-background);
+   border-radius: 8px;
+   border: 1px solid var(--ledit-border-color);
+   box-shadow: 0px 1px 3px var(--ledit-shadow-color);
 }
 
 .post-seen .post-title a {
-  font-size: var(--ledit-font-size);
-  color: var(--ledit-color-dim);
+   font-size: var(--ledit-font-size);
+   color: var(--ledit-color-dim);
 }
 
 .post-seen {
-  background: var(--ledit-background-dim);
+   background: var(--ledit-background-dim);
 }
 
 .post-seen .post-content,
 .post-seen .post-buttons {
-  display: none;
+   display: none;
 }
 
 .post-content {
-  overflow-wrap: break-word;
+   overflow-wrap: break-word;
 }
 
 .post-content > :last-child {
-  margin-bottom: 0;
+   margin-bottom: 0;
 }
 
 .post-loading {
-  text-align: center;
-  margin: var(--ledit-margin);
-  cursor: pointer;
-  margin: 0;
-  padding: var(--ledit-padding);
+   text-align: center;
+   margin: var(--ledit-margin);
+   cursor: pointer;
+   margin: 0;
+   padding: var(--ledit-padding);
 }
 
 .post-error {
-  text-align: center;
-  margin: var(--ledit-margin);
+   text-align: center;
+   margin: var(--ledit-margin);
 }
 
 .post-title {
-  font-size: var(--ledit-font-size);
-  font-weight: 450;
-  overflow-wrap: anywhere;
+   font-size: var(--ledit-font-size);
+   font-weight: 450;
+   overflow-wrap: break-word;
 }
 
 .post-title a {
-  color: var(--ledit-color)
+   color: var(--ledit-color);
 }
 
 .post-feed {
-  font-size: var(--ledit-font-size-small);
+   font-size: var(--ledit-font-size-small);
 }
 
 .post-meta {
-  display: flex;
-  color: var(--ledit-color-dim);
-  font-size: var(--ledit-font-size-small);
-  padding: calc(var(--ledit-padding) * 0.5) 0;
-  margin-top: -4px;
+   display: flex;
+   color: var(--ledit-color-dim);
+   font-size: var(--ledit-font-size-small);
+   gap: 0.25em;
 }
 
 .post-meta span {
-  display: flex;
-  align-items: center;
+   display: flex;
+   align-items: center;
 }
 
 .post-self-preview {
-  cursor: pointer;
+   cursor: pointer;
+   padding: 0 var(--ledit-margin);
 }
 
 .post-rss-preview {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  cursor: pointer;
-  margin-bottom: calc(var(--ledit-padding) * 1.5);
+   display: flex;
+   flex-direction: row;
+   align-items: flex-start;
+   cursor: pointer;
+   padding: 0 var(--ledit-margin);
+   margin-bottom: calc(var(--ledit-padding) * 1.5);
 }
 
 .post-rss-preview > div > p:last-child {
-  margin-bottom: 0;
+   margin-bottom: 0;
 }
 
 .post-rss-preview > div {
-  width: 100%;
+   width: 100%;
 }
 
 .post-rss-preview-image {
-  max-width: 150px !important;
-  flex: 0 0 auto; /* Prevent vertical growth and maintain aspect ratio */
-  object-fit: contain;
-  margin-right: var(--ledit-margin);
+   max-width: 150px !important;
+   flex: 0 0 auto; /* Prevent vertical growth and maintain aspect ratio */
+   object-fit: contain;
+   margin-right: var(--ledit-margin);
 }
 
 .post-rss-preview img {
-  max-width: 100% !important;
-  height: auto !important;
-  border-radius: 8px;
+   max-width: 100% !important;
+   height: auto !important;
+   border-radius: 8px;
 }
 
 .post-rss-preview video {
-  max-width: 100% !important;
-  height: auto !important;
-  border-radius: 8px;
+   max-width: 100% !important;
+   height: auto !important;
+   border-radius: 8px;
 }
 
 .post-rss-preview svg {
-  width: 1em;
-  height: 1em;
+   width: 1em;
+   height: 1em;
 }
 
 .post-rss-preview h1 {
-  font-size: var(--ledit-font-size);
+   font-size: var(--ledit-font-size);
 }
 
 .post-rss-preview h2 {
-  font-size: var(--ledit-font-size);
+   font-size: var(--ledit-font-size);
 }
 
 .post-rss-preview h3 {
-  font-size: var(--ledit-font-size);
+   font-size: var(--ledit-font-size);
 }
 
 .post-rss-preview h4 {
-  font-size: var(--ledit-font-size);
+   font-size: var(--ledit-font-size);
 }
 
 .post-mastodon-prelude {
-  display: flex;
-  align-items: center;
-  padding: var(--ledit-padding) 0;
-  gap: var(--ledit-padding);
-  font-size: var(--ledit-font-size-small);
-  margin-top: -1em;
+   display: flex;
+   align-items: center;
+   padding: var(--ledit-padding) 0;
+   gap: var(--ledit-padding);
+   font-size: var(--ledit-font-size-small);
+   margin-top: -1em;
 }
 
 .post-mastodon-prelude a {
-  color: var(--ledit-color-dim) !important;
+   color: var(--ledit-color-dim) !important;
 }
 
 .post-url {
-  overflow: hidden;
-  white-space: pre;
-  text-overflow: ellipsis;
-  font-size: var(--ledit-font-size-small);
-  color: var(--ledit-color-dim);
+   overflow: hidden;
+   white-space: pre;
+   text-overflow: ellipsis;
+   font-size: var(--ledit-font-size-small);
+   color: var(--ledit-color-dim);
 }
 
 .post-url a {
-  color: var(--ledit-color-dim);
+   color: var(--ledit-color-dim);
 }
 
 .post-points-comments {
-  display: flex;
-  flex-direction: row;
-  gap: 0.3em;
+   display: flex;
+   flex-direction: row;
+   gap: 0.3em;
 }
 
 .post-author > a {
-  font-weight: 400;
-  color: var(--ledit-color-dim);
+   font-weight: 400;
+   color: var(--ledit-color-dim);
 }
 
 .post-buttons {
-  display: flex;
-  font-size: var(--ledit-font-size-mid);
-  gap: var(--ledit-padding);
-  z-index: 10;
+   display: flex;
+   gap: var(--ledit-margin);
 }
 
-.post-buttons * {
-  display: flex;
-  padding: calc(var(--ledit-padding) * 0.25) calc(var(--ledit-padding) * 0.25);
-  border-radius: 5px;
-  font-weight: 400;
-  justify-content: center;
-  align-items: center;
-  user-select: none;
-}
-
-.post-comments-toggle {
-  margin: -1em;
-  padding: 1em;
-  cursor: pointer;
+.post-button {
+   display: flex;
+   align-items: center;
+   gap: 0.25em;
+   cursor: pointer;
+   margin: -1em;
+   padding: 1em;
+   cursor: pointer;
 }
 
 .post-buttons-sticky {
-  position: sticky;
-  background: var(--ledit-background);
-  padding-bottom: 0.5em;
-  padding-top: 0.5em;
-  top: calc(var(--ledit-font-size) * 2 + var(--ledit-padding) * 2);
-}
-
-
-.post-external-link, .post-gallery-toggle, .post-comments-toggle, .post-points {
-  display: flex;
-  align-items: center;
+   position: sticky;
+   top: calc(var(--ledit-font-size) * 2 + var(--ledit-padding) * 2);
+   background: var(--ledit-background);
+   padding-top: var(--ledit-padding);
+   padding-bottom: var(--ledit-padding);
 }
 
 .post-points {
-  margin-left: auto;
-  cursor: pointer;
+   display: flex;
+   align-items: center;
+   gap: 0.25em;
+   margin-left: auto;
+   cursor: pointer;
 }
 
 .post-mastodon-poll {
-
 }
 
 .post-mastodon-poll-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
+   display: flex;
+   align-items: center;
+   gap: 0.5em;
 }
 
 .post-mastodon-poll-summary {
-  margin-top: var(--ledit-margin);
-  font-size: var(--ledit-font-size-small);
-  color: var(--ledit-color-dim);
+   margin-top: var(--ledit-margin);
+   font-size: var(--ledit-font-size-small);
+   color: var(--ledit-color-dim);
 }
 
 .post-notification-text {
-  color: var(--ledit-color-dim) !important;
-  cursor: pointer;
+   color: var(--ledit-color-dim) !important;
+   cursor: pointer;
 }
 
 .post-notification-text * {
-  color: var(--ledit-color-dim) !important;
-  margin: var(--ledit-padding) 0;
+   color: var(--ledit-color-dim) !important;
+   margin: var(--ledit-padding) 0;
 }

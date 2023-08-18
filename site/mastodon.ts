@@ -168,21 +168,7 @@ export class MastodonSource implements Source {
       return {
          url: postUrl,
          domain: null,
-         feed: `${
-            avatarImageUrl
-               ? /*html*/ `
-                  <a href="${authorUrl}" target="_blank" style="display: flex; gap: var(--ledit-padding);">
-                     <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">
-                     <div>
-                        <span><b>${getAccountName(postToView.account)}</b></span>
-                        <span>${postToView.account.username}@${
-                    new URL(postToView.uri).host == userInfo.host ? null : new URL(postToView.uri).host
-                 }</span>
-                     </div>
-                  </a>
-                  `
-               : userInfo.username + "@" + userInfo.host
-         }`,
+         feed: "",
          title: "",
          isSelf: false,
          author: null,
@@ -490,6 +476,33 @@ export class MastodonSource implements Source {
       return roots;
    }
 
+   getMetaDom(post: Post): HTMLElement[] {
+      const postToView = ((post as any).mastodonPost.reblog ?? (post as any).mastodonPost);
+      const userInfo = ((post as any).userInfo);
+      const avatarImageUrl = postToView.account.avatar_static;
+      const postUrl = postToView.url;
+      const authorUrl = postToView.account.url;
+
+      return dom(/*html*/ `
+         ${
+            avatarImageUrl
+            ? /*html*/ `
+               <a href="${authorUrl}" target="_blank" style="display: flex; gap: var(--ledit-padding);">
+                  <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">
+                  <div>
+                     <span><b>${getAccountName(postToView.account)}</b></span>
+                     <span>${postToView.account.username}@${
+                 new URL(postToView.uri).host == userInfo.host ? null : new URL(postToView.uri).host
+              }</span>
+                  </div>
+               </a>
+               `
+            : userInfo.username + "@" + userInfo.host
+         }
+         <span style="margin-left: auto; align-items: flex-start;">${dateToText(post.createdAt * 1000)}</span>
+      `);
+   }
+
    getContentDom(post: Post): ContentDom {
       if (!post.contentOnly) {
          let userInfo = (post as any).userInfo;
@@ -531,7 +544,11 @@ export class MastodonSource implements Source {
          </a>
          `;
       }
-      const content = dom(`<div class="post-content">${prelude}${postToView.content}</div>`)[0];
+      const content = dom(/*html*/`
+         <div class="remove-last-child-bottom-margin" style="padding: 0 var(--ledit-margin);">
+            ${prelude}${postToView.content}
+         </div>
+      `)[0];
 
       if (postToView.poll) {
          const pollDiv = dom(`<div class="post-mastodon-poll"></div>`)[0];
@@ -544,6 +561,7 @@ export class MastodonSource implements Source {
          content.append(pollDiv);
       }
 
+      const media = dom(`<div style="margin-top: var(--ledit-margin);"></div>`)[0];
       if (postToView.media_attachments.length > 0) {
          const images: string[] = [];
          const videos: MastodonMedia[] = [];
@@ -560,12 +578,12 @@ export class MastodonSource implements Source {
 
          if (images.length >= 1) {
             const gallery = renderGallery(images);
-            content.append(gallery.gallery);
+            media.append(gallery.gallery);
             if (images.length > 1) toggles.push(gallery.toggle);
          }
          if (videos.length >= 1) {
             for (const video of videos) {
-               content.append(
+               media.append(
                   renderVideo(
                      {
                         width: video.meta.original?.width ?? 0,
@@ -677,7 +695,7 @@ export class MastodonSource implements Source {
       }
       toggles.push(points);
 
-      return { elements: [content], toggles };
+      return { elements: media.children.length > 0 ? [content, media] : [content], toggles };
    }
 
    getNotificationContent(post: Post) {

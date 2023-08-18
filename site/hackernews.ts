@@ -1,6 +1,6 @@
 import { encodeHTML } from "entities";
 import { Comment, ContentDom as ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
-import { dom, htmlDecode, makeCollapsible } from "./utils";
+import { addCommasToNumber, dateToText, dom, htmlDecode, makeCollapsible } from "./utils";
 
 interface HNPost {
    by: string,
@@ -153,6 +153,18 @@ export class HackerNewsSource implements Source {
       };
       const comments = roots.map((root) => convertComment(root));
       return comments;
+   }
+
+   getMetaDom(post: Post): HTMLElement[] {
+      return dom(/*html*/`
+         <span>${(post as any).hnPost.score} pts</span>
+         <span>•</span>
+         <span>${dateToText(post.createdAt * 1000)}</span>
+         <span>•</span>
+         <a href="${post.authorUrl}">${post.author}</a>
+         <span>•</span>
+         <span>${new URL(post.url).host}</span>
+      `);
    }
 
    getContentDom(post: Post): ContentDom {

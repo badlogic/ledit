@@ -44,6 +44,7 @@ export interface ContentDom {
 export interface Source {
    getPosts(after: string | null): Promise<Posts>,
    getComments(post: Post): Promise<Comment[]>,
+   getMetaDom(post: Post): HTMLElement[],
    getContentDom(post: Post): ContentDom,
    getFeed(): string,
    getSourcePrefix(): SourcePrefix,

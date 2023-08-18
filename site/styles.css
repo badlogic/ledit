@@ -1,7 +1,6 @@
 :root {
    --ledit-font-size: 16px;
    --ledit-font-size-big: calc(var(--ledit-font-size) * 1.2);
-   --ledit-font-size-mid: calc(var(--ledit-font-size) * 1);
    --ledit-font-size-small: calc(var(--ledit-font-size) * 0.75);
    --ledit-font-family: "Noto Sans JP", "helvetica neue", helvetica, Ubuntu, roboto, noto, arial, sans-serif;
    --ledit-padding: calc(var(--ledit-font-size) * 0.5);
@@ -125,14 +124,15 @@ blockquote {
    height: 2em;
 }
 
-.load-more {
+.show-more {
    display: flex;
    align-items: center;
    justify-content: center;
-   border: 1px solid var(--ledit-color-dim);
-   border-radius: 8px;
-   margin-top: var(--ledit-padding);
+   height: calc(var(--ledit-font-size) * 2);
    cursor: pointer;
+   color: var(--ledit-link-color);
+   border-bottom: 1px solid var(--ledit-border-color);
+   border-top: 1px solid var(--ledit-border-color);
 }
 
 .inline-row {
@@ -173,6 +173,10 @@ blockquote {
    justify-content: center;
    align-items: center;
    font-size: calc(1.25 * var(--ledit-font-size));
+}
+
+.remove-last-child-bottom-margin > :last-child {
+   margin-bottom: 0;
 }
 
 @media (max-width: 767px) {

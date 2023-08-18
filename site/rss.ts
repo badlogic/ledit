@@ -1,7 +1,7 @@
 // @ts-ignore
 import { FeedEntry, extractFromXml } from "@extractus/feed-extractor";
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
-import { dom, makeCollapsible, proxyFetch, removeTrailingEmptyParagraphs } from "./utils";
+import { dateToText, dom, makeCollapsible, proxyFetch, removeTrailingEmptyParagraphs } from "./utils";
 import { parse, isValid } from "date-fns";
 
 function parseFeedDate(dateString: string): Date {
@@ -135,6 +135,14 @@ export class RssSource implements Source {
       throw new Error("Method not implemented.");
    }
 
+   getMetaDom(post: Post): HTMLElement[] {
+      return dom(/*html*/ `
+         <a href="${new URL(post.url).host}">${post.feed}</a>
+         <span>•</span>
+         <span>${dateToText(post.createdAt * 1000)}</span>
+      `);
+   }
+
    getContentDom(post: Post): ContentDom {
       const xmlItem = (post as any).xmlItem as FeedEntry;
       if (!xmlItem) return {elements: [], toggles: []};
@@ -157,13 +165,7 @@ export class RssSource implements Source {
             imageUrl ? `<img src="${imageUrl}" class="post-rss-preview-image" style="flex: 0; max-width: 150px !important;">` : ""
          } <div>${removeTrailingEmptyParagraphs(description)}</div></div>`
       )[0];
-      content.querySelectorAll("script").forEach((script) => {
-         script.remove();
-      });
-      content.querySelectorAll("iframe").forEach((iframe) => {
-         iframe.remove();
-      });
-
+      content.querySelectorAll("iframe").forEach((iframe) => iframe.remove());
       requestAnimationFrame(() => {
          makeCollapsible(content, 8);
       });
