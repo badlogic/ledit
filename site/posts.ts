@@ -211,7 +211,11 @@ export class PostView extends View {
          this.toggleComments();
       } else {
          const commentDiv = new CommentView(comment, "");
-         this.commentsView.insertBefore(commentDiv, this.commentsView.children[0]);
+         if (this.commentsView.children.length > 0) {
+            this.commentsView.insertBefore(commentDiv, this.commentsView.children[0]);
+         } else {
+            this.commentsView.append(commentDiv);
+         }
       }
    }
 

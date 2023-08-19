@@ -4,7 +4,7 @@ import { CommentView } from "./comments";
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { PostEditor } from "./post-editor";
 import { PostView, PostsView } from "./posts";
-import { SettingsView, getSettings } from "./settings";
+import { Bookmark, SettingsView, getSettings, saveSettings } from "./settings";
 import { svgBell, svgCircle, svgClose, svgLoader, svgPencil, svgReblog, svgReply, svgStar } from "./svg";
 import { addCommasToNumber, dateToText, dom, renderGallery, renderVideo } from "./utils";
 import { View } from "./view";
@@ -87,6 +87,7 @@ interface MastodonPost {
    uri: string;
    url: string;
    visibility: string;
+   userInfo: MastodonUserInfo | undefined;
 }
 
 interface MastodonNotification {
@@ -103,7 +104,7 @@ interface MastodonPostContext {
 }
 
 export class MastodonApi {
-   static getFetchOptions(userInfo: MastodonUserInfo): RequestInit {
+   static getAuthHeader(userInfo: MastodonUserInfo): RequestInit {
       return !userInfo.bearer
          ? {}
          : {
@@ -113,7 +114,7 @@ export class MastodonApi {
 
    static async getAccount(userName: string, userInfo: MastodonUserInfo): Promise<MastodonAccount | null> {
       try {
-         const response = await fetch("https://" + userInfo.host + "/api/v1/accounts/lookup?acct=" + userName);
+         const response = await fetch("https://" + userInfo.instance + "/api/v1/accounts/lookup?acct=" + userName);
          if (response.status != 200) return null;
          return (await response.json()) as MastodonAccount;
       } catch (e) {
@@ -123,8 +124,8 @@ export class MastodonApi {
 
    static async getPostContext(postId: string, userInfo: MastodonUserInfo): Promise<MastodonPostContext | null> {
       try {
-         const options = this.getFetchOptions(userInfo);
-         const response = await fetch(`https://${userInfo.host}/api/v1/statuses/${postId}/context`, options);
+         const options = this.getAuthHeader(userInfo);
+         const response = await fetch(`https://${userInfo.instance}/api/v1/statuses/${postId}/context`, options);
          if (response.status != 200) return null;
          return (await response.json()) as MastodonPostContext;
       } catch (e) {
@@ -134,8 +135,8 @@ export class MastodonApi {
 
    static async getPost(postId: string, userInfo: MastodonUserInfo): Promise<MastodonPost | null> {
       try {
-         const options = this.getFetchOptions(userInfo);
-         const response = await fetch(`https://${userInfo.host}/api/v1/statuses/${postId}`, options);
+         const options = this.getAuthHeader(userInfo);
+         const response = await fetch(`https://${userInfo.instance}/api/v1/statuses/${postId}`, options);
          if (response.status != 200) return null;
          return (await response.json()) as MastodonPost;
       } catch (e) {
@@ -143,10 +144,23 @@ export class MastodonApi {
       }
    }
 
-   static async getAccountPosts(accountId: string, maxId: string, userInfo: MastodonUserInfo): Promise<MastodonPost[] | null> {
+   static async resolvePost(postUrl: string, userInfo: MastodonUserInfo): Promise<MastodonPost | null> {
       try {
-         const options = this.getFetchOptions(userInfo);
-         const response = await fetch(`https://${userInfo.host}/api/v1/accounts/${accountId}/statuses?limit=40${maxId}`, options);
+         const options = this.getAuthHeader(userInfo);
+         const response = await fetch(`https://${userInfo.instance}/api/v2/search/?q=${postUrl}&resolve=true`, options);
+         if (response.status != 200) return null;
+         const searchResult = (await response.json()) as any as {statuses: MastodonPost[]};
+         if (searchResult.statuses.length == 0) return null;
+         return searchResult.statuses[0];
+      } catch (e) {
+         return null;
+      }
+   }
+
+   static async getAccountPosts(accountId: string, maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonPost[] | null> {
+      try {
+         const options = this.getAuthHeader(userInfo);
+         const response = await fetch(`https://${userInfo.instance}/api/v1/accounts/${accountId}/statuses?limit=40${maxId ? maxId : ""}`, options);
          if (response.status != 200) return null;
          return (await response.json()) as MastodonPost[];
       } catch (e) {
@@ -154,11 +168,11 @@ export class MastodonApi {
       }
    }
 
-   static async getNotifications(maxId: string, userInfo: MastodonUserInfo): Promise<MastodonNotification[] | null> {
+   static async getNotifications(maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonNotification[] | null> {
       if (!userInfo.bearer) return null;
       try {
-         const options = this.getFetchOptions(userInfo);
-         const response = await fetch(`https://${userInfo.host}/api/v1/notifications?limit=40${maxId}`, options);
+         const options = this.getAuthHeader(userInfo);
+         const response = await fetch(`https://${userInfo.instance}/api/v1/notifications?limit=40${maxId ? maxId : ""}`, options);
          if (response.status != 200) return null;
          return (await response.json()) as MastodonNotification[];
       } catch (e) {
@@ -166,11 +180,11 @@ export class MastodonApi {
       }
    }
 
-   static async getHomeTimeline(maxId: string, userInfo: MastodonUserInfo): Promise<MastodonPost[] | null> {
+   static async getHomeTimeline(maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonPost[] | null> {
       if (!userInfo.bearer) return null;
       try {
-         const options = this.getFetchOptions(userInfo);
-         const response = await fetch(`https://${userInfo.host}/api/v1/timelines/home?limit=40${maxId}`, options);
+         const options = this.getAuthHeader(userInfo);
+         const response = await fetch(`https://${userInfo.instance}/api/v1/timelines/home?limit=40${maxId ? maxId : ""}`, options);
          if (response.status != 200) return null;
          return (await response.json()) as MastodonPost[];
       } catch (e) {
@@ -178,16 +192,30 @@ export class MastodonApi {
       }
    }
 
-   static async publishPost(replyToId: string | null, text: string, userInfo: MastodonUserInfo): Promise<MastodonPost | null> {
+   static async getLocalTimeline(maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonPost[] | null> {
       if (!userInfo.bearer) return null;
       try {
-         const response = await fetch(`https://${userInfo.host}/api/v1/statuses`, {
+         const options = this.getAuthHeader(userInfo);
+         const response = await fetch(`https://${userInfo.instance}/api/v1/timelines/public?limit=40${maxId ? maxId : ""}`, options);
+         if (response.status != 200) return null;
+         return (await response.json()) as MastodonPost[];
+      } catch (e) {
+         return null;
+      }
+   }
+
+   static async publishPost(replyTo: MastodonPost | null, text: string, userInfo: MastodonUserInfo): Promise<MastodonPost | null> {
+      if (!userInfo.bearer) return null;
+      const resolvedPost = replyTo ? await this.resolvePost(replyTo.uri, userInfo) : null;
+      if (replyTo && !resolvedPost) return null;
+      try {
+         const response = await fetch(`https://${userInfo.instance}/api/v1/statuses`, {
             method: "POST",
             headers: {
                Authorization: `Bearer ${userInfo.bearer}`,
                "Content-Type": "application/json",
             },
-            body: JSON.stringify(replyToId ? { status: text, in_reply_to_id: replyToId } : { status: text }),
+            body: JSON.stringify(replyTo ? { status: text, in_reply_to_id: resolvedPost?.id } : { status: text }),
          });
          const json = await response.json();
          if (response.status != 200) {
@@ -202,7 +230,9 @@ export class MastodonApi {
    }
 
    static async reblogPost(post: MastodonPost, userInfo: MastodonUserInfo): Promise<boolean> {
-      const url = `https://${userInfo.host}/api/v1/statuses/${post.id}/${post.reblogged ? "reblog" : "unreblog"}`;
+      const resolvedPost = await this.resolvePost(post.uri, userInfo);
+      if (!resolvedPost) return false;
+      const url = `https://${userInfo.instance}/api/v1/statuses/${resolvedPost.id}/${post.reblogged ? "reblog" : "unreblog"}`;
       const options = {
          method: "POST",
          headers: {
@@ -214,7 +244,9 @@ export class MastodonApi {
    }
 
    static async favouritePost(post: MastodonPost, userInfo: MastodonUserInfo): Promise<boolean> {
-      const url = `https://${userInfo.host}/api/v1/statuses/${post.id}/${post.favourited ? "favourite" : "unfavourite"}`;
+      const resolvedPost = await this.resolvePost(post.uri, userInfo);
+      if (!resolvedPost) return false;
+      const url = `https://${userInfo.instance}/api/v1/statuses/${resolvedPost.id}/${post.favourited ? "favourite" : "unfavourite"}`;
       const options = {
          method: "POST",
          headers: {
@@ -230,37 +262,31 @@ function getAccountName(account: MastodonAccount) {
    return account.display_name && account.display_name.length > 0 ? account.display_name : account.username;
 }
 
-function extractUserHostAndBearer(input: string): { username: string; host: string; bearer: string | null } | null {
+function getUserInfo(input: string): MastodonUserInfo | null {
    let username = "";
-   let host = "";
+   let instance = "";
    let bearer: string | null = null;
 
-   if (input.startsWith("https://")) {
-      const url = new URL(input);
-      if (url.pathname.startsWith("/users/")) {
-         const userPart = url.pathname.substring("/users/".length);
-         const userHostParts = url.host.split(".");
-         if (userHostParts.length >= 2) {
-            username = userPart;
-            host = userHostParts.slice(-2).join(".");
-         }
-      }
-   } else {
-      if (input.startsWith("@")) input = input.substring(1);
-      const tokens = input.split("@");
-      if (tokens.length != 2) {
-         return null;
-      }
-      username = tokens[0];
-      host = tokens[1];
-      const bearerIndex = host.indexOf(":");
-      if (bearerIndex != -1) {
-         bearer = host.substring(bearerIndex + 1);
-         host = host.substring(0, bearerIndex);
+   if (input.startsWith("@")) input = input.substring(1);
+   const tokens = input.split("@");
+   if (tokens.length != 2) {
+      return null;
+   }
+   username = tokens[0];
+   instance = tokens[1];
+
+   for (const bookmark of getSettings().bookmarks) {
+      if (
+         bookmark.source == "m/" &&
+         bookmark.supplemental &&
+         bookmark.supplemental.username == username &&
+         bookmark.supplemental.instance == instance
+      ) {
+         bearer = bookmark.supplemental.bearer;
       }
    }
 
-   return { username, host, bearer };
+   return { username, instance, bearer };
 }
 
 function extractUsernames(mastodonPost: MastodonPost) {
@@ -283,35 +309,18 @@ function extractUsernames(mastodonPost: MastodonPost) {
    return usernames;
 }
 
-type MastodonUserInfo = { username: string; host: string; bearer: string | null };
+export type MastodonUserInfo = { username: string; instance: string; bearer: string | null };
 
 export class MastodonSource implements Source {
-   localizeMastodonAccountIds(mastodonAccount: MastodonAccount, userInfo: MastodonUserInfo) {
-      mastodonAccount.url = `https://${userInfo.host}/@${mastodonAccount.username}@${new URL(mastodonAccount.url).host}/`;
-   }
-
-   localizeMastodonPostIds(mastodonPost: MastodonPost, userInfo: MastodonUserInfo) {
-      if (!userInfo.bearer) return;
-      mastodonPost.url = `https://${userInfo.host}/@${mastodonPost.account.username}@${new URL(mastodonPost.account.url).host}/${mastodonPost.id}`;
-      this.localizeMastodonAccountIds(mastodonPost.account, userInfo);
-      if (mastodonPost.reblog) {
-         mastodonPost.reblog.url = `https://${userInfo.host}/@${mastodonPost.reblog.account.username}@${
-            new URL(mastodonPost.reblog.account.url).host
-         }/${mastodonPost.reblog.id}`;
-         this.localizeMastodonAccountIds(mastodonPost.reblog.account, userInfo);
-      }
-   }
 
    async mastodonPostToPost(mastodonPost: MastodonPost, onlyShowRoots: boolean, userInfo: MastodonUserInfo): Promise<Post | null> {
-      this.localizeMastodonPostIds(mastodonPost, userInfo);
       let postToView = mastodonPost.reblog ?? mastodonPost;
       if (onlyShowRoots && postToView.in_reply_to_account_id) return null;
-      const avatarImageUrl = postToView.account.avatar_static;
       let postUrl = postToView.url;
 
       let inReplyToPost: MastodonPost | null = null;
       if (postToView.in_reply_to_id) {
-         inReplyToPost = (await MastodonApi.getPost(postToView.in_reply_to_id, userInfo)) ?? inReplyToPost;
+         inReplyToPost = (await MastodonApi.getPost(postToView.in_reply_to_id, mastodonPost.userInfo ?? userInfo)) ?? inReplyToPost;
       }
 
       return {
@@ -334,18 +343,10 @@ export class MastodonSource implements Source {
    }
 
    mastodonPostToComment(reply: MastodonPost, highlight: boolean, userInfo: MastodonUserInfo): Comment {
-      this.localizeMastodonPostIds(reply, userInfo);
-      let replyUrl = reply.url;
-      const avatarImageUrl = reply.account.avatar_static;
       const content = this.getPostOrCommentContentDom(reply, null, userInfo, true);
       return {
-         url: replyUrl,
-         author: avatarImageUrl
-            ? /*html*/ `
-            <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(1 * var(--ledit-font-size));">
-            <span>${getAccountName(reply.account)}</span>
-         `
-            : getAccountName(reply.account),
+         url: reply.url,
+         author: getAccountName(reply.account),
          authorUrl: reply.account.url,
          createdAt: new Date(reply.created_at).getTime() / 1000,
          score: null,
@@ -353,6 +354,7 @@ export class MastodonSource implements Source {
          replies: [],
          highlight,
          mastodonComment: reply,
+         userInfo
       } as Comment;
    }
 
@@ -395,7 +397,7 @@ export class MastodonSource implements Source {
       let userHandles: string[] = [];
       const commentHost = new URL(mastodonComment.uri).host;
       userHandles.push(...extractUsernames(mastodonComment));
-      const commentUser = "@" + mastodonComment.account.username + (commentHost == userInfo.host ? "" : "@" + commentHost);
+      const commentUser = "@" + mastodonComment.account.username + (commentHost == userInfo.instance ? "" : "@" + commentHost);
       if (commentUser) userHandles.push(commentUser);
 
       const header = dom(/*html*/ `
@@ -418,7 +420,7 @@ export class MastodonSource implements Source {
             500,
             true,
             async (text) => {
-               const mastodonReply = await MastodonApi.publishPost(mastodonComment.id, text, userInfo);
+               const mastodonReply = await MastodonApi.publishPost(mastodonComment, text, userInfo);
                if (mastodonReply) {
                   const reply = await this.mastodonPostToComment(mastodonReply, true, userInfo);
                   if (!reply) return false;
@@ -443,7 +445,7 @@ export class MastodonSource implements Source {
       mastodonUser = tokens[0];
       let mastodonUserId: string | null = mastodonUserIds[mastodonUser];
 
-      const userInfo = extractUserHostAndBearer(mastodonUser);
+      const userInfo = getUserInfo(mastodonUser);
       if (!userInfo) return [];
 
       if (!mastodonUserId) {
@@ -491,8 +493,12 @@ export class MastodonSource implements Source {
                : await MastodonApi.getAccountPosts(mastodonUserId, maxId, userInfo);
          if (!mastodonPosts) return [];
          const posts: Post[] = [];
+         const postPromises: Promise<Post | null>[] = [];
          for (const mastodonPost of mastodonPosts) {
-            const post = await this.mastodonPostToPost(mastodonPost, getSettings().showOnlyMastodonRoots, userInfo);
+            postPromises.push(this.mastodonPostToPost(mastodonPost, getSettings().showOnlyMastodonRoots, userInfo));
+         }
+         const resolvedPosts = await Promise.all(postPromises);
+         for (const post of resolvedPosts) {
             if (post) posts.push(post);
          }
          if (timeline == "home") this.showActionButtons(userInfo);
@@ -501,32 +507,155 @@ export class MastodonSource implements Source {
    }
 
    async getPosts(after: string | null): Promise<Posts> {
-      const urls = this.getFeed().split("+");
-      let afters: (string | null)[] | undefined = after?.split("+");
-      const promises: Promise<Post[]>[] = [];
-      for (let i = 0; i < urls.length; i++) {
-         promises.push(this.getPostsForUser(urls[i], afters ? afters[i] : null));
+      // We support different m/ url types
+      //
+      // These do not require an account bookmark and are readonly:
+      // 1. instance, e.g. mastodon.gamedev.place, shows the local timeline in readonly mode.
+      // 3. user@instance, e.g. badlogic@mastodon.gamedev.place, shows the user profile and public posts in readonly mode.
+      // 2. user@instance(+user@instance)+, e.g. badlogic@mastodon.gamedev.place+eniko@peoplemaking.games, shows their most recent public posts in readonly mode.
+
+      // These require an account bookmark and allow read/write, e.g. follow/unfollow, reblog, favourite, reply, publish.
+      // 4. user@instance/home, shows the user's home timeline.
+      // 5. user@instance/notifications, shows user's notifications.
+      // 6. user@instance/local, shows the local timeline.
+      // 7. user@instance/@user(@instance)/, shows the user profile and posts.
+      // 7. user@instance/<statusid>, shows the status.
+
+      const noResult = { posts: [], after: null };
+      if (after == "end") return noResult;
+
+      const feedTokens = this.getFeed().split("/");
+      if (feedTokens.length == 0) return noResult;
+
+      if (feedTokens.length == 1) {
+         if (feedTokens[0].includes("@")) {
+            const userTokens = feedTokens[0].split("+");
+            const users: MastodonUserInfo[] = [];
+            for (const userToken of userTokens) {
+               const userInfo = getUserInfo(userToken);
+               if (userInfo) {
+                  users.push(userInfo);
+               }
+            }
+
+            const urls = this.getFeed().split("+");
+            let afters: (string | null)[] | undefined = after?.split("+");
+            const promises: Promise<Post[]>[] = [];
+            for (let i = 0; i < urls.length; i++) {
+               promises.push(this.getPostsForUser(urls[i], afters ? afters[i] : null));
+            }
+
+            const promisesResult = await Promise.all(promises);
+            const posts: Post[] = [];
+            const newAfters = [];
+            for (let i = 0; i < urls.length; i++) {
+               posts.push(...promisesResult[i]);
+               const userInfo = getUserInfo(urls[i]);
+               if (!userInfo) {
+                  newAfters.push(null);
+                  continue;
+               }
+
+               let maxId = promisesResult[i].length == 0 ? "end" : (promisesResult[i][promisesResult[i].length - 1] as any).id;
+               newAfters.push(maxId);
+            }
+            if (urls.length > 1) {
+               posts.sort((a, b) => b.createdAt - a.createdAt);
+            }
+
+            // FIXME
+            return { posts, after: newAfters!.join("+") };
+         }
       }
 
-      const promisesResult = await Promise.all(promises);
-      const posts: Post[] = [];
-      const newAfters = [];
-      for (let i = 0; i < urls.length; i++) {
-         posts.push(...promisesResult[i]);
-         const userInfo = extractUserHostAndBearer(urls[i]);
-         if (!userInfo) {
-            newAfters.push(null);
-            continue;
+      if (feedTokens.length == 2) {
+         const userInfo = getUserInfo(feedTokens[0].trim());
+         if (!userInfo) return noResult;
+         if (!userInfo.bearer) {
+            alert(`You must add a Mastodon account for ${userInfo.username}@${userInfo.instance}.`)
+            return noResult;
+         }
+         const what = feedTokens[1].trim();
+         if (what.length == 0) return noResult;
+
+         let mastodonAccount: MastodonAccount | null = null;
+         let mastodonPosts: MastodonPost[] | null = null;
+         let mastodonNotifications: MastodonNotification[] | null = null;
+         if (what == "home") {
+            mastodonPosts = await MastodonApi.getHomeTimeline(after, userInfo);
+            if (!mastodonPosts) return noResult;
+         } else if (what == "notifications") {
+            mastodonNotifications = await MastodonApi.getNotifications(after, userInfo);
+         } else if (what == "local") {
+            mastodonPosts = await MastodonApi.getLocalTimeline(after, userInfo);
+         } else if (what.includes("@")) {
+            let otherUserInfo = getUserInfo(what);
+            if (!otherUserInfo || otherUserInfo.instance == userInfo.instance) otherUserInfo = userInfo;
+            mastodonAccount = await MastodonApi.getAccount(what, otherUserInfo);
+            if (!mastodonAccount) return noResult;
+            mastodonPosts = await MastodonApi.getAccountPosts(mastodonAccount.id, after, otherUserInfo);
+            if (mastodonPosts) {
+               for (const mastodonPost of mastodonPosts) {
+                  mastodonPost.userInfo = otherUserInfo;
+               }
+            }
+         } else {
+            const post = await MastodonApi.getPost(what, userInfo);
+            if (!post) return noResult;
+            mastodonPosts = [post];
          }
 
-         let maxId = promisesResult[i].length == 0 ? "end" : (promisesResult[i][promisesResult[i].length - 1] as any).id;
-         newAfters.push(maxId);
-      }
-      if (urls.length > 1) {
-         posts.sort((a, b) => b.createdAt - a.createdAt);
+         let maxId: string | null = null;
+         if (mastodonPosts) {
+            maxId = mastodonPosts.length == 0 ? "end" : mastodonPosts[mastodonPosts.length - 1].id;
+         }
+         if (mastodonNotifications) {
+            maxId = mastodonNotifications.length == 0 ? "end" : mastodonNotifications[mastodonNotifications.length - 1].id;
+         }
+         maxId = maxId ? `&max_id=${maxId}` : "";
+
+         const posts: Post[] = [];
+         if (mastodonPosts) {
+            const postPromises: Promise<Post | null>[] = [];
+            for (const mastodonPost of mastodonPosts) {
+               postPromises.push(this.mastodonPostToPost(mastodonPost, getSettings().showOnlyMastodonRoots, userInfo));
+            }
+            const resolvedPosts = await Promise.all(postPromises);
+            for (const post of resolvedPosts) {
+               if (post) posts.push(post);
+            }
+            if (what == "home") this.showActionButtons(userInfo);
+         }
+
+         if (mastodonNotifications) {
+            const postPromises: Promise<any>[] = [];
+
+            for (const notification of mastodonNotifications) {
+               if (notification.type === "mention") {
+                  // Push the promise for fetching the post to the array
+                  postPromises.push(this.mastodonPostToPost(notification.status!, false, userInfo));
+               } else {
+                  // Create a promise that resolves to the current notification data
+                  postPromises.push(Promise.resolve({
+                     contentOnly: true,
+                     notification,
+                     userInfo,
+                     id: notification.id,
+                  }));
+               }
+            }
+
+            // Wait for all the promises to resolve in parallel
+            const fetchedPosts = await Promise.all(postPromises);
+
+            // Push the fetched posts to the 'posts' array
+            posts.push(...fetchedPosts);
+         }
+
+         return {posts: posts, after: maxId};
       }
 
-      return { posts, after: newAfters!.join("+") };
+      return noResult;
    }
 
    async getComments(post: Post): Promise<Comment[]> {
@@ -535,7 +664,7 @@ export class MastodonSource implements Source {
       const postToView = mastodonPost.reblog ?? mastodonPost;
       const host = new URL(postToView.uri).host;
       const statusId = postToView.uri.split("/").pop()!;
-      const commentUserInfo: MastodonUserInfo = userInfo.host == host ? userInfo : { username: "", host, bearer: null };
+      let commentUserInfo: MastodonUserInfo = userInfo.instance == host ? userInfo : { username: "", instance: host, bearer: null };
       let rootId: string | null = null;
       const roots: Comment[] = [];
       const comments: Comment[] = [];
@@ -545,13 +674,23 @@ export class MastodonSource implements Source {
       if (!context) return [];
 
       if (context.ancestors.length > 0) {
-         const root = context.ancestors[0];
+         // FIXME if the root is from our instance, query our instance
+         // instead of whatever instance we fetched the context from.
+         // this will give us properly set favourite and reblogged flags.
+         let root = context.ancestors[0];
+         if (new URL(root.url).host == userInfo.instance) {
+            const resolvedRoot = await MastodonApi.resolvePost(root.url, userInfo);
+            if (resolvedRoot) {
+               root = resolvedRoot;
+               commentUserInfo = userInfo;
+            }
+         }
          rootId = root.id;
          const rootComment = this.mastodonPostToComment(root, root.id == statusId, userInfo);
          roots.push(rootComment);
          comments.push(rootComment);
          commentsById.set(root.id, rootComment);
-         const fullContext = await MastodonApi.getPostContext(context.ancestors[0].id, commentUserInfo);
+         const fullContext = await MastodonApi.getPostContext(root.id, commentUserInfo);
          if (fullContext) context = fullContext;
       }
 
@@ -581,12 +720,11 @@ export class MastodonSource implements Source {
    }
 
    getMetaDom(post: Post): HTMLElement[] {
-      const postToView = (post as any).mastodonPost.reblog ?? (post as any).mastodonPost;
-      const userInfo = (post as any).userInfo;
+      const postToView = ((post as any).mastodonPost.reblog ?? (post as any).mastodonPost) as MastodonPost;
+      const userInfo = (post as any).userInfo as MastodonUserInfo;
       const avatarImageUrl = postToView.account.avatar_static;
-      const postUrl = postToView.url;
       const authorUrl = postToView.account.url;
-
+      const postUrl = postToView.uri; // "/#m/" + userInfo.username + "@" + userInfo.instance + "/" + postToView.id;
       return dom(/*html*/ `
          ${
             avatarImageUrl
@@ -595,15 +733,15 @@ export class MastodonSource implements Source {
                   <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">
                   <div>
                      <span><b>${getAccountName(postToView.account)}</b></span>
-                     <span>${postToView.account.username}@${
-                    new URL(postToView.uri).host == userInfo.host ? null : new URL(postToView.uri).host
+                     <span>${postToView.account.username}${
+                    new URL(postToView.uri).host == userInfo.instance ? "" : "@" + new URL(postToView.uri).host
                  }</span>
                   </div>
                </a>
                `
-               : userInfo.username + "@" + userInfo.host
+               : userInfo.username + "@" + userInfo.instance
          }
-         <span style="margin-left: auto; align-items: flex-start;">${dateToText(post.createdAt * 1000)}</span>
+         <a href="${postUrl}" target="_blank" style="text-decoration: underline; margin-left: auto; align-items: flex-start;">${dateToText(post.createdAt * 1000)}</span>
       `);
    }
 
@@ -817,8 +955,6 @@ export class MastodonSource implements Source {
 
    getNotificationContentDom(post: Post) {
       const notification = (post as any).notification as MastodonNotification;
-      this.localizeMastodonAccountIds(notification.account, (post as any).userInfo);
-      if (notification.status) this.localizeMastodonPostIds(notification.status!, (post as any).userInfo);
       let html = "";
       switch (notification.type) {
          case "mention":
@@ -910,12 +1046,16 @@ export class MastodonSource implements Source {
    }
 
    getCommentMetaDom(comment: Comment, opName: string): HTMLElement[] {
+      const mastodonComment = (comment as any).mastodonComment as MastodonPost;
       const metaDom = dom(/*html*/ `
          <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">
-         <a href="${comment.authorUrl}" target="_blank">${comment.author}</a>
+         <a href="${comment.authorUrl}" target="_blank" class="inline-row">
+            <img src="${mastodonComment.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+            <span>${comment.author}</span>
+         </a>
          </span>
          <span>•</span>
-         <span>${dateToText(comment.createdAt * 1000)}</span>
+         <a href="${comment.url}" target="_blank" style="text-decoration: underline;">${dateToText(comment.createdAt * 1000)}</a>
       `);
       return metaDom;
    }
@@ -941,13 +1081,11 @@ export class MastodonSource implements Source {
    }
 }
 
-export type MastodonUser = { user: string; instance: string; bearer: string };
-
 export class MastodonUserEditor extends View {
    escapeCallback: EscapeCallback | undefined;
    navigationCallback: NavigationCallback | undefined;
 
-   constructor(public readonly user: MastodonUser, public readonly isNew: boolean) {
+   constructor(public readonly user: MastodonUserInfo, public readonly isNew: boolean) {
       super();
       this.render();
       this.classList.add("editor-container");
@@ -958,8 +1096,8 @@ export class MastodonUserEditor extends View {
          <div x-id="editor" class="editor">
             <div x-id="close" class="editor-close"><span class="color-fill">${svgClose}</span></div>
             <div x-id="headerRow" class="editor-header">Mastodon user</div>
-            <input x-id="user" value="${this.user.user}" placeholder="user@instance.com">
-            <input x-id="bearer" value="${this.user.user}" placeholder="Access token">
+            <input x-id="user" value="${this.user.username}" placeholder="user@instance.com">
+            <input x-id="bearer" value="${this.user.username}" placeholder="Access token">
             <div class="editor-buttons">
                <button x-id="save" class="editor-button" style="margin-left: auto;">Save</button>
                <div x-id="progress" class="color-fill hidden">${svgLoader}</div>
@@ -986,14 +1124,14 @@ export class MastodonUserEditor extends View {
             return;
          }
 
-         const userInfo = extractUserHostAndBearer(user);
+         const userInfo = getUserInfo(user);
          if (!userInfo) {
             alert("Invalid user name. Must have the form user@instance.com");
             return;
          }
 
          try {
-            new URL("https://" + userInfo.host);
+            new URL("https://" + userInfo.instance);
          } catch (e) {
             alert("Invalid instance. Must be the domain name plus optional port of your instance, e.g. mastodon.social");
             return;
@@ -1011,7 +1149,27 @@ export class MastodonUserEditor extends View {
          elements.save.setAttribute("disabled", "");
          elements.progress.classList.remove("hidden");
 
-         const response = await this.close();
+         userInfo.bearer = bearer;
+         const posts = await MastodonApi.getHomeTimeline("", userInfo);
+         if (!posts) {
+            alert(`Couldn't authenticate your account. Please check the user name, instance, and access token.`);
+            elements.user.removeAttribute("disabled");
+            elements.bearer.removeAttribute("disabled");
+            elements.save.removeAttribute("disabled");
+            elements.progress.classList.add("hidden");
+            return;
+         }
+
+         const bookmark: Bookmark = {
+            source: "m/",
+            label: `${userInfo.username}@${userInfo.instance}`,
+            ids: [`${userInfo.username}@${userInfo.instance}/home`],
+            isDefault: false,
+            supplemental: userInfo,
+         };
+         getSettings().bookmarks.push(bookmark);
+         saveSettings();
+         this.close();
          document.body.append(new SettingsView());
       });
 

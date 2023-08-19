@@ -1,19 +1,20 @@
 import { SourcePrefix, sourcePrefixLabel } from "./data";
 import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
-import { MastodonUser, MastodonUserEditor } from "./mastodon";
+import { MastodonUserEditor, MastodonUserInfo } from "./mastodon";
 import "./settings.css";
-import { svgCheck, svgClose, svgGithub, svgHeart, svgMinus, svgPencil, svgBookmark } from "./svg/index";
+import { svgBookmark, svgCheck, svgClose, svgGithub, svgHeart, svgMinus, svgPencil } from "./svg/index";
 import { assertNever, dom, navigate } from "./utils";
 import { View } from "./view";
 
-interface Bookmark {
+export interface Bookmark {
    source: SourcePrefix;
    label: string;
    ids: string[];
    isDefault: boolean;
+   supplemental?: MastodonUserInfo;
 }
 
-interface Settings {
+export interface Settings {
    bookmarks: Bookmark[];
    hideSeen: boolean;
    seenIds: string[];
@@ -216,10 +217,9 @@ export class SettingsView extends View {
             });
             elements.bookmarks.append(bookmarkDiv);
          }
+
          if (source != "hn/") {
-            const addBookmarkDiv = dom(
-               `<div class="settings-row"><span class="color-fill">${svgBookmark}</span>Add feed</div>`
-            )[0];
+            const addBookmarkDiv = dom(`<div class="settings-row"><span class="color-fill">${svgBookmark}</span>Add feed</div>`)[0];
             elements.bookmarks.append(addBookmarkDiv);
             addBookmarkDiv.addEventListener("click", () => {
                this.close();
@@ -233,14 +233,11 @@ export class SettingsView extends View {
             });
          }
          if (source == "m/") {
-            const addAccountDiv = dom(
-               `<div class="settings-row"><span class="color-fill">${svgBookmark}</span>Add account</div>`
-            )[0];
+            const addAccountDiv = dom(`<div class="settings-row"><span class="color-fill">${svgBookmark}</span>Add account</div>`)[0];
             elements.bookmarks.append(addAccountDiv);
             addAccountDiv.addEventListener("click", () => {
-               const newUser: MastodonUser = { user: "", instance: "", bearer: ""};
                this.close();
-               document.body.append(new MastodonUserEditor(newUser, true));
+               document.body.append(new MastodonUserEditor({ username: "", instance: "", bearer: "" }, true));
             });
          }
       }
@@ -363,7 +360,7 @@ function sourcePrefixToFeedPlaceholder(source: SourcePrefix) {
       case "hn/":
          return "";
       case "rss/":
-         return "https://techcrunch.com/feed/\nhttps://www.theverge.com/rss/frontpage\nhttps://www.wired.com/feed/rss\n..."
+         return "https://techcrunch.com/feed/\nhttps://www.theverge.com/rss/frontpage\nhttps://www.wired.com/feed/rss\n...";
       case "yt/":
          return "RedLetterMedia\nVeritasium\n...";
       case "m/":

@@ -61,14 +61,17 @@ export class CommentView extends View {
       const elements = this.elements<{
          replies: HTMLElement;
       }>();
-      elements.replies.insertBefore(replyDiv, elements.replies.children[0]);
+      if (elements.replies.children.length > 0) {
+         elements.replies.insertBefore(replyDiv, elements.replies.children[0]);
+      } else {
+         elements.replies.append(replyDiv);
+      }
    }
 
    render() {
       const comment = this.comment;
       if (comment.highlight) {
          this.classList.add("comment-highlighted");
-         // FIXME this doesn't quite work...
          onAddedToDOM(this, () => {
             scrollToAndCenter(this);
          });
