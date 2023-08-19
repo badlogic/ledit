@@ -686,7 +686,8 @@ export class MastodonSource implements Source {
             }
          }
          rootId = root.id;
-         const rootComment = this.mastodonPostToComment(root, root.id == statusId, userInfo);
+         // FIXME matching by content is bad
+         const rootComment = this.mastodonPostToComment(root, root.content == postToView.content, userInfo);
          roots.push(rootComment);
          comments.push(rootComment);
          commentsById.set(root.id, rootComment);
@@ -703,7 +704,8 @@ export class MastodonSource implements Source {
       mastodonComments.push(...context.descendants);
 
       for (const reply of mastodonComments) {
-         const comment = this.mastodonPostToComment(reply, reply.id == statusId, userInfo);
+         // FIXME matching by content is bad
+         const comment = this.mastodonPostToComment(reply, reply.content == postToView.content, userInfo);
          if (!rootId && reply.in_reply_to_id == statusId) roots.push(comment);
          if (reply.id == rootId) roots.push(comment);
          comments.push(comment);
