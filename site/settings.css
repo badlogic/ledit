@@ -11,7 +11,7 @@
 
 .settings {
    margin: 0 auto;
-   background: var(--ledit-background);
+   background: var(--ledit-background-dim);
    padding: var(--ledit-padding) 0;
    font-size: var(--ledit-font-size-big);
    display: flex;
@@ -21,58 +21,23 @@
    border-bottom-right-radius: 8px;
 }
 
-.settings-row-close {
+.settings-header {
+   display: flex;
+   flex-direction: row;
+   align-items: center;
+   padding: 0 var(--ledit-margin);
+   font-size: var(--ledit-font-size);
+   font-weight: 600;
+   height: 2em;
+}
+
+.settings-close {
    display: flex;
    align-items: center;
    padding: var(--ledit-margin) var(--ledit-margin);
    font-size: var(--ledit-font-size);
    height: 1em;
    cursor: pointer;
-}
-
-.settings-row-input {
-   background: none;
-   border: none;
-   border-bottom: 0.5px solid var(--ledit-color);
-   font: inherit;
-   font-size: var(--ledit-font-size);
-   color: inherit;
-   line-height: inherit;
-   outline: none;
-   box-shadow: none;
-   border-radius: 0;
-   flex: 1;
-   margin: 0 calc(var(--ledit-padding) + var(--ledit-margin));
-}
-
-.settings-row-textarea {
-   height: calc(var(--ledit-font-size) * 10);
-   font: inherit;
-   font-size: var(--ledit-font-size);
-   margin: 0 calc(var(--ledit-padding) + var(--ledit-margin));
-   padding: var(--ledit-margin);
-
-   background: none;
-   border: none;
-   border: 0.5px solid var(--ledit-color);
-   color: inherit;
-   line-height: inherit;
-   outline: none;
-   box-shadow: none;
-   border-radius: 8px;
-   resize: vertical;
-   overflow: auto;
-}
-
-.settings-row-label {
-   display: flex;
-   flex-direction: row;
-   align-items: center;
-   padding: 0 calc(var(--ledit-padding) + var(--ledit-margin));
-   padding-right: var(--ledit-margin);
-   font-size: var(--ledit-font-size);
-   height: 2em;
-   font-weight: 450;
 }
 
 .settings-row {
@@ -82,15 +47,11 @@
    padding: 0 calc(var(--ledit-padding) + var(--ledit-margin));
    padding-right: var(--ledit-margin);
    font-size: var(--ledit-font-size);
-   height: 2em;
+   height: 3em;
    cursor: pointer;
+   border-bottom: 0.5px solid var(--ledit-border-color);
 }
 
-.settings-row > * {
-   height: 100%;
-   display: flex;
-   align-items: center;
-}
 
 .settings-row a {
    overflow: hidden;
@@ -102,14 +63,4 @@
 
 .settings-row:hover {
    background: var(--ledit-background-buttons);
-}
-
-.settings-row-header {
-   display: flex;
-   flex-direction: row;
-   align-items: center;
-   padding: 0 var(--ledit-margin);
-   font-size: var(--ledit-font-size);
-   font-weight: 600;
-   height: 2em;
 }

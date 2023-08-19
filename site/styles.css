@@ -20,6 +20,7 @@
    --ledit-link-color: #8db5e1;
    --ledit-default-check-color: rgba(197, 197, 185, 0.3);
    --ledit-shadow-color: #ffffff20;
+   --ledit-accent-color: orange;
 }
 
 .light-theme {
@@ -33,6 +34,7 @@
    --ledit-link-color: #3a579b;
    --ledit-default-check-color: #ddd;
    --ledit-shadow-color: rgba(0, 0, 0, 0.1);
+   --ledit-accent-color: orange;
 }
 
 body,
@@ -181,12 +183,13 @@ blockquote {
    font-size: calc(1.25 * var(--ledit-font-size));
 }
 
-.header, .post, .settings, .fab-container {
+.header, .post, .settings, .editor, .fab-container {
    width: 600px;
 }
 
 @media (max-width: 600px) {
    .posts,
+   .post,
    .comments,
    .header,
    .settings,

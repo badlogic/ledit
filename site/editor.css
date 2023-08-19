@@ -22,17 +22,23 @@
 
 .editor > * {
    margin-top: var(--ledit-padding);
+   font-size: var(--ledit-font-size);
 }
 
 .editor-close {
    display: flex;
    align-items: center;
-   font-size: var(--ledit-font-size-big);
+   padding: var(--ledit-margin);
+   font-size: var(--ledit-font-size);
    height: 1em;
    cursor: pointer;
+   margin: -0.5em -1em;
 }
 
 .editor-header {
+   display: flex;
+   flex-direction: row;
+   align-items: center;
    font-size: var(--ledit-font-size);
    font-weight: 600;
 }
@@ -66,6 +72,22 @@
    border-radius: 8px;
 }
 
+.editor textarea:focus {
+   outline-color: var(--ledit-accent-color);
+}
+
+.editor input {
+   background: var(--ledit-background);
+   border: 1px solid var(--ledit-border-color);
+   border-radius: 8px;
+   padding: var(--ledit-padding);
+   color: var(--ledit-color);
+}
+
+.editor input:focus {
+   outline: 2px solid var(--ledit-accent-color);
+}
+
 .editor-buttons {
    display: flex;
    gap: var(--ledit-padding);
@@ -78,4 +100,10 @@
    background: var(--ledit-background);
    border-radius: 4px;
    color: var(--ledit-color);
+   cursor: pointer;
+   font-size: var(--ledit-font-size);
+}
+
+.editor-button:hover {
+   border: 1px solid var(--ledit-accent-color);
 }

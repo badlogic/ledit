@@ -4,10 +4,11 @@ import { CommentView } from "./comments";
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { PostEditor } from "./post-editor";
 import { PostView, PostsView } from "./posts";
-import { getSettings } from "./settings";
-import { svgBell, svgCircle, svgPencil, svgReblog, svgReply, svgStar } from "./svg";
+import { SettingsView, getSettings } from "./settings";
+import { svgBell, svgCircle, svgClose, svgLoader, svgPencil, svgReblog, svgReply, svgStar } from "./svg";
 import { addCommasToNumber, dateToText, dom, renderGallery, renderVideo } from "./utils";
 import { View } from "./view";
+import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
 
@@ -96,6 +97,135 @@ interface MastodonNotification {
    status: MastodonPost | null;
 }
 
+interface MastodonPostContext {
+   ancestors: MastodonPost[];
+   descendants: MastodonPost[];
+}
+
+export class MastodonApi {
+   static getFetchOptions(userInfo: MastodonUserInfo): RequestInit {
+      return !userInfo.bearer
+         ? {}
+         : {
+              headers: { Authorization: `Bearer ${userInfo.bearer}` },
+           };
+   }
+
+   static async getAccount(userName: string, userInfo: MastodonUserInfo): Promise<MastodonAccount | null> {
+      try {
+         const response = await fetch("https://" + userInfo.host + "/api/v1/accounts/lookup?acct=" + userName);
+         if (response.status != 200) return null;
+         return (await response.json()) as MastodonAccount;
+      } catch (e) {
+         return null;
+      }
+   }
+
+   static async getPostContext(postId: string, userInfo: MastodonUserInfo): Promise<MastodonPostContext | null> {
+      try {
+         const options = this.getFetchOptions(userInfo);
+         const response = await fetch(`https://${userInfo.host}/api/v1/statuses/${postId}/context`, options);
+         if (response.status != 200) return null;
+         return (await response.json()) as MastodonPostContext;
+      } catch (e) {
+         return null;
+      }
+   }
+
+   static async getPost(postId: string, userInfo: MastodonUserInfo): Promise<MastodonPost | null> {
+      try {
+         const options = this.getFetchOptions(userInfo);
+         const response = await fetch(`https://${userInfo.host}/api/v1/statuses/${postId}`, options);
+         if (response.status != 200) return null;
+         return (await response.json()) as MastodonPost;
+      } catch (e) {
+         return null;
+      }
+   }
+
+   static async getAccountPosts(accountId: string, maxId: string, userInfo: MastodonUserInfo): Promise<MastodonPost[] | null> {
+      try {
+         const options = this.getFetchOptions(userInfo);
+         const response = await fetch(`https://${userInfo.host}/api/v1/accounts/${accountId}/statuses?limit=40${maxId}`, options);
+         if (response.status != 200) return null;
+         return (await response.json()) as MastodonPost[];
+      } catch (e) {
+         return null;
+      }
+   }
+
+   static async getNotifications(maxId: string, userInfo: MastodonUserInfo): Promise<MastodonNotification[] | null> {
+      if (!userInfo.bearer) return null;
+      try {
+         const options = this.getFetchOptions(userInfo);
+         const response = await fetch(`https://${userInfo.host}/api/v1/notifications?limit=40${maxId}`, options);
+         if (response.status != 200) return null;
+         return (await response.json()) as MastodonNotification[];
+      } catch (e) {
+         return null;
+      }
+   }
+
+   static async getHomeTimeline(maxId: string, userInfo: MastodonUserInfo): Promise<MastodonPost[] | null> {
+      if (!userInfo.bearer) return null;
+      try {
+         const options = this.getFetchOptions(userInfo);
+         const response = await fetch(`https://${userInfo.host}/api/v1/timelines/home?limit=40${maxId}`, options);
+         if (response.status != 200) return null;
+         return (await response.json()) as MastodonPost[];
+      } catch (e) {
+         return null;
+      }
+   }
+
+   static async publishPost(replyToId: string | null, text: string, userInfo: MastodonUserInfo): Promise<MastodonPost | null> {
+      if (!userInfo.bearer) return null;
+      try {
+         const response = await fetch(`https://${userInfo.host}/api/v1/statuses`, {
+            method: "POST",
+            headers: {
+               Authorization: `Bearer ${userInfo.bearer}`,
+               "Content-Type": "application/json",
+            },
+            body: JSON.stringify(replyToId ? { status: text, in_reply_to_id: replyToId } : { status: text }),
+         });
+         const json = await response.json();
+         if (response.status != 200) {
+            console.error(JSON.stringify(json));
+            return null;
+         }
+         return json as MastodonPost;
+      } catch (e) {
+         console.error("Couldn't publish post.", e);
+         return null;
+      }
+   }
+
+   static async reblogPost(post: MastodonPost, userInfo: MastodonUserInfo): Promise<boolean> {
+      const url = `https://${userInfo.host}/api/v1/statuses/${post.id}/${post.reblogged ? "reblog" : "unreblog"}`;
+      const options = {
+         method: "POST",
+         headers: {
+            Authorization: "Bearer " + userInfo.bearer,
+         },
+      };
+      const response = await fetch(url, options);
+      return response.status == 200;
+   }
+
+   static async favouritePost(post: MastodonPost, userInfo: MastodonUserInfo): Promise<boolean> {
+      const url = `https://${userInfo.host}/api/v1/statuses/${post.id}/${post.favourited ? "favourite" : "unfavourite"}`;
+      const options = {
+         method: "POST",
+         headers: {
+            Authorization: "Bearer " + userInfo.bearer,
+         },
+      };
+      const response = await fetch(url, options);
+      return response.status == 200;
+   }
+}
+
 function getAccountName(account: MastodonAccount) {
    return account.display_name && account.display_name.length > 0 ? account.display_name : account.username;
 }
@@ -133,51 +263,24 @@ function extractUserHostAndBearer(input: string): { username: string; host: stri
    return { username, host, bearer };
 }
 
-async function publishPost(userInfo: MastodonUserInfo, replyToId: string | null, text: string): Promise<MastodonPost | null> {
-   if (!userInfo.bearer) return null;
-   try {
-      const response = await fetch(`https://${userInfo.host}/api/v1/statuses`, {
-         method: "POST",
-         headers: {
-            Authorization: `Bearer ${userInfo.bearer}`,
-            "Content-Type": "application/json",
-         },
-         body: JSON.stringify(replyToId ? { status: text, in_reply_to_id: replyToId } : { status: text }),
-      });
-      const json = await response.json();
-      if (response.status != 200) {
-         console.error(JSON.stringify(json));
-         return null;
+function extractUsernames(mastodonPost: MastodonPost) {
+   const dom = new DOMParser().parseFromString(mastodonPost.content, "text/html");
+   const mentionLinks = dom.querySelectorAll("a.u-url.mention");
+   const usernames: string[] = [];
+
+   mentionLinks.forEach((link) => {
+      const href = link.getAttribute("href");
+      if (!href) return;
+      const match = href.match(/https?:\/\/([^/]+)\/@([^/]+)/);
+
+      if (match) {
+         const host = match[1];
+         const username = match[2];
+         usernames.push("@" + username + "@" + host);
       }
-      return json as MastodonPost;
-   } catch (e) {
-      console.error("Couldn't publish post.", e);
-      return null;
-   }
-}
+   });
 
-async function reblogPost(post: MastodonPost, userInfo: MastodonUserInfo): Promise<boolean> {
-   const url = `https://${userInfo.host}/api/v1/statuses/${post.id}/${post.reblogged ? "reblog" : "unreblog"}`;
-   const options = {
-      method: "POST",
-      headers: {
-         Authorization: "Bearer " + userInfo.bearer,
-      },
-   };
-   const response = await fetch(url, options);
-   return response.status == 200;
-}
-
-async function favouritePost(post: MastodonPost, userInfo: MastodonUserInfo): Promise<boolean> {
-   const url = `https://${userInfo.host}/api/v1/statuses/${post.id}/${post.favourited ? "favourite" : "unfavourite"}`;
-   const options = {
-      method: "POST",
-      headers: {
-         Authorization: "Bearer " + userInfo.bearer,
-      },
-   };
-   const response = await fetch(url, options);
-   return response.status == 200;
+   return usernames;
 }
 
 type MastodonUserInfo = { username: string; host: string; bearer: string | null };
@@ -199,8 +302,7 @@ export class MastodonSource implements Source {
       }
    }
 
-   async mastodonPostToPost(mastodonPost: MastodonPost, userInfo: MastodonUserInfo): Promise<Post | null> {
-      const onlyShowRoots = getSettings().showOnlyMastodonRoots;
+   async mastodonPostToPost(mastodonPost: MastodonPost, onlyShowRoots: boolean, userInfo: MastodonUserInfo): Promise<Post | null> {
       this.localizeMastodonPostIds(mastodonPost, userInfo);
       let postToView = mastodonPost.reblog ?? mastodonPost;
       if (onlyShowRoots && postToView.in_reply_to_account_id) return null;
@@ -209,8 +311,7 @@ export class MastodonSource implements Source {
 
       let inReplyToPost: MastodonPost | null = null;
       if (postToView.in_reply_to_id) {
-         const response = await fetch(`https://${userInfo.host}/api/v1/statuses/${postToView.in_reply_to_id}`);
-         if (response.status == 200) inReplyToPost = await response.json();
+         inReplyToPost = (await MastodonApi.getPost(postToView.in_reply_to_id, userInfo)) ?? inReplyToPost;
       }
 
       return {
@@ -255,26 +356,6 @@ export class MastodonSource implements Source {
       } as Comment;
    }
 
-   extractUsernames(mastodonPost: MastodonPost) {
-      const dom = new DOMParser().parseFromString(mastodonPost.content, "text/html");
-      const mentionLinks = dom.querySelectorAll("a.u-url.mention");
-      const usernames: string[] = [];
-
-      mentionLinks.forEach((link) => {
-         const href = link.getAttribute("href");
-         if (!href) return;
-         const match = href.match(/https?:\/\/([^/]+)\/@([^/]+)/);
-
-         if (match) {
-            const host = match[1];
-            const username = match[2];
-            usernames.push("@" + username + "@" + host);
-         }
-      });
-
-      return usernames;
-   }
-
    showActionButtons(userInfo: MastodonUserInfo) {
       if (!userInfo.bearer) return;
       const actionButtons = dom(`<div class="fab-container"></div>`)[0];
@@ -292,9 +373,9 @@ export class MastodonSource implements Source {
                500,
                true,
                async (text) => {
-                  const mastodonPost = await publishPost(userInfo, null, text);
+                  const mastodonPost = await MastodonApi.publishPost(null, text, userInfo);
                   if (mastodonPost) {
-                     const post = await this.mastodonPostToPost(mastodonPost, userInfo);
+                     const post = await this.mastodonPostToPost(mastodonPost, false, userInfo);
                      if (!post) return false;
                      const postsView = document.querySelector("ledit-posts") as PostsView;
                      postsView.prependPost(post);
@@ -313,7 +394,7 @@ export class MastodonSource implements Source {
    showCommentReplyEditor(mastodonComment: MastodonPost, userInfo: MastodonUserInfo, commentOrPostView: CommentView | PostView) {
       let userHandles: string[] = [];
       const commentHost = new URL(mastodonComment.uri).host;
-      userHandles.push(...this.extractUsernames(mastodonComment));
+      userHandles.push(...extractUsernames(mastodonComment));
       const commentUser = "@" + mastodonComment.account.username + (commentHost == userInfo.host ? "" : "@" + commentHost);
       if (commentUser) userHandles.push(commentUser);
 
@@ -337,7 +418,7 @@ export class MastodonSource implements Source {
             500,
             true,
             async (text) => {
-               const mastodonReply = await publishPost(userInfo, mastodonComment.id, text);
+               const mastodonReply = await MastodonApi.publishPost(mastodonComment.id, text, userInfo);
                if (mastodonReply) {
                   const reply = await this.mastodonPostToComment(mastodonReply, true, userInfo);
                   if (!reply) return false;
@@ -366,58 +447,55 @@ export class MastodonSource implements Source {
       if (!userInfo) return [];
 
       if (!mastodonUserId) {
-         const url = "https://" + userInfo.host + "/api/v1/accounts/lookup?acct=" + userInfo.username;
-         const response = await fetch(url);
-         const json = await response.json();
-         if (!json.id) return [];
-         mastodonUserId = json.id;
+         const account = await MastodonApi.getAccount(userInfo.username, userInfo);
+         if (!account) return [];
+         mastodonUserId = account.id;
          mastodonUserIds[mastodonUser] = mastodonUserId;
          localStorage.setItem("mastodonCache", JSON.stringify(mastodonUserIds));
       }
 
       let maxId = after ? `&max_id=${after}` : "";
-      let options = undefined;
-      if (userInfo.bearer) {
-         options = {
-            method: "GET",
-            headers: {
-               Authorization: "Bearer " + userInfo.bearer,
-            },
-         };
-      }
 
       let url;
-      if (timeline == "home") {
-         url = `https://${userInfo.host}/api/v1/timelines/home?limit=40${maxId}`;
-      } else if (timeline == "notifications") {
-         url = `https://${userInfo.host}/api/v1/notifications?limit=40${maxId}`;
+      if (timeline == "notifications") {
+         const mastodonNotifications = await MastodonApi.getNotifications(maxId, userInfo);
+         if (!mastodonNotifications) return [];
+         const posts: Post[] = [];
+         for (const notification of mastodonNotifications) {
+            if (notification.type == "mention") {
+               const post = await this.mastodonPostToPost(notification.status!, false, userInfo);
+               if (!post) {
+                  posts.push({
+                     contentOnly: true,
+                     notification,
+                     userInfo,
+                     id: notification.id,
+                  } as any);
+               } else {
+                  posts.push(post);
+               }
+            } else {
+               posts.push({
+                  contentOnly: true,
+                  notification,
+                  userInfo,
+                  id: notification.id,
+               } as any);
+            }
+         }
+         return posts;
       } else {
-         url = `https://${userInfo.host}/api/v1/accounts/${mastodonUserId}/statuses?limit=40${maxId}`;
-      }
-
-      const response = await fetch(url, options);
-      const json = await response.json();
-
-      if (timeline != "notifications") {
-         const mastodonPosts = json as MastodonPost[];
+         const mastodonPosts =
+            timeline == "home"
+               ? await MastodonApi.getHomeTimeline(maxId, userInfo)
+               : await MastodonApi.getAccountPosts(mastodonUserId, maxId, userInfo);
+         if (!mastodonPosts) return [];
          const posts: Post[] = [];
          for (const mastodonPost of mastodonPosts) {
-            const post = await this.mastodonPostToPost(mastodonPost, userInfo);
+            const post = await this.mastodonPostToPost(mastodonPost, getSettings().showOnlyMastodonRoots, userInfo);
             if (post) posts.push(post);
          }
          if (timeline == "home") this.showActionButtons(userInfo);
-         return posts;
-      } else {
-         const notifications = json as MastodonNotification[];
-         const posts: Post[] = [];
-         for (const notification of notifications) {
-            posts.push({
-               contentOnly: true,
-               notification,
-               userInfo,
-               id: notification.id,
-            } as any);
-         }
          return posts;
       }
    }
@@ -454,27 +532,18 @@ export class MastodonSource implements Source {
    async getComments(post: Post): Promise<Comment[]> {
       const mastodonPost = (post as any).mastodonPost as MastodonPost;
       const userInfo = (post as any).userInfo as MastodonUserInfo;
-      let postToView = mastodonPost.reblog ?? mastodonPost;
-      let host = new URL(postToView.uri).host;
-      let statusId = postToView.uri.split("/").pop();
-      let options = undefined;
-      if (userInfo.bearer) {
-         host = userInfo.host;
-         statusId = postToView.id;
-         options = {
-            headers: {
-               Authorization: `Bearer ${userInfo.bearer}`,
-            }
-         }
-      }
-
+      const postToView = mastodonPost.reblog ?? mastodonPost;
+      const host = new URL(postToView.uri).host;
+      const statusId = postToView.uri.split("/").pop()!;
+      const commentUserInfo: MastodonUserInfo = userInfo.host == host ? userInfo : { username: "", host, bearer: null };
       let rootId: string | null = null;
       const roots: Comment[] = [];
       const comments: Comment[] = [];
       const commentsById = new Map<string, Comment>();
 
-      let response = await fetch(`https://${host}/api/v1/statuses/${statusId}/context`, options);
-      let context = (await response.json()) as { ancestors: MastodonPost[]; descendants: MastodonPost[] };
+      let context = await MastodonApi.getPostContext(statusId, commentUserInfo);
+      if (!context) return [];
+
       if (context.ancestors.length > 0) {
          const root = context.ancestors[0];
          rootId = root.id;
@@ -482,8 +551,8 @@ export class MastodonSource implements Source {
          roots.push(rootComment);
          comments.push(rootComment);
          commentsById.set(root.id, rootComment);
-         response = await fetch(`https://${host}/api/v1/statuses/${context.ancestors[0].id}/context`, options);
-         context = (await response.json()) as { ancestors: MastodonPost[]; descendants: MastodonPost[] };
+         const fullContext = await MastodonApi.getPostContext(context.ancestors[0].id, commentUserInfo);
+         if (fullContext) context = fullContext;
       }
 
       const mastodonComments: MastodonPost[] = [];
@@ -503,7 +572,6 @@ export class MastodonSource implements Source {
       }
       for (const comment of comments) {
          const mastodonComment = (comment as any).mastodonComment as MastodonPost;
-         // if (mastodonComment.in_reply_to_id == statusId) continue;
          if (commentsById.get(mastodonComment.in_reply_to_id!)) {
             const other = commentsById.get(mastodonComment.in_reply_to_id!)!;
             other.replies.push(comment);
@@ -697,7 +765,7 @@ export class MastodonSource implements Source {
 
          boost.addEventListener("click", async () => {
             postToView.reblogged = !postToView.reblogged;
-            if (!(await reblogPost(postToView, userInfo))) {
+            if (!(await MastodonApi.reblogPost(postToView, userInfo))) {
                alert("Coulnd't (un)reblog post");
                return;
             }
@@ -723,7 +791,7 @@ export class MastodonSource implements Source {
          favourite.addEventListener("click", async () => {
             postToView.favourited = !postToView.favourited;
 
-            if (!(await favouritePost(postToView, userInfo))) {
+            if (!(await MastodonApi.favouritePost(postToView, userInfo))) {
                alert("Couldn't (un)favourite post");
                return;
             }
@@ -872,3 +940,116 @@ export class MastodonSource implements Source {
       return "";
    }
 }
+
+export type MastodonUser = { user: string; instance: string; bearer: string };
+
+export class MastodonUserEditor extends View {
+   escapeCallback: EscapeCallback | undefined;
+   navigationCallback: NavigationCallback | undefined;
+
+   constructor(public readonly user: MastodonUser, public readonly isNew: boolean) {
+      super();
+      this.render();
+      this.classList.add("editor-container");
+   }
+
+   render() {
+      this.innerHTML = /*html*/ `
+         <div x-id="editor" class="editor">
+            <div x-id="close" class="editor-close"><span class="color-fill">${svgClose}</span></div>
+            <div x-id="headerRow" class="editor-header">Mastodon user</div>
+            <input x-id="user" value="${this.user.user}" placeholder="user@instance.com">
+            <input x-id="bearer" value="${this.user.user}" placeholder="Access token">
+            <div class="editor-buttons">
+               <button x-id="save" class="editor-button" style="margin-left: auto;">Save</button>
+               <div x-id="progress" class="color-fill hidden">${svgLoader}</div>
+            </div>
+         </div>
+      `;
+
+      const elements = this.elements<{
+         editor: HTMLElement;
+         close: HTMLElement;
+         user: HTMLInputElement;
+         bearer: HTMLInputElement;
+         save: HTMLButtonElement;
+         progress: HTMLElement;
+      }>();
+
+      elements.save.addEventListener("click", async (event: Event) => {
+         event.stopPropagation();
+         let user = elements.user.value.trim();
+         let bearer = elements.bearer.value.trim();
+
+         if (user.length == 0) {
+            alert("Please specify a Mastodon user, e.g. user@mastodon.social");
+            return;
+         }
+
+         const userInfo = extractUserHostAndBearer(user);
+         if (!userInfo) {
+            alert("Invalid user name. Must have the form user@instance.com");
+            return;
+         }
+
+         try {
+            new URL("https://" + userInfo.host);
+         } catch (e) {
+            alert("Invalid instance. Must be the domain name plus optional port of your instance, e.g. mastodon.social");
+            return;
+         }
+
+         if (bearer.length == 0) {
+            alert(
+               "Please specify an access token.\nYou can find your access token as follows\n\n1. Log into your Mastodon account on your instance\n2. Go to Preferences > Development\n3. Click 'New application'\n4. Enter 'ledit' as the application name and click submit\n5. In the list, click on the application you just created\n6. Copy & paste the value of the 'Your access token' field"
+            );
+            return;
+         }
+
+         elements.user.setAttribute("disabled", "");
+         elements.bearer.setAttribute("disabled", "");
+         elements.save.setAttribute("disabled", "");
+         elements.progress.classList.remove("hidden");
+
+         const response = await this.close();
+         document.body.append(new SettingsView());
+      });
+
+      // Prevent clicking in input elements to dismiss editor
+      elements.editor.addEventListener("click", (event: Event) => {
+         event.stopPropagation();
+      });
+
+      // Close when container is clicked
+      this.addEventListener("click", () => {
+         this.close();
+      });
+
+      // Close when close button is clicked
+      elements.close.addEventListener("click", () => {
+         this.close();
+      });
+
+      // Close when escape is pressed
+      this.escapeCallback = escapeGuard.register(1000, () => {
+         this.close();
+      });
+
+      // Close on back navigation
+      this.navigationCallback = navigationGuard.register(1000, () => {
+         this.close();
+         return false;
+      });
+
+      // Prevent underlying posts from scrolling
+      document.body.style.overflow = "hidden";
+   }
+
+   close() {
+      this.remove();
+      escapeGuard.remove(this.escapeCallback!);
+      navigationGuard.remove(this.navigationCallback!);
+      document.body.style.overflow = "";
+   }
+}
+customElements.define("ledit-mastodon-user-editor", MastodonUserEditor);

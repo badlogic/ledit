@@ -11,7 +11,7 @@ import { HackerNewsSource } from "./hackernews";
 import { RssSource } from "./rss";
 import { SourcePrefix, setSource } from "./data";
 import { YoutubeSource } from "./youtube";
-import { MastodonSource } from "./mastodon";
+import { MastodonUserEditor, MastodonSource } from "./mastodon";
 
 function loadDefaultBookmark() {
    const defaultBookmark = getSettings().bookmarks.find((bookmark) => bookmark.isDefault == true);

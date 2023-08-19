@@ -1,5 +1,6 @@
 import { SourcePrefix, sourcePrefixLabel } from "./data";
 import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
+import { MastodonUser, MastodonUserEditor } from "./mastodon";
 import "./settings.css";
 import { svgCheck, svgClose, svgGithub, svgHeart, svgMinus, svgPencil, svgBookmark } from "./svg/index";
 import { assertNever, dom, navigate } from "./utils";
@@ -22,36 +23,6 @@ interface Settings {
 }
 
 let settings: Settings | null = null;
-export const defaultSettings = {
-   bookmarks: [
-      // prettier-ignore
-      { source: "r/", label: "ledit_mix", ids: ["AdviceAnimals","AskReddit","askscience","assholedesign","aww","battlestations","bestof","BetterEveryLoop","blackmagicfuckery","boardgames","BuyItForLife","Damnthatsinteresting","dataisbeautiful","DesignDesign","DIY","diyelectronics","DrugNerds","europe","explainlikeimfive","facepalm","fatFIRE","fightporn","Fitness","funny","Futurology","gadgets","gaming","GifRecipes","gifs","GiftIdeas","history","homeautomation","Hue","IAmA","IllegalLifeProTips","INEEEEDIT","instant_regret","interestingasfuck","InternetIsBeautiful","Jokes","JusticeServed","kitchens","LifeProTips","maybemaybemaybe","mildlyinfuriating","mildlyinteresting","mildlyvagina","movies","news","NintendoSwitch","nottheonion","oddlysatisfying","OldSchoolCool","pcmasterrace","photoshopbattles","pics","PoliticalHumor","ProgrammerHumor","PublicFreakout","rarepuppers","recipes","rickandmorty","RoomPorn","running","science","Showerthoughts","slatestarcodex","space","spicy","technology","technologyconnections","television","therewasanattempt","todayilearned","UnethicalLifeProTips","Unexpected","UpliftingNews","videos","watchpeoplealmostdie","Wellthatsucks","Whatcouldgowrong","whitepeoplegifs","woahdude","worldnews","WTF"], isDefault: true},
-      { source: "r/", label: "all", ids: ["all"], isDefault: false },
-      { source: "r/", label: "pics", ids: ["pics"], isDefault: false },
-      { source: "r/", label: "videos", ids: ["videos"], isDefault: false },
-      { source: "r/", label: "worldnews", ids: ["worldnews"], isDefault: false },
-      { source: "r/", label: "science", ids: ["science"], isDefault: false },
-      { source: "r/", label: "todayilearned", ids: ["todayilearned"], isDefault: false },
-      { source: "hn/", label: "hackernews", ids: [""], isDefault: false },
-      {
-         source: "rss/",
-         label: "Tech News",
-         ids: [
-            "https://techcrunch.com/feed/",
-            "https://www.theverge.com/rss/frontpage",
-            "https://www.wired.com/feed/rss",
-            "https://gizmodo.com/rss",
-            "https://feeds.arstechnica.com/arstechnica/index",
-         ],
-         isDefault: false,
-      },
-   ],
-   hideSeen: false,
-   seenIds: [],
-   theme: "light",
-   collapseSeenPosts: true,
-   showOnlyMastodonRoots: false,
-} as Settings;
 
 export function bookmarkToHash(bookmark: Bookmark) {
    return bookmark.source + bookmark.ids.join("+");
@@ -61,8 +32,39 @@ export function bookmarkToShortHash(bookmark: Bookmark) {
    return bookmark.ids.join("+");
 }
 
+let defaultSettings: Settings;
 export function getSettings(): Settings {
    if (settings) return settings;
+   defaultSettings = {
+      bookmarks: [
+         // prettier-ignore
+         { source: "r/", label: "ledit_mix", ids: ["AdviceAnimals","AskReddit","askscience","assholedesign","aww","battlestations","bestof","BetterEveryLoop","blackmagicfuckery","boardgames","BuyItForLife","Damnthatsinteresting","dataisbeautiful","DesignDesign","DIY","diyelectronics","DrugNerds","europe","explainlikeimfive","facepalm","fatFIRE","fightporn","Fitness","funny","Futurology","gadgets","gaming","GifRecipes","gifs","GiftIdeas","history","homeautomation","Hue","IAmA","IllegalLifeProTips","INEEEEDIT","instant_regret","interestingasfuck","InternetIsBeautiful","Jokes","JusticeServed","kitchens","LifeProTips","maybemaybemaybe","mildlyinfuriating","mildlyinteresting","mildlyvagina","movies","news","NintendoSwitch","nottheonion","oddlysatisfying","OldSchoolCool","pcmasterrace","photoshopbattles","pics","PoliticalHumor","ProgrammerHumor","PublicFreakout","rarepuppers","recipes","rickandmorty","RoomPorn","running","science","Showerthoughts","slatestarcodex","space","spicy","technology","technologyconnections","television","therewasanattempt","todayilearned","UnethicalLifeProTips","Unexpected","UpliftingNews","videos","watchpeoplealmostdie","Wellthatsucks","Whatcouldgowrong","whitepeoplegifs","woahdude","worldnews","WTF"], isDefault: true},
+         { source: "r/", label: "all", ids: ["all"], isDefault: false },
+         { source: "r/", label: "pics", ids: ["pics"], isDefault: false },
+         { source: "r/", label: "videos", ids: ["videos"], isDefault: false },
+         { source: "r/", label: "worldnews", ids: ["worldnews"], isDefault: false },
+         { source: "r/", label: "science", ids: ["science"], isDefault: false },
+         { source: "r/", label: "todayilearned", ids: ["todayilearned"], isDefault: false },
+         { source: "hn/", label: "hackernews", ids: [""], isDefault: false },
+         {
+            source: "rss/",
+            label: "Tech News",
+            ids: [
+               "https://techcrunch.com/feed/",
+               "https://www.theverge.com/rss/frontpage",
+               "https://www.wired.com/feed/rss",
+               "https://gizmodo.com/rss",
+               "https://feeds.arstechnica.com/arstechnica/index",
+            ],
+            isDefault: false,
+         },
+      ],
+      hideSeen: false,
+      seenIds: [],
+      theme: "light",
+      collapseSeenPosts: true,
+      showOnlyMastodonRoots: false,
+   } as Settings;
    settings = JSON.parse(JSON.stringify(defaultSettings));
 
    if (localStorage.getItem("ledit")) {
@@ -103,12 +105,12 @@ export class SettingsView extends View {
       this.innerHTML = /*html*/ `
             <div x-id="container" class="settings-container">
                 <div class="settings">
-                    <div x-id="close" class="settings-row-close"><span class="color-fill">${svgClose}</span></div>
-                    <div class="settings-row-header">Feed Bookmarks</div>
+                    <div x-id="close" class="settings-close"><span class="color-fill">${svgClose}</span></div>
+                    <div class="settings-header">Feed Bookmarks</div>
                     <div x-id="bookmarks"></div>
-                    <div class="settings-row-header">Theme</div>
+                    <div class="settings-header">Theme</div>
                     <div x-id="themes"></div>
-                    <div class="settings-row-header">View options</div>
+                    <div class="settings-header">View options</div>
                     <div x-id="collapseSeen" class="settings-row">
                      <div style="flex: 1">Collapse seen posts</div>
                      <div class="box ${getSettings().collapseSeenPosts ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
@@ -120,7 +122,7 @@ export class SettingsView extends View {
                     <div x-id="hideSeen" class="settings-row">
                      <span style="flex: 1">Hide seen posts (experimental)</span>
                     </div>
-                    <div class="settings-row-header">About</div>
+                    <div class="settings-header">About</div>
 
                     <div class="settings-row"><a href="https://github.com/badlogic/ledit#usage">How does this work?</a></div>
                     <div class="settings-row"><a href="https://github.com/badlogic/ledit" class="color-fill">${svgGithub} GitHub</a></div>
@@ -160,7 +162,7 @@ export class SettingsView extends View {
             const isDefault = bookmark.isDefault;
             const hash = bookmarkToHash(bookmark);
             const bookmarkDiv = dom(/*html*/ `
-               <div class="settings-row" style="margin-left: var(--ledit-padding)">
+               <div class="settings-row">
                   <a x-id="feed" href="#${hash}" style="flex: 1">${bookmark.label}</a>
                   <div x-id="makeDefaultFeed" class="box">
                      <span class="${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</span>
@@ -206,26 +208,39 @@ export class SettingsView extends View {
             }
             subElements.deleteFeed.addEventListener("click", (event) => {
                event.stopPropagation();
-               settings.bookmarks = settings.bookmarks.filter((bm) => bm != bookmark);
-               saveSettings();
-               this.render();
+               if (confirm(`Are you sure you want to delete bookmark '${bookmark.label}'?`)) {
+                  settings.bookmarks = settings.bookmarks.filter((bm) => bm != bookmark);
+                  saveSettings();
+                  this.render();
+               }
             });
             elements.bookmarks.append(bookmarkDiv);
          }
          if (source != "hn/") {
             const addBookmarkDiv = dom(
-               `<div class="settings-row" style="margin-left: var(--ledit-padding);"><span class="color-fill">${svgBookmark}</span>Add feed</div>`
+               `<div class="settings-row"><span class="color-fill">${svgBookmark}</span>Add feed</div>`
             )[0];
             elements.bookmarks.append(addBookmarkDiv);
             addBookmarkDiv.addEventListener("click", () => {
+               this.close();
                const newBookmark: Bookmark = {
                   isDefault: false,
                   source: source,
                   label: "",
                   ids: [],
                };
-               this.close();
                document.body.append(new BookmarkEditor(newBookmark, true));
+            });
+         }
+         if (source == "m/") {
+            const addAccountDiv = dom(
+               `<div class="settings-row"><span class="color-fill">${svgBookmark}</span>Add account</div>`
+            )[0];
+            elements.bookmarks.append(addAccountDiv);
+            addAccountDiv.addEventListener("click", () => {
+               const newUser: MastodonUser = { user: "", instance: "", bearer: ""};
+               this.close();
+               document.body.append(new MastodonUserEditor(newUser, true));
             });
          }
       }
@@ -341,6 +356,24 @@ function sourcePrefixToFeedLabel(source: SourcePrefix) {
    }
 }
 
+function sourcePrefixToFeedPlaceholder(source: SourcePrefix) {
+   switch (source) {
+      case "r/":
+         return "r/all\nr/videos\nr/puppies\n...";
+      case "hn/":
+         return "";
+      case "rss/":
+         return "https://techcrunch.com/feed/\nhttps://www.theverge.com/rss/frontpage\nhttps://www.wired.com/feed/rss\n..."
+      case "yt/":
+         return "RedLetterMedia\nVeritasium\n...";
+      case "m/":
+         // FIXME
+         return "Mastodon accounts";
+      default:
+         assertNever(source);
+   }
+}
+
 export class BookmarkEditor extends View {
    escapeCallback: EscapeCallback | undefined;
    navigationCallback: NavigationCallback | undefined;
@@ -356,10 +389,8 @@ export class BookmarkEditor extends View {
           <div x-id="editor" class="editor">
             <div x-id="close" class="editor-close"><span class="color-fill">${svgClose}</span></div>
             <div class="editor-header">${sourcePrefixLabel(this.bookmark.source)} bookmark</div>
-            <div class="editor-header">Label</div>
-            <input x-id="label" value="${this.bookmark.label}">
-            <div>${sourcePrefixToFeedLabel(this.bookmark.source)}</div>
-            <textarea x-id="feedIds"></textarea>
+            <input x-id="label" value="${this.bookmark.label}" placeholder="Label, e.g 'Puppies'">
+            <textarea x-id="feedIds" placeholder="${sourcePrefixToFeedPlaceholder(this.bookmark.source)}"></textarea>
             <div class="editor-buttons">
                <div x-id="save" class="editor-button" style="margin-left: auto;">Save</div>
             </div>
