@@ -19,7 +19,7 @@ export class PostEditor extends OverlayView {
 
    renderContent() {
       const editorDom = dom(/*html*/ `
-         <div x-id="headerRow" class="overlay-editor-header"></div>
+         <div x-id="headerRow"></div>
          <textarea x-id="text"></textarea>
          <div class="overlay-buttons">
             <button x-id="addMedia" class="overlay-button color-fill" style="font-size: var(--ledit-font-size-big)">${svgImages}</button>

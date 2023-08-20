@@ -367,7 +367,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       const notificationUrl = location.hash.replace("/home", "/notifications").substring(1);
       const notifications = dom(`<a href="#${notificationUrl}" style="margin-right: var(--ledit-margin);"><div class="fab color-fill">${svgBell}</div></a>`)[0];
 
-      const header = dom(`<span class="overlay-editor-header">New post</span>`)[0];
+      const header = dom(`<span class="overlay-header">New post</span>`)[0];
       publish.addEventListener("click", () =>
          document.body.append(
             new PostEditor(
@@ -1118,7 +1118,7 @@ export class MastodonUserEditor extends OverlayView {
    renderContent() {
       this.content.style.gap = "0.5em";
       const editorDom = dom(/*html*/ `
-            <div x-id="headerRow" class="overlay-editor-header">Mastodon account</div>
+            <div x-id="headerRow" class="overlay-header">Mastodon account</div>
             <input x-id="user" value="${this.bookmark.supplemental!.username ? this.bookmark.supplemental!.username + "@" + this.bookmark.supplemental!.instance : ""}" placeholder="user@instance.com">
             <input x-id="bearer" value="${this.bookmark.supplemental!.bearer}" placeholder="Access token">
             <div class="overlay-buttons">

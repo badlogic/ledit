@@ -128,7 +128,7 @@ export class BookmarksView extends OverlayView {
    renderContent() {
       const settings = getSettings();
       this.content.innerHTML = "";
-      this.content.append(...dom(/*html*/ `<div class="overlay-editor-header">Bookmarks</div>`));
+      this.content.append(...dom(/*html*/ `<div class="overlay-header">Bookmarks</div>`));
 
       // Add feed & accounts buttons
       const addBookmarkDiv = dom(`<div class="overlay-row"><span class="box color-fill">${svgBookmark}</span>Add feed</div>`)[0];
@@ -248,7 +248,7 @@ export class BookmarkEditor extends OverlayView {
    renderContent() {
       this.content.style.gap = "0.5em";
       const editorDom = dom(/*html*/ `
-         <div class="overlay-editor-header">${sourcePrefixLabel(this.bookmark.source)} bookmark</div>
+         <div class="overlay-header">${sourcePrefixLabel(this.bookmark.source)} bookmark</div>
          <input x-id="label" value="${this.bookmark.label}" placeholder="Label, e.g 'Puppies'">
          <textarea x-id="feedIds" placeholder="${sourcePrefixToFeedPlaceholder(this.bookmark.source)}"></textarea>
          <div class="overlay-buttons">

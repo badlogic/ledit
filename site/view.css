@@ -25,7 +25,6 @@
    display: flex;
    align-items: center;
    padding: var(--ledit-margin) var(--ledit-margin);
-   margin-bottom: 0.5em;
    font-size: var(--ledit-font-size);
    height: 1em;
    cursor: pointer;
