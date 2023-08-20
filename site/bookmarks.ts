@@ -170,7 +170,7 @@ export class BookmarksView extends OverlayView {
                   <div x-id="makeDefaultFeed" class="box ${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
                   ${
                      bookmark.source == "hn/"
-                        ? /*html*/ `<div x-id="editFeed"></div>`
+                        ? /*html*/ `<div x-id="editFeed" class="box"></div>`
                         : /*html*/ `<div x-id="editFeed" class="box color-fill">${svgPencil}</div>`
                   }
                   <div x-id="deleteFeed" class="box color-fill">${svgMinus}</div>
