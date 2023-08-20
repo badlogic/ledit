@@ -96,7 +96,6 @@ export class RssSource implements Source<FeedEntry, void> {
                url: entry.link,
                title: entry.title!,
                author: null,
-               authorUrl: null,
                createdAt: parseFeedDate(entry.published as any as string).getTime() / 1000,
                feed: `${
                   channelImageUrl

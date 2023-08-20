@@ -43,7 +43,6 @@ export class YoutubeSource implements Source<FeedEntry, void> {
          const channel = channels[i];
          for (const post of result) {
             post.author = channel;
-            post.authorUrl = "https://youtube.com/@" + channel;
          }
          posts.push(...result);
       }
@@ -57,7 +56,7 @@ export class YoutubeSource implements Source<FeedEntry, void> {
 
    getMetaDom(post: Post<FeedEntry>): HTMLElement[] {
       return dom(/*html*/ `
-      <a href="${post.authorUrl}">${post.author}</a>
+      <a href="${"https://youtube.com/@" + post.author}" target="_blank">${post.author}</a>
       <span>•</span>
       <span>${dateToText(post.createdAt * 1000)}</span>
    `);

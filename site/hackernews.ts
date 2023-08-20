@@ -57,7 +57,6 @@ export class HackerNewsSource implements Source<HNPost, HNComment> {
             url: hnPost.url ?? "https://news.ycombinator.com/item?id=" + hnPost.id,
             title: hnPost.title,
             author: hnPost.by,
-            authorUrl: "https://news.ycombinator.com/user?id=" + hnPost.by,
             createdAt: hnPost.time,
             feed: "",
             numComments: hnPost.descendants ?? 0,
@@ -159,7 +158,7 @@ export class HackerNewsSource implements Source<HNPost, HNComment> {
          <span>•</span>
          <span>${dateToText(post.createdAt * 1000)}</span>
          <span>•</span>
-         <a href="${post.authorUrl}">${post.author}</a>
+         <a href="${"https://news.ycombinator.com/user?id=" + post.data.by}">${post.author}</a>
          <span>•</span>
          <span>${new URL(post.url).host}</span>
       `);
@@ -185,7 +184,7 @@ export class HackerNewsSource implements Source<HNPost, HNComment> {
       return { elements: [], toggles };
    }
 
-   getCommentMetaDom(comment: Comment<HNComment>, opName: string): HTMLElement[] {
+   getCommentMetaDom(comment: Comment<HNComment>, opName: string | null): HTMLElement[] {
       return dom(/*html*/ `
          <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">
          <a href="${comment.authorUrl}" target="_blank">${comment.author}</a>

@@ -8,11 +8,8 @@ export interface Posts<T> {
 
 export interface Post<T> {
    url: string;
-   // domain: string | null;
    title: string;
-   // isSelf: boolean;
    author: string | null;
-   authorUrl: string | null;
    createdAt: number;
    feed: string;
    numComments: number | null;
@@ -47,7 +44,7 @@ export interface Source<POST_DATA, COMMENT_DATA> {
    getComments(post: Post<POST_DATA>): Promise<Comment<COMMENT_DATA>[]>,
    getMetaDom(post: Post<POST_DATA>): HTMLElement[],
    getContentDom(post: Post<POST_DATA>): ContentDom,
-   getCommentMetaDom(comment: Comment<COMMENT_DATA>, opName: string): HTMLElement[],
+   getCommentMetaDom(comment: Comment<COMMENT_DATA>, opName: string | null): HTMLElement[],
    getFeed(): string,
    getSourcePrefix(): SourcePrefix,
    getSortingOptions(): SortingOption[],

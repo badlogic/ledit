@@ -330,7 +330,6 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
          feed: "",
          title: "",
          author: getAccountName(mastodonPost.account),
-         authorUrl: null,
          createdAt: new Date(postToView.created_at).getTime() / 1000,
          numComments: postToView.replies_count + (inReplyToPost && postToView.replies_count == 0 ? 1 : 0),
          contentOnly: false,
@@ -1071,7 +1070,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
          `;
    }
 
-   getCommentMetaDom(comment: Comment<MastodonCommentData>, opName: string): HTMLElement[] {
+   getCommentMetaDom(comment: Comment<MastodonCommentData>, opName: string | null): HTMLElement[] {
       const mastodonComment = comment.data.mastodonComment;
       const metaDom = dom(/*html*/ `
          <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">

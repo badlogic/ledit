@@ -188,7 +188,6 @@ export class RedditSource implements Source<RedditPost, RedditComment> {
             feed: redditPost.data.subreddit,
             title: redditPost.data.title,
             author: redditPost.data.author,
-            authorUrl: "https://www.reddit.com/u/" + redditPost.data.author,
             createdAt: redditPost.data.created_utc,
             numComments: redditPost.data.num_comments,
             contentOnly: false,
@@ -253,7 +252,7 @@ export class RedditSource implements Source<RedditPost, RedditComment> {
          ${post.feed.toLowerCase() != feed ? /*html*/ `<a href="https://www.reddit.com/${post.feed}">r/${post.feed}</a><span>•</span>` : ""}
          <span>${dateToText(post.createdAt * 1000)}</span>
          <span>•</span>
-         <a href="${post.authorUrl}">${post.author}</a>
+         <a href="${"https://www.reddit.com/u/" + post.author}">${post.author}</a>
          ${!(post.url.includes("redd.it") || post.url.includes("reddit.com")) ? /*html*/ `<span>•</span><span>${new URL(post.url).host}</span>` : ""}
       `);
    }

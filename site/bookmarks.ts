@@ -299,3 +299,9 @@ export class BookmarkEditor extends OverlayView {
    }
 }
 customElements.define("ledit-bookmark-editor", BookmarkEditor);
+
+document.addEventListener("keydown", (event) => {
+   if (event.key == "b" && event.target == document.body && !document.body.querySelector("ledit-bookmarks")) {
+      document.body.append(new BookmarksView());
+   }
+});

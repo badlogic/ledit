@@ -8,13 +8,11 @@ const commentsCache = new Map<string, Comment<any>[]>();
 
 export class CommentsView extends View {
    private comments: Comment<any>[] | null = null;
-   private opName: string;
 
-   constructor(post: Post<any>, public readonly postView: Element) {
+   constructor(post: Post<any>, public readonly opName: string, public readonly postView: Element) {
       super();
       this.render();
       this.classList.add("comments");
-      this.opName = post.author!;
       (async () => this.loadComments(post))();
    }
 
