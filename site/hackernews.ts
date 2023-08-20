@@ -56,8 +56,6 @@ export class HackerNewsSource implements Source<HNPost, HNComment> {
          posts.push({
             url: hnPost.url ?? "https://news.ycombinator.com/item?id=" + hnPost.id,
             title: hnPost.title,
-            domain: hnPost.url ? new URL(hnPost.url).host : null,
-            isSelf: hnPost.text ? true : false,
             author: hnPost.by,
             authorUrl: "https://news.ycombinator.com/user?id=" + hnPost.by,
             createdAt: hnPost.time,
@@ -174,7 +172,7 @@ export class HackerNewsSource implements Source<HNPost, HNComment> {
             /*html*/ `<a href="https://news.ycombinator.com/item?id=${post.data.id}" target="_blank" class="color-fill">${svgReply}</a>`
          )[0]
       );
-      if (post.isSelf) {
+      if (post.data.text) {
          let text = post.data.text;
          text = encodeHTML(text);
          let selfPost = dom(`<div class="content-text">${htmlDecode(text)}</div>`)[0];

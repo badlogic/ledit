@@ -327,10 +327,8 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
 
       return {
          url: postUrl,
-         domain: null,
          feed: "",
          title: "",
-         isSelf: false,
          author: getAccountName(mastodonPost.account),
          authorUrl: null,
          createdAt: new Date(postToView.created_at).getTime() / 1000,
@@ -611,6 +609,10 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             mastodonPosts = [post];
          }
 
+         const posts: Post<MastodonPostData>[] = [];
+         if (mastodonAccount && !after) {
+         }
+
          let maxId: string | null = null;
          if (mastodonPosts) {
             maxId = mastodonPosts.length == 0 ? "end" : mastodonPosts[mastodonPosts.length - 1].id;
@@ -620,7 +622,6 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
          }
          maxId = maxId ? `&max_id=${maxId}` : "";
 
-         const posts: Post<MastodonPostData>[] = [];
          if (mastodonPosts) {
             const postPromises: Promise<Post<MastodonPostData> | null>[] = [];
             for (const mastodonPost of mastodonPosts) {

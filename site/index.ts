@@ -1,17 +1,17 @@
-import "./styles.css";
-import "./header";
-import "./settings";
-import "./posts";
+import { BookmarksView } from "./bookmarks";
 import "./comments";
-import { applySettings, bookmarkToHash, getSettings } from "./settings";
-import { navigate } from "./utils";
-import { RedditSource } from "./reddit";
-import { HackerNewsSource } from "./hackernews";
-import { RssSource } from "./rss";
 import { SourcePrefix, setSource } from "./data";
+import { HackerNewsSource } from "./hackernews";
+import "./header";
+import { MastodonSource } from "./mastodon";
+import "./posts";
+import { RedditSource } from "./reddit";
+import { RssSource } from "./rss";
+import "./settings";
+import { applySettings, bookmarkToHash, getSettings } from "./settings";
+import "./styles.css";
+import { navigate } from "./utils";
 import { YoutubeSource } from "./youtube";
-import { MastodonUserEditor, MastodonSource } from "./mastodon";
-import { BookmarkEditor, BookmarksView } from "./bookmarks";
 
 function loadDefaultBookmark() {
    const defaultBookmark = getSettings().bookmarks.find((bookmark) => bookmark.isDefault == true);

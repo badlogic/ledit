@@ -8,9 +8,9 @@ export interface Posts<T> {
 
 export interface Post<T> {
    url: string;
-   domain: string | null;
+   // domain: string | null;
    title: string;
-   isSelf: boolean;
+   // isSelf: boolean;
    author: string | null;
    authorUrl: string | null;
    createdAt: number;

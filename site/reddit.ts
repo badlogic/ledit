@@ -185,10 +185,8 @@ export class RedditSource implements Source<RedditPost, RedditComment> {
          let domain = url.includes("redd.it") || url.includes("reddit.com") ? "" : new URL(url).host;
          const post: Post<RedditPost> = {
             url,
-            domain,
             feed: redditPost.data.subreddit,
             title: redditPost.data.title,
-            isSelf: redditPost.data.is_self,
             author: redditPost.data.author,
             authorUrl: "https://www.reddit.com/u/" + redditPost.data.author,
             createdAt: redditPost.data.created_utc,

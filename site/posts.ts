@@ -43,7 +43,7 @@ export class PostsView extends View {
       }
    }
 
-   renderPost(post: Post) {
+   renderPost(post: Post<any>) {
       const postDiv = new PostView(post);
       if (PostsView.seenPosts.has(post.url)) {
          if (PostsView.hideSeen) {
@@ -63,7 +63,7 @@ export class PostsView extends View {
       return postDiv;
    }
 
-   async renderPosts(posts: Posts) {
+   async renderPosts(posts: Posts<any>) {
       const source = getSource();
       if (posts.posts.length == 0) {
          this.showError(`${source.getSourcePrefix() + source.getFeed()} does not exist or has no posts.`);
@@ -106,7 +106,7 @@ export class PostsView extends View {
       if (e) console.error("An error occured: ", e);
    }
 
-   prependPost(post: Post) {
+   prependPost(post: Post<any>) {
       const postDiv = this.renderPost(post);
       this.insertBefore(postDiv, this.children[0]);
       window.scrollTo({ top: 0 });
@@ -118,7 +118,7 @@ export class PostView extends View {
    escapeCallback: EscapeCallback | undefined;
    navigationCallback: NavigationCallback | undefined;
 
-   constructor(private readonly post: Post) {
+   constructor(private readonly post: Post<any>) {
       super();
       this.classList.add("post");
       this.render();
@@ -140,7 +140,7 @@ export class PostView extends View {
       }
    }
 
-   renderFullPost(post: Post) {
+   renderFullPost(post: Post<any>) {
       const showFeed = getSource().getFeed().toLowerCase() != post.feed.toLowerCase();
       const collapse = getSettings().collapseSeenPosts && PostsView.seenPosts.has(post.url) ? "post-seen" : "";
       this.innerHTML = /*html*/ `
@@ -206,7 +206,7 @@ export class PostView extends View {
       }
    }
 
-   prependComment(comment: Comment) {
+   prependComment(comment: Comment<any>) {
       if (!this.commentsView) {
          this.toggleComments();
       } else {

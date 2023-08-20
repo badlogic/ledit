@@ -95,8 +95,6 @@ export class RssSource implements Source<FeedEntry, void> {
             posts.push({
                url: entry.link,
                title: entry.title!,
-               domain: null,
-               isSelf: true,
                author: null,
                authorUrl: null,
                createdAt: parseFeedDate(entry.published as any as string).getTime() / 1000,
