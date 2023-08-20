@@ -1,12 +1,8 @@
-import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
-import { svgClose, svgImages, svgLoader } from "./svg";
-import { onAddedToDOM } from "./utils";
-import { View } from "./view";
+import { svgImages, svgLoader } from "./svg";
+import { dom, onAddedToDOM } from "./utils";
+import { OverlayView } from "./view";
 
-export class PostEditor extends View {
-   escapeCallback: EscapeCallback | undefined;
-   navigationCallback: NavigationCallback | undefined;
-
+export class PostEditor extends OverlayView {
    constructor(
       public readonly header: Element,
       public readonly text: string | null,
@@ -18,29 +14,25 @@ export class PostEditor extends View {
       public readonly onMediaRemoved: (name: string) => void
    ) {
       super();
-      this.render();
-      this.classList.add("editor-container");
+      this.renderContent();
    }
 
-   render() {
-      this.innerHTML = /*html*/ `
-          <div x-id="editor" class="editor">
-            <div x-id="close" class="editor-close"><span class="color-fill">${svgClose}</span></div>
-            <div x-id="headerRow" class="editor-header"></div>
-            <textarea x-id="text"></textarea>
-            <div class="editor-buttons">
-               <button x-id="addMedia" class="editor-button color-fill" style="font-size: var(--ledit-font-size-big)">${svgImages}</button>
-               <div x-id="charCount" style="margin-left: auto">${this.text?.length ?? 0}/${this.maxChars}</div>
-               <button x-id="publish" class="editor-button">Publish</button>
-               <div x-id="progress" class="color-fill hidden">${svgLoader}</div>
-            </div>
+   renderContent() {
+      const editorDom = dom(/*html*/ `
+         <div x-id="headerRow" class="overlay-editor-header"></div>
+         <textarea x-id="text"></textarea>
+         <div class="overlay-buttons">
+            <button x-id="addMedia" class="overlay-button color-fill" style="font-size: var(--ledit-font-size-big)">${svgImages}</button>
+            <div x-id="charCount" style="margin-left: auto; font-size: var(--ledit-font-size-small)">${this.text?.length ?? 0}/${this.maxChars}</div>
+            <button x-id="publish" class="overlay-button">Publish</button>
+            <div x-id="progress" class="color-fill hidden">${svgLoader}</div>
          </div>
-      `;
+      `);
+      this.content.style.gap = "0.5em";
+      this.content.append(...editorDom);
 
       const elements = this.elements<{
-         editor: Element;
          headerRow: Element;
-         close: Element;
          text: HTMLTextAreaElement;
          charCount: Element;
          publish: Element;
@@ -89,42 +81,6 @@ export class PostEditor extends View {
             this.close();
          }
       });
-
-      // Prevent clicking in input elements to dismiss editor
-      elements.editor.addEventListener("click", (event: Event) => {
-         event.stopPropagation();
-      });
-
-      // Close when container is clicked
-      this.addEventListener("click", () => {
-         this.close();
-      });
-
-      // Close when close button is clicked
-      elements.close.addEventListener("click", () => {
-         this.close();
-      });
-
-      // Close when escape is pressed
-      this.escapeCallback = escapeGuard.register(1000, () => {
-         this.close();
-      });
-
-      // Close on back navigation
-      this.navigationCallback = navigationGuard.register(1000, () => {
-         this.close();
-         return false;
-      });
-
-      // Prevent underlying posts from scrolling
-      document.body.style.overflow = "hidden";
-   }
-
-   close() {
-      this.remove();
-      escapeGuard.remove(this.escapeCallback!);
-      navigationGuard.remove(this.navigationCallback!);
-      document.body.style.overflow = "";
    }
 }
 customElements.define("ledit-post-editor", PostEditor);

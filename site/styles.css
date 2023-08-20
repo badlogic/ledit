@@ -152,7 +152,7 @@ blockquote {
 
 .fab-container {
    position: fixed;
-   left: calc(50% - var(--ledit-margin));
+   left: calc(50%);
    transform: translateX(-50%);
    bottom: var(--ledit-margin);
 
@@ -183,7 +183,7 @@ blockquote {
    font-size: calc(1.25 * var(--ledit-font-size));
 }
 
-.header, .post, .settings, .editor, .fab-container {
+.header, .posts, .post, .overlay, .editor, .fab-container {
    width: 600px;
 }
 
@@ -192,7 +192,7 @@ blockquote {
    .post,
    .comments,
    .header,
-   .settings,
+   .overlay,
    .editor,
    .fab-container {
       width: 100% !important;

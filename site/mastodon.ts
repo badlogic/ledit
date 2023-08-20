@@ -1,14 +1,14 @@
 // @ts-ignore
-import "./mastodon.css";
 import { CommentView } from "./comments";
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
+import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
+import "./mastodon.css";
 import { PostEditor } from "./post-editor";
 import { PostView, PostsView } from "./posts";
-import { Bookmark, SettingsView, getSettings, saveSettings } from "./settings";
+import { Bookmark, bookmarkToHash, getSettings, saveSettings } from "./settings";
 import { svgBell, svgCircle, svgClose, svgLoader, svgPencil, svgReblog, svgReply, svgStar } from "./svg";
-import { addCommasToNumber, dateToText, dom, renderGallery, renderVideo } from "./utils";
-import { View } from "./view";
-import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
+import { addCommasToNumber, dateToText, dom, navigate, renderGallery, renderVideo } from "./utils";
+import { OverlayView, View } from "./view";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
 
@@ -361,11 +361,11 @@ export class MastodonSource implements Source {
    showActionButtons(userInfo: MastodonUserInfo) {
       if (!userInfo.bearer) return;
       const actionButtons = dom(`<div class="fab-container"></div>`)[0];
-      const notificationUrl = location.hash.replace("/home", "/notifications").substring(1);
-      const notifications = dom(`<a href="#${notificationUrl}"><div class="fab color-fill">${svgBell}</div></a>`)[0];
       const publish = dom(`<div class="fab color-fill">${svgPencil}</div>`)[0];
+      const notificationUrl = location.hash.replace("/home", "/notifications").substring(1);
+      const notifications = dom(`<a href="#${notificationUrl}" style="margin-right: var(--ledit-margin);"><div class="fab color-fill">${svgBell}</div></a>`)[0];
 
-      const header = dom(`<span>New post</span>`)[0];
+      const header = dom(`<span class="overlay-editor-header">New post</span>`)[0];
       publish.addEventListener("click", () =>
          document.body.append(
             new PostEditor(
@@ -399,9 +399,10 @@ export class MastodonSource implements Source {
       userHandles.push(...extractUsernames(mastodonComment).map((handle) => handle.replace("@" + userInfo.instance, "")));
       const commentUser = "@" + mastodonComment.account.username + (commentHost == userInfo.instance ? "" : "@" + commentHost);
       if (userHandles.indexOf(commentUser) == -1) userHandles.push(commentUser);
+      userHandles = userHandles.filter((handle) => handle != "@" + userInfo.username && handle != "@" + userInfo.username + "@" + userInfo.instance);
 
       const header = dom(/*html*/ `
-               <div class="editor-supplement">
+               <div class="overlay-supplement">
                   <div class="inline-row" style="margin-bottom: var(--ledit-padding); color: var(--ledit-color);">
                         <span>Replying to</span>
                         <img src="${
@@ -759,6 +760,7 @@ export class MastodonSource implements Source {
    }
 
    getPollDom(post: MastodonPost): HTMLElement | null {
+      // FIXME make this interactive and show results if poll has ended.
       if (post.poll) {
          const pollDiv = dom(`<div></div>`)[0];
          for (const option of post.poll.options) {
@@ -871,7 +873,6 @@ export class MastodonSource implements Source {
       }
 
       // Add points last, so they go right as the only toggle.
-      // FIXME when fetching comments, the reblog and favourited fields aren't sett. reblog is null, favourited is missing entirely.
       const boost = dom(/*html*/ `
          <div x-id="boost" class="post-button" style="color: var(--ledit-color); ${!isComment ? "margin-left: auto;" : ""}">
             <span x-id="boostIcon" class="${postToView.reblogged ? "color-gold-fill" : "color-fill"}">${svgReblog}</span>
@@ -892,6 +893,7 @@ export class MastodonSource implements Source {
          reply.addEventListener("click", (event) => {
             let parent = reply.parentElement;
             while (parent) {
+               if (parent instanceof CommentView) break;
                if (parent instanceof PostView) break;
                parent = parent.parentElement;
             }
@@ -1083,29 +1085,28 @@ export class MastodonSource implements Source {
    }
 }
 
-export class MastodonUserEditor extends View {
-   escapeCallback: EscapeCallback | undefined;
-   navigationCallback: NavigationCallback | undefined;
-
-   constructor(public readonly user: MastodonUserInfo, public readonly isNew: boolean) {
+export class MastodonUserEditor extends OverlayView {
+   constructor(public readonly bookmark: Bookmark, public readonly isNew: boolean) {
       super();
-      this.render();
-      this.classList.add("editor-container");
+      if (!this.bookmark.supplemental) {
+         throw new Error("Need a bookmark with user info!");
+      }
+      this.renderContent();
    }
 
-   render() {
-      this.innerHTML = /*html*/ `
-         <div x-id="editor" class="editor">
-            <div x-id="close" class="editor-close"><span class="color-fill">${svgClose}</span></div>
-            <div x-id="headerRow" class="editor-header">Mastodon user</div>
-            <input x-id="user" value="${this.user.username}" placeholder="user@instance.com">
-            <input x-id="bearer" value="${this.user.username}" placeholder="Access token">
-            <div class="editor-buttons">
-               <button x-id="save" class="editor-button" style="margin-left: auto;">Save</button>
+   renderContent() {
+      this.content.style.gap = "0.5em";
+      const editorDom = dom(/*html*/ `
+            <div x-id="headerRow" class="overlay-editor-header">Mastodon account</div>
+            <input x-id="user" value="${this.bookmark.supplemental!.username ? this.bookmark.supplemental!.username + "@" + this.bookmark.supplemental!.instance : ""}" placeholder="user@instance.com">
+            <input x-id="bearer" value="${this.bookmark.supplemental!.bearer}" placeholder="Access token">
+            <div class="overlay-buttons">
+               <button x-id="save" class="overlay-button" style="margin-left: auto;">Save</button>
                <div x-id="progress" class="color-fill hidden">${svgLoader}</div>
             </div>
          </div>
-      `;
+      `);
+      this.content.append(...editorDom);
 
       const elements = this.elements<{
          editor: HTMLElement;
@@ -1162,54 +1163,19 @@ export class MastodonUserEditor extends View {
             return;
          }
 
-         const bookmark: Bookmark = {
-            source: "m/",
-            label: `${userInfo.username}@${userInfo.instance}`,
-            ids: [`${userInfo.username}@${userInfo.instance}/home`],
-            isDefault: false,
-            supplemental: userInfo,
-         };
-         getSettings().bookmarks.push(bookmark);
+         const bookmark = this.bookmark;
+
+         bookmark.label = `${userInfo.username}@${userInfo.instance}`;
+         bookmark.ids = [`${userInfo.username}@${userInfo.instance}/home`];
+         bookmark.supplemental = userInfo;
+
+         if (this.isNew) {
+            getSettings().bookmarks.push(bookmark);
+         }
          saveSettings();
          this.close();
-         document.body.append(new SettingsView());
+         navigate(bookmarkToHash(bookmark));
       });
-
-      // Prevent clicking in input elements to dismiss editor
-      elements.editor.addEventListener("click", (event: Event) => {
-         event.stopPropagation();
-      });
-
-      // Close when container is clicked
-      this.addEventListener("click", () => {
-         this.close();
-      });
-
-      // Close when close button is clicked
-      elements.close.addEventListener("click", () => {
-         this.close();
-      });
-
-      // Close when escape is pressed
-      this.escapeCallback = escapeGuard.register(1000, () => {
-         this.close();
-      });
-
-      // Close on back navigation
-      this.navigationCallback = navigationGuard.register(1000, () => {
-         this.close();
-         return false;
-      });
-
-      // Prevent underlying posts from scrolling
-      document.body.style.overflow = "hidden";
-   }
-
-   close() {
-      this.remove();
-      escapeGuard.remove(this.escapeCallback!);
-      navigationGuard.remove(this.navigationCallback!);
-      document.body.style.overflow = "";
    }
 }
 customElements.define("ledit-mastodon-user-editor", MastodonUserEditor);

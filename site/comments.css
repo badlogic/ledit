@@ -9,8 +9,7 @@
 .comments > .comment {
   background: var(--ledit-background-dim);
   border-radius: 8px;
-  margin: 0;
-  padding: var(--ledit-margin);
+  padding: var(--ledit-margin) !important;
   border: 1px solid var(--ledit-border-color);
 }
 

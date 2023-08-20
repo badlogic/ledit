@@ -40,25 +40,40 @@ import bell from "./bell.svg"
 import attachment from "./attachment.svg"
 // @ts-ignore
 import reply from "./reply.svg"
+// @ts-ignore
+import reddit from "./reddit.svg";
+// @ts-ignore
+import mastodon from "./mastodon.svg";
+// @ts-ignore
+import rss from "./rss.svg";
+// @ts-ignore
+import hackernews from "./hackernews.svg";
+// @ts-ignore
+import youtube from "./youtube.svg";
 
-export const svgBurger = burger;
-export const svgCircle = circle;
-export const svgLoader = loader;
-export const svgMinus = minus;
-export const svgPlus = plus;
-export const svgBookmark = bookmark;
-export const svgUpArrow = upArrow;
-export const svgDownArrow = downArrow;
-export const svgSpeechBubble = speechBubble;
-export const svgImages = images;
-export const svgGithub = github;
-export const svgClose = close;
-export const svgCheck = check;
-export const svgHeart = heart;
-export const svgPencil = pencil;
-export const svgLink = link;
-export const svgStar = star;
-export const svgReblog = reblog;
-export const svgBell = bell;
-export const svgAttachment = attachment;
-export const svgReply = reply;
+export const svgBurger: string = burger;
+export const svgCircle: string = circle;
+export const svgLoader: string = loader;
+export const svgMinus: string = minus;
+export const svgPlus: string = plus;
+export const svgBookmark: string = bookmark;
+export const svgUpArrow: string = upArrow;
+export const svgDownArrow: string = downArrow;
+export const svgSpeechBubble: string = speechBubble;
+export const svgImages: string = images;
+export const svgGithub: string = github;
+export const svgClose: string = close;
+export const svgCheck: string = check;
+export const svgHeart: string = heart;
+export const svgPencil: string = pencil;
+export const svgLink: string = link;
+export const svgStar: string = star;
+export const svgReblog: string = reblog;
+export const svgBell: string = bell;
+export const svgAttachment: string = attachment;
+export const svgReply: string = reply;
+export const svgReddit: string = reddit;
+export const svgMastodon: string = mastodon;
+export const svgRss: string = rss;
+export const svgHackernews: string = hackernews;
+export const svgYoutube: string = youtube;

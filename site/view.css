@@ -1,4 +1,4 @@
-.editor-container {
+.overlay-container {
    position: fixed;
    top: 0;
    width: 100%;
@@ -9,10 +9,11 @@
    backdrop-filter: blur(10px);
 }
 
-.editor {
+.overlay {
    margin: 0 auto;
    background: var(--ledit-background-dim);
-   padding: var(--ledit-margin);
+   padding: var(--ledit-padding) 0;
+   font-size: var(--ledit-font-size-big);
    display: flex;
    flex-direction: column;
    box-shadow: 0px 2px 5px var(--ledit-shadow-color);
@@ -20,40 +21,75 @@
    border-bottom-right-radius: 8px;
 }
 
-.editor > * {
-   margin-top: var(--ledit-padding);
-   font-size: var(--ledit-font-size);
-}
-
-.editor-close {
+.overlay-close {
    display: flex;
    align-items: center;
-   padding: var(--ledit-margin);
+   padding: var(--ledit-margin) var(--ledit-margin);
+   margin-bottom: 0.5em;
    font-size: var(--ledit-font-size);
    height: 1em;
    cursor: pointer;
-   margin: -0.5em -1em;
 }
 
-.editor-header {
+.overlay-content {
+   display: flex;
+   flex-direction: column;
+   margin: 0 var(--ledit-margin);
+   margin-bottom: var(--ledit-padding);
+}
+
+.overlay-header {
    display: flex;
    flex-direction: row;
    align-items: center;
    font-size: var(--ledit-font-size);
    font-weight: 600;
+   border-bottom: 0.5px solid var(--ledit-border-color);
+   line-height: 3em;
 }
 
-.editor-supplement {
+.overlay-editor-header {
+   display: flex;
+   flex-direction: row;
+   align-items: center;
+   font-size: var(--ledit-font-size);
+   font-weight: 600;
+   border-bottom: 0.5px solid var(--ledit-border-color);
+}
+
+.overlay-row {
+   display: flex;
+   flex-direction: row;
+   align-items: center;
+   font-size: var(--ledit-font-size);
+   line-height: 3em;
+   cursor: pointer;
+   border-bottom: 0.5px solid var(--ledit-border-color);
+}
+
+.overlay-row a {
+   overflow: hidden;
+   white-space: pre;
+   text-overflow: ellipsis;
+   width: 100%;
+   justify-content: start;
+}
+
+.overlay-row:hover {
+   background: var(--ledit-background-buttons);
+}
+
+.overlay-supplement {
    font-weight: 400;
    font-size: var(--ledit-font-size);
    color: var(--ledit-color-dim) !important;
 }
 
-.editor-supplement a {
+.overlay-supplement a {
    color: var(--ledit-color-dim) !important;
 }
 
-.editor textarea {
+.overlay textarea {
    height: calc(var(--ledit-font-size) * 10);
    font: inherit;
    font-size: var(--ledit-font-size);
@@ -72,29 +108,31 @@
    border-radius: 8px;
 }
 
-.editor textarea:focus {
-   outline-color: var(--ledit-accent-color);
+.overlay textarea:focus {
+   outline: 2px solid var(--ledit-accent-color);
 }
 
-.editor input {
+.overlay input {
    background: var(--ledit-background);
    border: 1px solid var(--ledit-border-color);
    border-radius: 8px;
    padding: var(--ledit-padding);
    color: var(--ledit-color);
+   font: inherit;
+   font-size: var(--ledit-font-size);
 }
 
-.editor input:focus {
+.overlay input:focus {
    outline: 2px solid var(--ledit-accent-color);
 }
 
-.editor-buttons {
+.overlay-buttons {
    display: flex;
    gap: var(--ledit-padding);
    align-items: center;
 }
 
-.editor-button {
+.overlay-button {
    padding: var(--ledit-padding);
    border: 1px solid var(--ledit-border-color);
    background: var(--ledit-background);
@@ -104,6 +142,6 @@
    font-size: var(--ledit-font-size);
 }
 
-.editor-button:hover {
+.overlay-button:hover {
    border: 1px solid var(--ledit-accent-color);
 }

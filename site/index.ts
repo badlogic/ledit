@@ -1,5 +1,4 @@
 import "./styles.css";
-import "./editor.css";
 import "./header";
 import "./settings";
 import "./posts";
@@ -12,6 +11,7 @@ import { RssSource } from "./rss";
 import { SourcePrefix, setSource } from "./data";
 import { YoutubeSource } from "./youtube";
 import { MastodonUserEditor, MastodonSource } from "./mastodon";
+import { BookmarkEditor, BookmarksView } from "./bookmarks";
 
 function loadDefaultBookmark() {
    const defaultBookmark = getSettings().bookmarks.find((bookmark) => bookmark.isDefault == true);
@@ -59,4 +59,6 @@ if (window.location.hash.length == 0) {
   <ledit-header></ledit-header>
   <ledit-posts></ledit-posts>
   `;
+
+  BookmarksView.showActionButton();
 }
