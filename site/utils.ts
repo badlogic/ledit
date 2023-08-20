@@ -312,7 +312,7 @@ export function scrollToAndCenter(element: Element) {
       const rect = element.getBoundingClientRect();
       const elementTop = rect.top + window.scrollY;
       const elementHeight = rect.bottom - rect.top;
-      const scrollToPosition = elementTop + elementHeight / 2 - windowHeight / 2;
+      const scrollToPosition = elementTop - windowHeight / 2 + computedCssSizePx("--ledit-font-size") * 4;
 
       window.scrollTo({
          top: scrollToPosition,

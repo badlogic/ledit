@@ -396,9 +396,9 @@ export class MastodonSource implements Source {
    showCommentReplyEditor(mastodonComment: MastodonPost, userInfo: MastodonUserInfo, commentOrPostView: CommentView | PostView) {
       let userHandles: string[] = [];
       const commentHost = new URL(mastodonComment.uri).host;
-      userHandles.push(...extractUsernames(mastodonComment));
+      userHandles.push(...extractUsernames(mastodonComment).map((handle) => handle.replace("@" + userInfo.instance, "")));
       const commentUser = "@" + mastodonComment.account.username + (commentHost == userInfo.instance ? "" : "@" + commentHost);
-      if (commentUser) userHandles.push(commentUser);
+      if (userHandles.indexOf(commentUser) == -1) userHandles.push(commentUser);
 
       const header = dom(/*html*/ `
                <div class="editor-supplement">
@@ -687,7 +687,7 @@ export class MastodonSource implements Source {
          }
          rootId = root.id;
          // FIXME matching by content is bad
-         const rootComment = this.mastodonPostToComment(root, root.content == postToView.content, userInfo);
+         const rootComment = this.mastodonPostToComment(root, root.uri == postToView.uri, userInfo);
          roots.push(rootComment);
          comments.push(rootComment);
          commentsById.set(root.id, rootComment);
@@ -705,7 +705,7 @@ export class MastodonSource implements Source {
 
       for (const reply of mastodonComments) {
          // FIXME matching by content is bad
-         const comment = this.mastodonPostToComment(reply, reply.content == postToView.content, userInfo);
+         const comment = this.mastodonPostToComment(reply, reply.uri == postToView.uri, userInfo);
          if (!rootId && reply.in_reply_to_id == statusId) roots.push(comment);
          if (reply.id == rootId) roots.push(comment);
          comments.push(comment);
