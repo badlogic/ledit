@@ -70,12 +70,6 @@ export class CommentView extends View {
 
    render() {
       const comment = this.comment;
-      if (comment.highlight) {
-         this.classList.add("comment-highlighted");
-         onAddedToDOM(this, () => {
-            scrollToAndCenter(this);
-         });
-      }
 
       this.innerHTML = /*html*/ `
          <div x-id="meta" class="comment-meta"></div>
@@ -92,6 +86,14 @@ export class CommentView extends View {
          repliesCount: HTMLElement;
          reply: HTMLElement;
       }>();
+
+      // Scroll to it if highlighted
+      if (comment.highlight) {
+         this.classList.add("comment-highlighted");
+         onAddedToDOM(this, () => {
+            scrollToAndCenter(elements.content);
+         });
+      }
 
       // Add meta
       for (const el of getSource().getCommentMetaDom(comment, this.opName)) {
