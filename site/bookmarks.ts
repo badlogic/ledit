@@ -128,17 +128,17 @@ export class BookmarksView extends OverlayView {
    renderContent() {
       const settings = getSettings();
       this.content.innerHTML = "";
-      this.content.append(...dom(/*html*/ `<div class="overlay-header">Bookmarks</div>`));
+      this.content.append(...dom(/*html*/ `<div class="overlay-editor-header">Bookmarks</div>`));
 
       // Add feed & accounts buttons
-      const addBookmarkDiv = dom(`<div class="overlay-row"><span class="color-fill">${svgBookmark}</span>Add feed</div>`)[0];
+      const addBookmarkDiv = dom(`<div class="overlay-row"><span class="box color-fill">${svgBookmark}</span>Add feed</div>`)[0];
       this.content.append(addBookmarkDiv);
       addBookmarkDiv.addEventListener("click", () => {
          this.close();
          document.body.append(new SourceSelectorView());
       });
 
-      const addMastodonAccountDiv = dom(`<div class="overlay-row"><span class="color-fill">${svgBookmark}</span>Add Mastodon account</div>`)[0];
+      const addMastodonAccountDiv = dom(`<div class="overlay-row"><span class="box color-fill">${svgBookmark}</span>Add Mastodon account</div>`)[0];
       this.content.append(addMastodonAccountDiv);
       addMastodonAccountDiv.addEventListener("click", () => {
          this.close();
@@ -166,7 +166,7 @@ export class BookmarksView extends OverlayView {
                <div class="overlay-row">
                   <a x-id="feed" href="#${hash}" style="flex: 1; display: flex; align-items: center;"><span class="box" style="fill: var(--ledit-link-color);">${getSourceIcon(
             bookmark.source
-         )}</span><span>${bookmark.label}</span></a>
+         )}</span><span style="white-space: pre; text-overflow: ellipsis; overflow: hidden;">${bookmark.label}</span></a>
                   <div x-id="makeDefaultFeed" class="box ${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
                   ${
                      bookmark.source == "hn/"

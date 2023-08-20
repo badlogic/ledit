@@ -131,6 +131,8 @@ blockquote {
    justify-content: center;
    width: 2em;
    height: 2em;
+   min-width: 2em;
+   min-height: 2em;
 }
 
 .show-more {
