@@ -4,7 +4,7 @@ import { Post, getSource } from "./data";
 
 export class ContentView extends View {
    public readonly toggles: Element[] = [];
-   constructor(private readonly post: Post) {
+   constructor(private readonly post: Post<any>) {
       super();
       this.classList.add("content");
       this.render();

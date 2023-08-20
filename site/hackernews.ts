@@ -30,7 +30,7 @@ async function getHNItem(id: string): Promise<any> {
    return await response.json();
 }
 
-export class HackerNewsSource implements Source {
+export class HackerNewsSource implements Source<HNPost, HNComment> {
    private getSortingUrl() {
       const sorting = this.getSorting();
       if (sorting == "news") return "topstories.json";
@@ -41,7 +41,7 @@ export class HackerNewsSource implements Source {
       return "topstories.json";
    }
 
-   async getPosts(after: string | null): Promise<Posts> {
+   async getPosts(after: string | null): Promise<Posts<HNPost>> {
       const response = await fetch("https://hacker-news.firebaseio.com/v0/" + this.getSortingUrl());
       const storyIds = (await response.json()) as number[];
       let startIndex = after ? Number.parseInt(after) : 0;
@@ -51,7 +51,7 @@ export class HackerNewsSource implements Source {
       }
 
       const hnPosts = await Promise.all(requests);
-      const posts: Post[] = [];
+      const posts: Post<HNPost>[] = [];
       for (const hnPost of hnPosts) {
          posts.push({
             url: hnPost.url ?? "https://news.ycombinator.com/item?id=" + hnPost.id,
@@ -62,11 +62,10 @@ export class HackerNewsSource implements Source {
             authorUrl: "https://news.ycombinator.com/user?id=" + hnPost.by,
             createdAt: hnPost.time,
             feed: "",
-            score: hnPost.score,
             numComments: hnPost.descendants ?? 0,
             contentOnly: false,
-            hnPost,
-         } as Post);
+            data: hnPost,
+         });
       }
 
       return {
@@ -75,9 +74,9 @@ export class HackerNewsSource implements Source {
       };
    }
 
-   async getComments(post: Post): Promise<Comment[]> {
+   async getComments(post: Post<HNPost>): Promise<Comment<HNComment>[]> {
       // Use algolia to get all comments in one go
-      const hnPost = (post as any).hnPost as HNPost;
+      const hnPost = post.data;
       let response = await fetch("https://hn.algolia.com/api/v1/search?tags=comment,story_" + hnPost.id + "&hitsPerPage=" + hnPost.descendants);
       const data = await response.json();
       const hits: HNComment[] = [...data.hits];
@@ -133,31 +132,32 @@ export class HackerNewsSource implements Source {
       await Promise.all(promises);
 
       const convertComment = (hnComment: HNComment) => {
-         const comment = {
+         const comment: Comment<HNComment> = {
             url: `https://news.ycombinator.com/item?id=${hnComment.objectID}`,
             author: hnComment.author,
             authorUrl: `https://news.ycombinator.com/user?id=${hnComment.author}`,
             createdAt: hnComment.created_at_i,
             score: 0,
             content: encodeHTML("<p>" + hnComment.comment_text),
-            replies: [] as Comment[],
+            replies: [] as Comment<HNComment>[],
             highlight: false,
-         } as Comment;
+            data: hnComment
+         };
          if (hnComment.replies) {
             for (const reply of hnComment.replies) {
                comment.replies.push(convertComment(reply));
             }
          }
 
-         return comment as Comment;
+         return comment;
       };
       const comments = roots.map((root) => convertComment(root));
       return comments;
    }
 
-   getMetaDom(post: Post): HTMLElement[] {
+   getMetaDom(post: Post<HNPost>): HTMLElement[] {
       return dom(/*html*/ `
-         <span>${(post as any).hnPost.score} pts</span>
+         <span>${post.data.score} pts</span>
          <span>•</span>
          <span>${dateToText(post.createdAt * 1000)}</span>
          <span>•</span>
@@ -167,15 +167,15 @@ export class HackerNewsSource implements Source {
       `);
    }
 
-   getContentDom(post: Post): ContentDom {
+   getContentDom(post: Post<HNPost>): ContentDom {
       const toggles: Element[] = [];
       toggles.push(
          dom(
-            /*html*/ `<a href="https://news.ycombinator.com/item?id=${(post as any).hnPost.id}" target="_blank" class="color-fill">${svgReply}</a>`
+            /*html*/ `<a href="https://news.ycombinator.com/item?id=${post.data.id}" target="_blank" class="color-fill">${svgReply}</a>`
          )[0]
       );
       if (post.isSelf) {
-         let text = ((post as any).hnPost as HNPost).text;
+         let text = post.data.text;
          text = encodeHTML(text);
          let selfPost = dom(`<div class="content-text">${htmlDecode(text)}</div>`)[0];
 
@@ -187,14 +187,14 @@ export class HackerNewsSource implements Source {
       return { elements: [], toggles };
    }
 
-   getCommentMetaDom(comment: Comment, opName: string): HTMLElement[] {
+   getCommentMetaDom(comment: Comment<HNComment>, opName: string): HTMLElement[] {
       return dom(/*html*/ `
          <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">
          <a href="${comment.authorUrl}" target="_blank">${comment.author}</a>
          </span>
          <span>•</span>
-         <span>${dateToText(comment.createdAt * 1000)}</span>
-         <a style="margin-left: auto;" href="${comment.url}" target="_blank">${svgReply}</a>
+         <span style="margin-right: 0.25rem">${dateToText(comment.createdAt * 1000)}</span>
+         <a href="${comment.url}" target="_blank" class="post-button color-fill">${svgReply}</a>
        `);
    }
 

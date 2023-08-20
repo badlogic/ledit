@@ -4,13 +4,13 @@ import { svgLoader, svgReply } from "./svg";
 import { dateToText, dom, htmlDecode, onAddedToDOM, scrollToAndCenter } from "./utils";
 import { View } from "./view";
 
-const commentsCache = new Map<string, Comment[]>();
+const commentsCache = new Map<string, Comment<any>[]>();
 
 export class CommentsView extends View {
-   private comments: Comment[] | null = null;
+   private comments: Comment<any>[] | null = null;
    private opName: string;
 
-   constructor(post: Post, public readonly postView: Element) {
+   constructor(post: Post<any>, public readonly postView: Element) {
       super();
       this.render();
       this.classList.add("comments");
@@ -18,7 +18,7 @@ export class CommentsView extends View {
       (async () => this.loadComments(post))();
    }
 
-   async loadComments(post: Post) {
+   async loadComments(post: Post<any>) {
       const source = getSource();
       const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
       this.append(loadingDiv);
@@ -50,13 +50,13 @@ export class CommentsView extends View {
 customElements.define("ledit-comments", CommentsView);
 
 export class CommentView extends View {
-   constructor(private readonly comment: Comment, private readonly opName: string) {
+   constructor(private readonly comment: Comment<any>, private readonly opName: string) {
       super();
       this.render();
       this.classList.add("comment");
    }
 
-   prependReply(reply: Comment) {
+   prependReply(reply: Comment<any>) {
       const replyDiv = new CommentView(reply, this.opName);
       const elements = this.elements<{
          replies: HTMLElement;

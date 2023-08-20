@@ -310,10 +310,12 @@ function extractUsernames(mastodonPost: MastodonPost) {
 }
 
 export type MastodonUserInfo = { username: string; instance: string; bearer: string | null };
+export type MastodonPostData = {mastodonPost: MastodonPost, userInfo: MastodonUserInfo, id: string, inReplyToPost: MastodonPost | null }
+export type MastodonCommentData = {mastodonComment: MastodonPost, userInfo: MastodonUserInfo }
 
-export class MastodonSource implements Source {
+export class MastodonSource implements Source<MastodonPostData, MastodonCommentData> {
 
-   async mastodonPostToPost(mastodonPost: MastodonPost, onlyShowRoots: boolean, userInfo: MastodonUserInfo): Promise<Post | null> {
+   async mastodonPostToPost(mastodonPost: MastodonPost, onlyShowRoots: boolean, userInfo: MastodonUserInfo): Promise<Post<MastodonPostData> | null> {
       let postToView = mastodonPost.reblog ?? mastodonPost;
       if (onlyShowRoots && postToView.in_reply_to_account_id) return null;
       let postUrl = postToView.url;
@@ -332,17 +334,18 @@ export class MastodonSource implements Source {
          author: getAccountName(mastodonPost.account),
          authorUrl: null,
          createdAt: new Date(postToView.created_at).getTime() / 1000,
-         score: postToView.favourites_count,
          numComments: postToView.replies_count + (inReplyToPost && postToView.replies_count == 0 ? 1 : 0),
          contentOnly: false,
-         mastodonPost,
-         userInfo,
-         id: mastodonPost.id,
-         inReplyToPost,
-      } as Post;
+         data: {
+            mastodonPost,
+            userInfo,
+            id: mastodonPost.id,
+            inReplyToPost,
+         }
+      };
    }
 
-   mastodonPostToComment(reply: MastodonPost, highlight: boolean, userInfo: MastodonUserInfo): Comment {
+   mastodonPostToComment(reply: MastodonPost, highlight: boolean, userInfo: MastodonUserInfo): Comment<MastodonCommentData> {
       const content = this.getPostOrCommentContentDom(reply, null, userInfo, true);
       return {
          url: reply.url,
@@ -353,9 +356,11 @@ export class MastodonSource implements Source {
          content,
          replies: [],
          highlight,
-         mastodonComment: reply,
-         userInfo
-      } as Comment;
+         data: {
+            mastodonComment: reply,
+            userInfo
+         }
+      };
    }
 
    showActionButtons(userInfo: MastodonUserInfo) {
@@ -439,7 +444,7 @@ export class MastodonSource implements Source {
       );
    }
 
-   async getPostsForUser(mastodonUser: string, after: string | null): Promise<Post[]> {
+   async getPostsForUser(mastodonUser: string, after: string | null): Promise<Post<MastodonPostData>[]> {
       if (after == "end") return [];
       const tokens = mastodonUser.split("/");
       const timeline = tokens.length >= 2 ? tokens[1] : null;
@@ -463,7 +468,7 @@ export class MastodonSource implements Source {
       if (timeline == "notifications") {
          const mastodonNotifications = await MastodonApi.getNotifications(maxId, userInfo);
          if (!mastodonNotifications) return [];
-         const posts: Post[] = [];
+         const posts: Post<MastodonPostData>[] = [];
          for (const notification of mastodonNotifications) {
             if (notification.type == "mention") {
                const post = await this.mastodonPostToPost(notification.status!, false, userInfo);
@@ -473,7 +478,7 @@ export class MastodonSource implements Source {
                      notification,
                      userInfo,
                      id: notification.id,
-                  } as any);
+                  } as any); // FIXME don't use any!
                } else {
                   posts.push(post);
                }
@@ -483,7 +488,7 @@ export class MastodonSource implements Source {
                   notification,
                   userInfo,
                   id: notification.id,
-               } as any);
+               } as any); // FIXME don't use any!
             }
          }
          return posts;
@@ -493,8 +498,8 @@ export class MastodonSource implements Source {
                ? await MastodonApi.getHomeTimeline(maxId, userInfo)
                : await MastodonApi.getAccountPosts(mastodonUserId, maxId, userInfo);
          if (!mastodonPosts) return [];
-         const posts: Post[] = [];
-         const postPromises: Promise<Post | null>[] = [];
+         const posts: Post<MastodonPostData>[] = [];
+         const postPromises: Promise<Post<MastodonPostData> | null>[] = [];
          for (const mastodonPost of mastodonPosts) {
             postPromises.push(this.mastodonPostToPost(mastodonPost, getSettings().showOnlyMastodonRoots, userInfo));
          }
@@ -507,7 +512,7 @@ export class MastodonSource implements Source {
       }
    }
 
-   async getPosts(after: string | null): Promise<Posts> {
+   async getPosts(after: string | null): Promise<Posts<MastodonPostData>> {
       // We support different m/ url types
       //
       // These do not require an account bookmark and are readonly:
@@ -541,13 +546,13 @@ export class MastodonSource implements Source {
 
             const urls = this.getFeed().split("+");
             let afters: (string | null)[] | undefined = after?.split("+");
-            const promises: Promise<Post[]>[] = [];
+            const promises: Promise<Post<MastodonPostData>[]>[] = [];
             for (let i = 0; i < urls.length; i++) {
                promises.push(this.getPostsForUser(urls[i], afters ? afters[i] : null));
             }
 
             const promisesResult = await Promise.all(promises);
-            const posts: Post[] = [];
+            const posts: Post<MastodonPostData>[] = [];
             const newAfters = [];
             for (let i = 0; i < urls.length; i++) {
                posts.push(...promisesResult[i]);
@@ -557,7 +562,7 @@ export class MastodonSource implements Source {
                   continue;
                }
 
-               let maxId = promisesResult[i].length == 0 ? "end" : (promisesResult[i][promisesResult[i].length - 1] as any).id;
+               let maxId = promisesResult[i].length == 0 ? "end" : promisesResult[i][promisesResult[i].length - 1].data.id;
                newAfters.push(maxId);
             }
             if (urls.length > 1) {
@@ -615,9 +620,9 @@ export class MastodonSource implements Source {
          }
          maxId = maxId ? `&max_id=${maxId}` : "";
 
-         const posts: Post[] = [];
+         const posts: Post<MastodonPostData>[] = [];
          if (mastodonPosts) {
-            const postPromises: Promise<Post | null>[] = [];
+            const postPromises: Promise<Post<MastodonPostData> | null>[] = [];
             for (const mastodonPost of mastodonPosts) {
                postPromises.push(this.mastodonPostToPost(mastodonPost, getSettings().showOnlyMastodonRoots, userInfo));
             }
@@ -659,17 +664,17 @@ export class MastodonSource implements Source {
       return noResult;
    }
 
-   async getComments(post: Post): Promise<Comment[]> {
-      const mastodonPost = (post as any).mastodonPost as MastodonPost;
-      const userInfo = (post as any).userInfo as MastodonUserInfo;
+   async getComments(post: Post<MastodonPostData>): Promise<Comment<MastodonCommentData>[]> {
+      const mastodonPost = post.data.mastodonPost;
+      const userInfo = post.data.userInfo;
       const postToView = mastodonPost.reblog ?? mastodonPost;
       const host = new URL(postToView.uri).host;
       const statusId = postToView.uri.split("/").pop()!;
       let commentUserInfo: MastodonUserInfo = userInfo.instance == host ? userInfo : { username: "", instance: host, bearer: null };
       let rootId: string | null = null;
-      const roots: Comment[] = [];
-      const comments: Comment[] = [];
-      const commentsById = new Map<string, Comment>();
+      const roots: Comment<MastodonCommentData>[] = [];
+      const comments: Comment<MastodonCommentData>[] = [];
+      const commentsById = new Map<string, Comment<MastodonCommentData>>();
 
       let context = await MastodonApi.getPostContext(statusId, commentUserInfo);
       if (!context) return [];
@@ -713,7 +718,7 @@ export class MastodonSource implements Source {
          commentsById.set(reply.id, comment);
       }
       for (const comment of comments) {
-         const mastodonComment = (comment as any).mastodonComment as MastodonPost;
+         const mastodonComment = comment.data.mastodonComment;
          if (commentsById.get(mastodonComment.in_reply_to_id!)) {
             const other = commentsById.get(mastodonComment.in_reply_to_id!)!;
             other.replies.push(comment);
@@ -722,9 +727,9 @@ export class MastodonSource implements Source {
       return roots;
    }
 
-   getMetaDom(post: Post): HTMLElement[] {
-      const postToView = ((post as any).mastodonPost.reblog ?? (post as any).mastodonPost) as MastodonPost;
-      const userInfo = (post as any).userInfo as MastodonUserInfo;
+   getMetaDom(post: Post<MastodonPostData>): HTMLElement[] {
+      const postToView = post.data.mastodonPost.reblog ?? post.data.mastodonPost;
+      const userInfo = post.data.userInfo;
       const avatarImageUrl = postToView.account.avatar_static;
       const authorUrl = postToView.account.url;
       const postUrl = postToView.uri; // "/#m/" + userInfo.username + "@" + userInfo.instance + "/" + postToView.id;
@@ -748,11 +753,11 @@ export class MastodonSource implements Source {
       `);
    }
 
-   getContentDom(post: Post): ContentDom {
+   getContentDom(post: Post<MastodonPostData>): ContentDom {
       if (!post.contentOnly) {
-         let userInfo = (post as any).userInfo;
-         let mastodonPost = (post as any).mastodonPost as MastodonPost;
-         let inReplyToPost: MastodonPost | null = (post as any).inReplyToPost;
+         let userInfo = post.data.userInfo;
+         let mastodonPost = post.data.mastodonPost;
+         let inReplyToPost = post.data.inReplyToPost;
          return this.getPostOrCommentContentDom(mastodonPost, inReplyToPost, userInfo, false);
       } else {
          return this.getNotificationContentDom(post);
@@ -957,7 +962,7 @@ export class MastodonSource implements Source {
       return { elements: elements, toggles: toggles };
    }
 
-   getNotificationContentDom(post: Post) {
+   getNotificationContentDom(post: Post<MastodonPostData>) {
       const notification = (post as any).notification as MastodonNotification;
       let html = "";
       switch (notification.type) {
@@ -1049,8 +1054,8 @@ export class MastodonSource implements Source {
          `;
    }
 
-   getCommentMetaDom(comment: Comment, opName: string): HTMLElement[] {
-      const mastodonComment = (comment as any).mastodonComment as MastodonPost;
+   getCommentMetaDom(comment: Comment<MastodonCommentData>, opName: string): HTMLElement[] {
+      const mastodonComment = comment.data.mastodonComment;
       const metaDom = dom(/*html*/ `
          <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">
          <a href="${comment.authorUrl}" target="_blank" class="inline-row">

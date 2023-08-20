@@ -165,8 +165,8 @@ function getSortingParameter() {
    return "t=" + tokens[1];
 }
 
-export class RedditSource implements Source {
-   async getPosts(after: string | null): Promise<Posts> {
+export class RedditSource implements Source<RedditPost, RedditComment> {
+   async getPosts(after: string | null): Promise<Posts<RedditPost>> {
       const sortFrag = getSortingFragment();
       const sortParam = getSortingParameter();
       const hash = "/r/" + getSubreddit() + "/" + sortFrag + "/.json?" + sortParam + "&" + (after ? "after=" + after : "");
@@ -183,7 +183,7 @@ export class RedditSource implements Source {
       const convertPost = (redditPost: RedditPost) => {
          const url = redditPost.data.url.startsWith("/r/") ? "https://www.reddit.com" + redditPost.data.url : redditPost.data.url;
          let domain = url.includes("redd.it") || url.includes("reddit.com") ? "" : new URL(url).host;
-         return {
+         const post: Post<RedditPost> = {
             url,
             domain,
             feed: redditPost.data.subreddit,
@@ -192,14 +192,14 @@ export class RedditSource implements Source {
             author: redditPost.data.author,
             authorUrl: "https://www.reddit.com/u/" + redditPost.data.author,
             createdAt: redditPost.data.created_utc,
-            score: redditPost.data.score,
             numComments: redditPost.data.num_comments,
             contentOnly: false,
-            redditPost,
-         } as Post;
+            data: redditPost,
+         };
+         return post;
       };
 
-      const posts = [] as Post[];
+      const posts: Post<RedditPost>[] = [];
       for (const redditPost of redditPosts.data.children) {
          if (redditPost.data.author == undefined) continue;
          posts.push(convertPost(redditPost));
@@ -210,8 +210,8 @@ export class RedditSource implements Source {
          after: redditPosts.data.after,
       };
    }
-   async getComments(post: Post): Promise<Comment[]> {
-      const commentsUrl = "https://www.reddit.com/" + (post as any).redditPost.data.permalink + ".json";
+   async getComments(post: Post<RedditPost>): Promise<Comment<RedditComment>[]> {
+      const commentsUrl = "https://www.reddit.com/" + post.data.data.permalink + ".json";
       const response = await fetch(commentsUrl);
       const data = await response.json();
       if (data.length < 2) return [];
@@ -221,26 +221,27 @@ export class RedditSource implements Source {
       }
 
       const convertComment = (redditComment: RedditComment) => {
-         const comment = {
+         const comment: Comment<RedditComment> = {
             url: "https://www.reddit.com/" + redditComment.data.permalink,
             author: redditComment.data.author,
             authorUrl: `http://www.reddit.com/u/${redditComment.data.author}`,
             createdAt: redditComment.data.created_utc,
             score: redditComment.data.score,
             content: redditComment.data.body_html,
-            replies: [] as Comment[],
+            replies: [],
             highlight: false,
-         } as Comment;
+            data: redditComment
+         };
          if (redditComment.data.replies != "" && redditComment.data.replies !== undefined) {
             for (const reply of redditComment.data.replies.data.children) {
                if (reply.data.author == undefined) continue;
                comment.replies.push(convertComment(reply));
             }
          }
-         return comment as Comment;
+         return comment;
       };
 
-      const comments: Comment[] = [];
+      const comments: Comment<RedditComment>[] = [];
       for (const comment of redditComments.data.children) {
          if (comment.data.author == undefined) continue;
          comments.push(convertComment(comment));
@@ -248,7 +249,7 @@ export class RedditSource implements Source {
       return comments;
    }
 
-   getMetaDom(post: Post): HTMLElement[] {
+   getMetaDom(post: Post<RedditPost>): HTMLElement[] {
       const feed = getSource().getFeed().toLowerCase();
       return dom(/*html*/ `
          ${post.feed.toLowerCase() != feed ? /*html*/ `<a href="https://www.reddit.com/${post.feed}">r/${post.feed}</a><span>•</span>` : ""}
@@ -259,8 +260,8 @@ export class RedditSource implements Source {
       `);
    }
 
-   getContentDom(canonicalPost: Post): ContentDom {
-      const post = (canonicalPost as any).redditPost;
+   getContentDom(canonicalPost: Post<RedditPost>): ContentDom {
+      const post = canonicalPost.data;
       const postsWidth = document.querySelector(".posts")!.clientWidth; // account for padding in post
       const toggles: Element[] = [];
       const reply = dom(/*html*/`<a href="${"https://www.reddit.com" + post.data.permalink}" target="_blank" class="color-fill post-button">${svgReply}</a>`)[0];
@@ -370,7 +371,7 @@ export class RedditSource implements Source {
       return { elements: [document.createElement("div")], toggles };
    }
 
-   getCommentMetaDom(comment: Comment, opName: string): HTMLElement[] {
+   getCommentMetaDom(comment: Comment<RedditComment>, opName: string): HTMLElement[] {
       return dom(/*html*/ `
          <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">
          <a href="${comment.authorUrl}" target="_blank">${comment.author}</a>

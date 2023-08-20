@@ -41,8 +41,8 @@ function getChannelImage(rss: Document) {
    }
 }
 
-export class RssSource implements Source {
-   public static async getRssPosts(url: string): Promise<Post[]> {
+export class RssSource implements Source<FeedEntry, void> {
+   public static async getRssPosts(url: string): Promise<Post<FeedEntry>[]> {
       const options = {
          useISODateFormat: false,
          getExtraEntryFields: (feedEntry: any) => {
@@ -89,12 +89,12 @@ export class RssSource implements Source {
          const result = extractFromXml(text, options);
          if (!result || !result.entries) return [];
 
-         const posts: Post[] = [];
+         const posts: Post<FeedEntry>[] = [];
          for (const entry of result.entries) {
             if (!entry.link || !entry.published) continue;
             posts.push({
                url: entry.link,
-               title: entry.title,
+               title: entry.title!,
                domain: null,
                isSelf: true,
                author: null,
@@ -105,11 +105,10 @@ export class RssSource implements Source {
                      ? `<img src="${channelImageUrl}" style="max-height: calc(1.5 * var(--ledit-font-size));"></img>`
                      : new URL(url).hostname
                }`,
-               score: null,
                numComments: null,
-               xmlItem: entry,
-               contentOnly: false
-            } as Post);
+               contentOnly: false,
+               data: entry,
+            });
          }
          return posts;
       } catch (e) {
@@ -118,15 +117,15 @@ export class RssSource implements Source {
       }
    }
 
-   async getPosts(after: string | null): Promise<Posts> {
+   async getPosts(after: string | null): Promise<Posts<FeedEntry>> {
       const urls = this.getFeed().split("+");
-      const promises: Promise<Post[]>[] = [];
+      const promises: Promise<Post<FeedEntry>[]>[] = [];
       for (const url of urls) {
          promises.push(RssSource.getRssPosts(url));
       }
 
       const promisesResult = await Promise.all(promises);
-      const posts: Post[] = [];
+      const posts: Post<FeedEntry>[] = [];
       for (const result of promisesResult) {
          posts.push(...result);
       }
@@ -134,11 +133,11 @@ export class RssSource implements Source {
       return { posts, after: null };
    }
 
-   async getComments(post: Post): Promise<Comment[]> {
+   async getComments(post: Post<FeedEntry>): Promise<Comment<void>[]> {
       throw new Error("Method not implemented.");
    }
 
-   getMetaDom(post: Post): HTMLElement[] {
+   getMetaDom(post: Post<FeedEntry>): HTMLElement[] {
       return dom(/*html*/ `
          <a href="${new URL(post.url).host}">${post.feed}</a>
          <span>•</span>
@@ -146,8 +145,8 @@ export class RssSource implements Source {
       `);
    }
 
-   getContentDom(post: Post): ContentDom {
-      const xmlItem = (post as any).xmlItem as FeedEntry;
+   getContentDom(post: Post<FeedEntry>): ContentDom {
+      const xmlItem = post.data;
       if (!xmlItem) return {elements: [], toggles: []};
       const description = (xmlItem as any).html ?? xmlItem.description;
       if (!description) return {elements: [], toggles: []};
@@ -175,7 +174,7 @@ export class RssSource implements Source {
       return {elements: [content], toggles: []};
    }
 
-   getCommentMetaDom(comment: Comment, opName: string): HTMLElement[] {
+   getCommentMetaDom(comment: Comment<void>, opName: string): HTMLElement[] {
       return [];
    }
 

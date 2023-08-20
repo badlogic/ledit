@@ -1,12 +1,13 @@
+import { FeedEntry } from "@extractus/feed-extractor";
 import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
 import { RssSource } from "./rss";
 import { dateToText, dom, intersectsViewport, proxyFetch } from "./utils";
 
 const channelIds = localStorage.getItem("youtubeCache") ? JSON.parse(localStorage.getItem("youtubeCache")!) : {};
 
-export class YoutubeSource implements Source {
+export class YoutubeSource implements Source<FeedEntry, void> {
 
-   async getYoutubeChannel(channel: string): Promise<Post[]> {
+   async getYoutubeChannel(channel: string): Promise<Post<FeedEntry>[]> {
       let channelId: string | null = channelIds[channel];
 
       if (!channelId) {
@@ -26,16 +27,16 @@ export class YoutubeSource implements Source {
       return RssSource.getRssPosts("https://www.youtube.com/feeds/videos.xml?channel_id=" + channelId);
    }
 
-   async getPosts(after: string | null): Promise<Posts> {
+   async getPosts(after: string | null): Promise<Posts<FeedEntry>> {
       const channels = this.getFeed().split("+");
 
-      const promises: Promise<Post[]>[] = [];
+      const promises: Promise<Post<FeedEntry>[]>[] = [];
       for (const channel of channels) {
          promises.push(this.getYoutubeChannel(channel));
       }
 
       const promisesResult = await Promise.all(promises);
-      const posts: Post[] = [];
+      const posts: Post<FeedEntry>[] = [];
       for (let i = 0; i < channels.length; i++) {
          const result = promisesResult[i];
          const channel = channels[i];
@@ -49,11 +50,11 @@ export class YoutubeSource implements Source {
       return { posts, after: null };
    }
 
-   async getComments(post: Post): Promise<Comment[]> {
+   async getComments(post: Post<FeedEntry>): Promise<Comment<void>[]> {
       return [];
    }
 
-   getMetaDom(post: Post): HTMLElement[] {
+   getMetaDom(post: Post<FeedEntry>): HTMLElement[] {
       return dom(/*html*/ `
       <a href="${post.authorUrl}">${post.author}</a>
       <span>•</span>
@@ -61,7 +62,7 @@ export class YoutubeSource implements Source {
    `);
    }
 
-   getContentDom(post: Post): ContentDom {
+   getContentDom(post: Post<FeedEntry>): ContentDom {
       const url = post.url.split("=");
       if (url.length != 2) return {elements: [], toggles: []};
 
@@ -74,7 +75,7 @@ export class YoutubeSource implements Source {
       return {elements: [videoDom], toggles: []};
    }
 
-   getCommentMetaDom(comment: Comment, opName: string): HTMLElement[] {
+   getCommentMetaDom(comment: Comment<void>, opName: string): HTMLElement[] {
       return [];
    }
 
