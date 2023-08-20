@@ -740,7 +740,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
          ${
             avatarImageUrl
                ? /*html*/ `
-               <a href="${authorUrl}" target="_blank" style="gap: var(--ledit-padding);">
+               <a href="${authorUrl}" style="gap: var(--ledit-padding);">
                   <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">
                   <div>
                      <span><b>${getAccountName(postToView.account)}</b></span>
@@ -752,7 +752,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
                `
                : userInfo.username + "@" + userInfo.instance
          }
-         <a href="${postUrl}" target="_blank" style="text-decoration: underline; margin-left: auto; align-items: flex-start;">${dateToText(post.createdAt * 1000)}</span>
+         <a href="${postUrl}" style="text-decoration: underline; margin-left: auto; align-items: flex-start;">${dateToText(post.createdAt * 1000)}</span>
       `);
    }
 
@@ -841,7 +841,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       if (mastodonPost.reblog) {
          const avatarImageUrl = mastodonPost.account.avatar_static;
          prelude = /*html*/ `
-         <a href="${mastodonPost.account.url}" target="_blank" class="mastodon-prelude">
+         <a href="${mastodonPost.account.url}" class="mastodon-prelude">
             <div class="post-meta">
                   <span>Boosted by</span>
                   <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
@@ -854,7 +854,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       if (inReplyToPost) {
          const avatarImageUrl = inReplyToPost.account.avatar_static;
          prelude += /*html*/ `
-         <a href="${inReplyToPost.url}" target="_blank" class="mastodon-prelude">
+         <a href="${inReplyToPost.url}" class="mastodon-prelude">
             <div class="post-meta">
                   <span>In reply to</span>
                   <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
@@ -986,7 +986,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             html = /*html*/ `
                   <div class="post-notification-header">
                      ${this.getAuthorDomSmall(notification.account)}
-                     <a href="${notification.status!.url}" target="_blank">mentioned you ${dateToText(
+                     <a href="${notification.status!.url}">mentioned you ${dateToText(
                new Date(notification.created_at).getTime()
             )} ago</a>
                   </div>
@@ -1000,7 +1000,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
                   <div class="post-notification-header">
                      <span class="color-gold-fill">${svgReblog}</span>
                      ${this.getAuthorDomSmall(notification.account)}
-                     <a href="${notification.status!.url}" target="_blank">reblogged you ${dateToText(
+                     <a href="${notification.status!.url}">reblogged you ${dateToText(
                new Date(notification.created_at).getTime()
             )} ago</a>
                   </div>
@@ -1026,7 +1026,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
                   <div class="post-notification-header">
                      <span class="color-gold-fill">${svgStar}</span>
                      ${this.getAuthorDomSmall(notification.account)}
-                     <a href="${notification.status!.url}" target="_blank">favorited your post ${dateToText(
+                     <a href="${notification.status!.url}">favorited your post ${dateToText(
                new Date(notification.created_at).getTime()
             )} ago</a>
                   </div>
@@ -1038,7 +1038,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             html = /*html*/ `
                   <div class="post-notification-header">
                      ${this.getAuthorDomSmall(notification.account)}
-                     <a href="${notification.status!.url}" target="_blank">poll has ended ${dateToText(
+                     <a href="${notification.status!.url}">poll has ended ${dateToText(
                new Date(notification.created_at).getTime()
             )} ago</a>
                   </div>
@@ -1049,7 +1049,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             html = /*html*/ `
                   <div class="post-notification-header">
                      ${this.getAuthorDomSmall(notification.account)}
-                     <a href="${notification.status!.url}" target="_blank">post was edited ${dateToText(
+                     <a href="${notification.status!.url}">post was edited ${dateToText(
                new Date(notification.created_at).getTime()
             )} ago</a>
                   </div>
@@ -1063,7 +1063,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
 
    getAuthorDomSmall(account: MastodonAccount) {
       return /*html*/ `
-         <a href="${account.url}" target="_blank" class="inline-row">
+         <a href="${account.url}" class="inline-row">
             <img src="${account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
             <span>${getAccountName(account)}</span>
          </a>
@@ -1074,13 +1074,13 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       const mastodonComment = comment.data.mastodonComment;
       const metaDom = dom(/*html*/ `
          <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">
-         <a href="${comment.authorUrl}" target="_blank" class="inline-row">
+         <a href="${comment.authorUrl}" class="inline-row">
             <img src="${mastodonComment.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
             <span>${comment.author}</span>
          </a>
          </span>
          <span>•</span>
-         <a href="${comment.url}" target="_blank" style="text-decoration: underline;">${dateToText(comment.createdAt * 1000)}</a>
+         <a href="${comment.url}" style="text-decoration: underline;">${dateToText(comment.createdAt * 1000)}</a>
       `);
       return metaDom;
    }

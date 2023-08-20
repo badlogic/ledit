@@ -333,6 +333,7 @@ export function makeChildrenDraggable(container: HTMLElement, complete: () => vo
       chosenClass: "overlay-row-dragged",
       ghostClass: "overlay-row-dragged",
       delay: 300,
+      delayOnTouchOnly: true,
       onStart: () => {
          Array.from(container.children).forEach((el) => {
             el.classList.add("no-hover")

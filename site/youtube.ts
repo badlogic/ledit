@@ -56,7 +56,7 @@ export class YoutubeSource implements Source<FeedEntry, void> {
 
    getMetaDom(post: Post<FeedEntry>): HTMLElement[] {
       return dom(/*html*/ `
-      <a href="${"https://youtube.com/@" + post.author}" target="_blank">${post.author}</a>
+      <a href="${"https://youtube.com/@" + post.author}">${post.author}</a>
       <span>•</span>
       <span>${dateToText(post.createdAt * 1000)}</span>
    `);

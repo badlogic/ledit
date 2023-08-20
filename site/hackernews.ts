@@ -168,7 +168,7 @@ export class HackerNewsSource implements Source<HNPost, HNComment> {
       const toggles: Element[] = [];
       toggles.push(
          dom(
-            /*html*/ `<a href="https://news.ycombinator.com/item?id=${post.data.id}" target="_blank" class="color-fill">${svgReply}</a>`
+            /*html*/ `<a href="https://news.ycombinator.com/item?id=${post.data.id}" class="color-fill">${svgReply}</a>`
          )[0]
       );
       if (post.data.text) {
@@ -187,11 +187,11 @@ export class HackerNewsSource implements Source<HNPost, HNComment> {
    getCommentMetaDom(comment: Comment<HNComment>, opName: string | null): HTMLElement[] {
       return dom(/*html*/ `
          <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">
-         <a href="${comment.authorUrl}" target="_blank">${comment.author}</a>
+         <a href="${comment.authorUrl}">${comment.author}</a>
          </span>
          <span>•</span>
          <span style="margin-right: 0.25rem">${dateToText(comment.createdAt * 1000)}</span>
-         <a href="${comment.url}" target="_blank" class="post-button color-fill">${svgReply}</a>
+         <a href="${comment.url}" class="post-button color-fill">${svgReply}</a>
        `);
    }
 

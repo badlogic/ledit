@@ -124,10 +124,19 @@ export class PostView extends View {
       this.render();
    }
 
+   private setLinkTargets() {
+      let links = this.querySelectorAll("a")!;
+      for (let i = 0; i < links.length; i++) {
+         let link = links[i];
+         link.setAttribute("target", "_blank");
+      }
+   }
+
    render() {
       const post = this.post;
       if (!post.contentOnly) {
          this.renderFullPost(post);
+         this.setLinkTargets();
       } else {
          onVisibleOnce(this, () => {
             console.log("Showing content of " + this.post.title);
@@ -136,6 +145,7 @@ export class PostView extends View {
             for (const toggle of content.toggles) {
                this.append(toggle);
             }
+            this.setLinkTargets();
          });
       }
    }
@@ -144,7 +154,7 @@ export class PostView extends View {
       const showFeed = getSource().getFeed().toLowerCase() != post.feed.toLowerCase();
       const collapse = getSettings().collapseSeenPosts && PostsView.seenPosts.has(post.url) ? "post-seen" : "";
       this.innerHTML = /*html*/ `
-         ${post.title && post.title.length > 0 ? `<div class="post-title"><a href="${post.url}" target="_blank">${post.title}</a></div>` : ""}
+         ${post.title && post.title.length > 0 ? `<div class="post-title"><a href="${post.url}">${post.title}</a></div>` : ""}
          <div x-id="meta" class="post-meta"></div>
          <div x-id="buttonsRow" class="post-buttons">
             ${
@@ -182,6 +192,8 @@ export class PostView extends View {
          }
 
          if (!post.numComments && content.toggles.length == 0) elements.buttonsRow.classList.add("hidden");
+
+         this.setLinkTargets();
       });
 
       if (post.numComments && post.numComments > 0) {

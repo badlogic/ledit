@@ -9,7 +9,7 @@ const commentsCache = new Map<string, Comment<any>[]>();
 export class CommentsView extends View {
    private comments: Comment<any>[] | null = null;
 
-   constructor(post: Post<any>, public readonly opName: string, public readonly postView: Element) {
+   constructor(public readonly post: Post<any>, public readonly postView: Element) {
       super();
       this.render();
       this.classList.add("comments");
@@ -36,7 +36,7 @@ export class CommentsView extends View {
    render() {
       if (!this.comments) return;
       for (const comment of this.comments) {
-         this.append(new CommentView(comment, this.opName));
+         this.append(new CommentView(comment, this.post.author));
       }
    }
 
@@ -48,7 +48,7 @@ export class CommentsView extends View {
 customElements.define("ledit-comments", CommentsView);
 
 export class CommentView extends View {
-   constructor(private readonly comment: Comment<any>, private readonly opName: string) {
+   constructor(private readonly comment: Comment<any>, private readonly opName: string | null) {
       super();
       this.render();
       this.classList.add("comment");
@@ -125,7 +125,7 @@ export class CommentView extends View {
       }
 
       // Ensure all links open a new tab.
-      let links = elements.content.querySelectorAll("a")!;
+      let links = this.querySelectorAll("a")!;
       for (let i = 0; i < links.length; i++) {
          let link = links[i];
          link.setAttribute("target", "_blank");
