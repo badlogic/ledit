@@ -910,10 +910,15 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             boostCount: HTMLElement;
          }>(boost);
 
+         let boosting = false;
          boost.addEventListener("click", async () => {
+            if (boosting) return;
+            boosting = true;
             postToView.reblogged = !postToView.reblogged;
             if (!(await MastodonApi.reblogPost(postToView, userInfo))) {
                alert("Coulnd't (un)reblog post");
+               postToView.reblogged = !postToView.reblogged;
+               boosting = false;
                return;
             }
 
@@ -928,6 +933,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
                boostElements.boostIcon.classList.remove("color-gold-fill");
                boostElements.boostIcon.classList.add("color-fill");
             }
+            boosting = false;
          });
 
          const favouriteElements = View.elements<{
@@ -935,11 +941,16 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             favouriteCount: HTMLElement;
          }>(favourite);
 
+         let favouriting = false;
          favourite.addEventListener("click", async () => {
+            if (favouriting) return;
+            favouriting = true;
             postToView.favourited = !postToView.favourited;
 
             if (!(await MastodonApi.favouritePost(postToView, userInfo))) {
                alert("Couldn't (un)favourite post");
+               postToView.favourited = !postToView.favourited;
+               favouriting = false;
                return;
             }
 
@@ -954,6 +965,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
                favouriteElements.favouriteIcon.classList.remove("color-gold-fill");
                favouriteElements.favouriteIcon.classList.add("color-fill");
             }
+            favouriting = false;
          });
       }
       toggles.push(boost);
@@ -963,6 +975,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
    }
 
    getNotificationContentDom(post: Post<MastodonPostData>) {
+      // FIXME don't use any
       const notification = (post as any).notification as MastodonNotification;
       let html = "";
       switch (notification.type) {
