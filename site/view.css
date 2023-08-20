@@ -67,6 +67,10 @@
    border-bottom: 0.5px solid var(--ledit-border-color);
 }
 
+.overlay-row-dragged {
+   background: var(--ledit-background);
+}
+
 .overlay-row a {
    overflow: hidden;
    white-space: pre;

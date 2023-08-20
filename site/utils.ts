@@ -143,7 +143,7 @@ export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
          div.style.overflow = "hidden";
          div.style.marginBottom = "0";
 
-         const showMoreDiv = dom(/*html*/`
+         const showMoreDiv = dom(/*html*/ `
             <div class="show-more">Show more</div>
          `)[0];
 
@@ -318,5 +318,36 @@ export function scrollToAndCenter(element: Element) {
          top: scrollToPosition,
          behavior: "smooth",
       });
+   });
+}
+
+import Sortable from "sortablejs"
+
+export function makeChildrenDraggable(container: HTMLElement, complete: () => void) {
+   const preventContextMenu = (event: any) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      event.stopPropagation();
+   };
+   new Sortable(container, {
+      chosenClass: "overlay-row-dragged",
+      ghostClass: "overlay-row-dragged",
+      delay: 300,
+      onStart: () => {
+         Array.from(container.children).forEach((el) => {
+            el.classList.add("no-hover")
+            el.addEventListener("contextmenu", preventContextMenu);
+            Array.from(el.querySelectorAll("a")).forEach((el) => el.addEventListener("contextmenu", preventContextMenu));
+         });
+      },
+      onEnd: () => {
+         Array.from(container.children).forEach((el) => {
+            el.classList.remove("no-hover")
+            el.removeEventListener("contextmenu", preventContextMenu);
+            el.addEventListener("contextmenu", preventContextMenu);
+            Array.from(el.querySelectorAll("a")).forEach((el) => el.removeEventListener("contextmenu", preventContextMenu));
+         });
+         complete()
+      }
    });
 }

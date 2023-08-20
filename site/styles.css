@@ -183,6 +183,12 @@ blockquote {
    font-size: calc(1.25 * var(--ledit-font-size));
 }
 
+.no-hover:hover {
+   background-color: initial;
+   color: initial;
+   background: initial;
+}
+
 .header, .posts, .post, .overlay, .editor, .fab-container {
    width: 600px;
 }

@@ -2,7 +2,7 @@ import { Source, SourcePrefix, sourcePrefixLabel } from "./data";
 import { MastodonUserEditor } from "./mastodon";
 import { Bookmark, bookmarkToHash, getSettings, saveSettings } from "./settings";
 import { svgBookmark, svgCheck, svgHackernews, svgMastodon, svgMinus, svgPencil, svgPlus, svgReddit, svgRss, svgYoutube } from "./svg";
-import { assertNever, dom, navigate } from "./utils";
+import { assertNever, dom, makeChildrenDraggable, navigate } from "./utils";
 import { OverlayView, View } from "./view";
 
 function sourcePrefixToFeedLabel(source: SourcePrefix) {
@@ -127,21 +127,19 @@ export class BookmarksView extends OverlayView {
 
    renderContent() {
       const settings = getSettings();
-      const bookmarksDiv = dom(`<div></div>`)[0];
       this.content.innerHTML = "";
       this.content.append(...dom(/*html*/ `<div class="overlay-header">Bookmarks</div>`));
-      this.content.append(bookmarksDiv);
 
       // Add feed & accounts buttons
       const addBookmarkDiv = dom(`<div class="overlay-row"><span class="color-fill">${svgBookmark}</span>Add feed</div>`)[0];
-      bookmarksDiv.append(addBookmarkDiv);
+      this.content.append(addBookmarkDiv);
       addBookmarkDiv.addEventListener("click", () => {
          this.close();
          document.body.append(new SourceSelectorView());
       });
 
       const addMastodonAccountDiv = dom(`<div class="overlay-row"><span class="color-fill">${svgBookmark}</span>Add Mastodon account</div>`)[0];
-      bookmarksDiv.append(addMastodonAccountDiv);
+      this.content.append(addMastodonAccountDiv);
       addMastodonAccountDiv.addEventListener("click", () => {
          this.close();
          document.body.append(
@@ -159,7 +157,9 @@ export class BookmarksView extends OverlayView {
       });
 
       // Populate bookmarks
-      for (const bookmark of settings.bookmarks) {
+      const bookmarksDiv = dom(`<div></div>`)[0];
+      this.content.append(bookmarksDiv);
+      for (const [index, bookmark] of settings.bookmarks.entries()) {
          const isDefault = bookmark.isDefault;
          const hash = bookmarkToHash(bookmark);
          const bookmarkDiv = dom(/*html*/ `
@@ -213,8 +213,20 @@ export class BookmarksView extends OverlayView {
                this.renderContent();
             }
          });
+         bookmarkDiv.setAttribute("data-index", index.toString());
          bookmarksDiv.append(bookmarkDiv);
       }
+      makeChildrenDraggable(bookmarksDiv, () => {
+         const original = getSettings().bookmarks;
+         const rearranged: Bookmark[] = [];
+         bookmarksDiv.querySelectorAll(".overlay-row").forEach((bookmarkDiv) => {
+            const oldIndex = Number.parseInt(bookmarkDiv.getAttribute("data-index")!);
+            rearranged.push(original[oldIndex]);
+            bookmarkDiv.setAttribute("data-index", (rearranged.length - 1).toString());
+            getSettings().bookmarks = rearranged;
+            saveSettings();
+         })
+      });
    }
 
    static showActionButton() {
