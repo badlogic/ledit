@@ -630,7 +630,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             for (const post of resolvedPosts) {
                if (post) posts.push(post);
             }
-            if (what == "home") this.showActionButtons(userInfo);
+            this.showActionButtons(userInfo);
          }
 
          if (mastodonNotifications) {
@@ -656,6 +656,9 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
 
             // Push the fetched posts to the 'posts' array
             posts.push(...fetchedPosts);
+
+            // FIXME show home button?
+            this.showActionButtons(userInfo);
          }
 
          return {posts: posts, after: maxId};
@@ -850,7 +853,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
 
       if (inReplyToPost) {
          const avatarImageUrl = inReplyToPost.account.avatar_static;
-         prelude = /*html*/ `
+         prelude += /*html*/ `
          <a href="${inReplyToPost.url}" target="_blank" class="mastodon-prelude">
             <div class="post-meta">
                   <span>In reply to</span>
