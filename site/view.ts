@@ -41,12 +41,15 @@ export abstract class OverlayView extends View {
    navigationCallback: NavigationCallback | undefined;
    readonly content: HTMLElement;
 
-   constructor() {
+   constructor(title: string | HTMLElement | undefined) {
       super();
       this.classList.add("overlay-container");
       this.innerHTML = /*html*/ `
             <div class="overlay">
-                <div x-id="close" class="overlay-close"><span class="color-fill">${svgClose}</span></div>
+                <div x-id="close" class="overlay-close">
+                  ${title && typeof title === "string" ? `<span class="overlay-header">${title}</span>`: ""}
+                  <span class="overlay-close-button color-fill">${svgClose}</span>
+               </div>
                 <div x-id="content" class="overlay-content"></div>
             </div>
         `;
@@ -55,6 +58,10 @@ export abstract class OverlayView extends View {
          content: HTMLElement;
       }>();
       this.content = elements.content;
+
+      if (title instanceof HTMLElement) {
+         elements.close.append(title);
+      }
 
       // Close when container is clicked
       this.addEventListener("click", (event) => {

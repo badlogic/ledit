@@ -405,7 +405,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
 
       const header = dom(/*html*/ `
                <div class="overlay-supplement">
-                  <div class="inline-row" style="margin-bottom: var(--ledit-padding); color: var(--ledit-color);">
+                  <div class="inline-row" style="margin-bottom: var(--ledit-padding); color: var(--ledit-color); font-weight: 600;">
                         <span>Replying to</span>
                         <img src="${
                            mastodonComment.account.avatar_static
@@ -1108,7 +1108,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
 
 export class MastodonUserEditor extends OverlayView {
    constructor(public readonly bookmark: Bookmark, public readonly isNew: boolean) {
-      super();
+      super("Mastodon account");
       if (!this.bookmark.supplemental) {
          throw new Error("Need a bookmark with user info!");
       }
@@ -1118,7 +1118,6 @@ export class MastodonUserEditor extends OverlayView {
    renderContent() {
       this.content.style.gap = "0.5em";
       const editorDom = dom(/*html*/ `
-            <div x-id="headerRow" class="overlay-header">Mastodon account</div>
             <input x-id="user" value="${this.bookmark.supplemental!.username ? this.bookmark.supplemental!.username + "@" + this.bookmark.supplemental!.instance : ""}" placeholder="user@instance.com">
             <input x-id="bearer" value="${this.bookmark.supplemental!.bearer}" placeholder="Access token">
             <div class="overlay-buttons">

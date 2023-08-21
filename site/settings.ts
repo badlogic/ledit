@@ -88,7 +88,7 @@ export function resetSettings() {
 
 export class SettingsView extends OverlayView {
    constructor() {
-      super();
+      super("Settings");
       this.renderContent();
    }
 

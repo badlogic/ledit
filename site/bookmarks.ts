@@ -83,7 +83,7 @@ function getSourceIcon(source: SourcePrefix) {
 
 export class SourceSelectorView extends OverlayView {
    constructor() {
-      super();
+      super("Add feed for");
       this.renderContent();
    }
 
@@ -92,7 +92,6 @@ export class SourceSelectorView extends OverlayView {
 
       this.content.append(
          ...dom(/*html*/ `
-         <div class="overlay-header">Add feed for ...</div>
          ${sources.map((source) =>
             /*html*/`
             <div class="overlay-row" value="${source}" style="flex: 1; display: flex; align-items: center;">
@@ -121,14 +120,13 @@ customElements.define("ledit-source-selector", SourceSelectorView);
 
 export class BookmarksView extends OverlayView {
    constructor() {
-      super();
+      super("Bookmarks");
       this.renderContent();
    }
 
    renderContent() {
       const settings = getSettings();
       this.content.innerHTML = "";
-      this.content.append(...dom(/*html*/ `<div class="overlay-header">Bookmarks</div>`));
 
       // Add feed & accounts buttons
       const addBookmarkDiv = dom(`<div class="overlay-row"><span class="box color-fill">${svgBookmark}</span>Add feed</div>`)[0];
@@ -241,14 +239,13 @@ customElements.define("ledit-bookmarks", BookmarksView);
 
 export class BookmarkEditor extends OverlayView {
    constructor(public readonly bookmark: Bookmark, public readonly isNew = false) {
-      super();
+      super(sourcePrefixLabel(bookmark.source) + " bookmark");
       this.renderContent();
    }
 
    renderContent() {
       this.content.style.gap = "0.5em";
       const editorDom = dom(/*html*/ `
-         <div class="overlay-header">${sourcePrefixLabel(this.bookmark.source)} bookmark</div>
          <input x-id="label" value="${this.bookmark.label}" placeholder="Label, e.g 'Puppies'">
          <textarea x-id="feedIds" placeholder="${sourcePrefixToFeedPlaceholder(this.bookmark.source)}"></textarea>
          <div class="overlay-buttons">
@@ -313,7 +310,7 @@ export class BookmarkEditor extends OverlayView {
 customElements.define("ledit-bookmark-editor", BookmarkEditor);
 
 document.addEventListener("keydown", (event) => {
-   if (event.key == "b" && event.target == document.body && !document.body.querySelector("ledit-bookmarks")) {
+   if ((event.key == "b" || event.key == "d")  && event.target == document.body && !document.body.querySelector("ledit-bookmarks")) {
       document.body.append(new BookmarksView());
    }
 });

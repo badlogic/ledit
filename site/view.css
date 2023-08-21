@@ -24,10 +24,18 @@
 .overlay-close {
    display: flex;
    align-items: center;
-   padding: var(--ledit-margin) var(--ledit-margin);
+   position: relative;
+   padding: 0 var(--ledit-margin);
    font-size: var(--ledit-font-size);
-   height: 1em;
+   line-height: 1em;
    cursor: pointer;
+}
+
+.overlay-close-button {
+   line-height: 1em;
+   position: absolute;
+   right: calc(var(--ledit-margin) + var(--ledit-padding));
+   top: var(--ledit-margin);
 }
 
 .overlay-content {
@@ -90,6 +98,7 @@
    font-weight: 400;
    font-size: var(--ledit-font-size);
    color: var(--ledit-color-dim) !important;
+   margin-top: var(--ledit-margin);
 }
 
 .overlay-supplement a {
@@ -151,4 +160,10 @@
 
 .overlay-button:hover {
    border: 1px solid var(--ledit-accent-color);
+}
+
+.overlay-button:disabled {
+   border: 1px solid var(--ledit-border-color);
+   color: var(--ledit-color-dim);
+   fill: var(--ledit-color-dim);
 }

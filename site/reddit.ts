@@ -371,13 +371,13 @@ export class RedditSource implements Source<RedditPost, RedditComment> {
    getCommentMetaDom(comment: Comment<RedditComment>, opName: string): HTMLElement[] {
       return dom(/*html*/ `
          <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">
-         <a href="${comment.authorUrl}" target="_blank">${comment.author}</a>
+         <a href="${comment.authorUrl}">${comment.author}</a>
          </span>
          <span>•</span>
          <span>${dateToText(comment.createdAt * 1000)}</span>
          <span>•</span>
          <span style="margin-right: 0.25rem">${addCommasToNumber(comment.score!)} pts</span>
-         <a href="${comment.url}" target="_blank" class="color-fill post-button">${svgReply}</a>
+         <a href="${comment.url}" class="color-fill post-button">${svgReply}</a>
        `);
    }
 
