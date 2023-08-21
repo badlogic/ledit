@@ -1,10 +1,12 @@
 import { BookmarksView } from "./bookmarks";
 import "./comments";
-import { SourcePrefix, setSource } from "./data";
+import { SourcePrefix, getSource, setSource } from "./data";
 import { HackerNewsSource } from "./hackernews";
 import "./header";
+import { HeaderView } from "./header";
 import { MastodonSource } from "./mastodon";
 import "./posts";
+import { PostListView } from "./posts";
 import { RedditSource } from "./reddit";
 import { RssSource } from "./rss";
 import "./settings";
@@ -55,10 +57,8 @@ if (window.location.hash.length == 0) {
       }
    });
 
-   document.body.innerHTML = `
-  <ledit-header></ledit-header>
-  <ledit-posts></ledit-posts>
-  `;
+   document.body.append(new HeaderView());
+   document.body.append(new PostListView(getSource()));
 
   BookmarksView.showActionButton();
 }

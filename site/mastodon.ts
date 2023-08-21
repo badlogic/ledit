@@ -1,14 +1,13 @@
 // @ts-ignore
-import { CommentView } from "./comments";
-import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix, getSource } from "./data";
-import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
 import "./mastodon.css";
+import { CommentView } from "./comments";
+import { Comment, ContentDom, Page, PageIdentifier, Post, SortingOption, Source, SourcePrefix, getSource } from "./data";
 import { PostEditor } from "./post-editor";
-import { PostView, PostsView } from "./posts";
+import { PostListView, PostView } from "./posts";
 import { Bookmark, bookmarkToHash, getSettings, saveSettings } from "./settings";
-import { svgBell, svgCircle, svgClose, svgLoader, svgPencil, svgReblog, svgReply, svgStar } from "./svg";
-import { addCommasToNumber, dateToText, dom, navigate, renderGallery, renderVideo } from "./utils";
-import { OverlayView, View } from "./view";
+import { svgBell, svgCircle, svgLoader, svgPencil, svgReblog, svgReply, svgStar } from "./svg";
+import { addCommasToNumber, dateToText, dom, navigate, renderGallery, renderVideo, setLinkTargetsToBlank } from "./utils";
+import { OverlayView, PagedListView, View } from "./view";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
 
@@ -74,9 +73,9 @@ interface MastodonMedia {
 }
 
 interface MastodonEmoji {
-   shortcode: string,
-   url: string,
-   static_url: string
+   shortcode: string;
+   url: string;
+   static_url: string;
 }
 
 interface MastodonCard {}
@@ -136,164 +135,173 @@ export class MastodonApi {
            };
    }
 
-   static async getAccount(userName: string, userInfo: MastodonUserInfo): Promise<MastodonAccount | null> {
+   static async lookupAccount(userName: string, instance: string): Promise<MastodonAccount | Error> {
       try {
-         const response = await fetch("https://" + userInfo.instance + "/api/v1/accounts/lookup?acct=" + userName);
-         if (response.status != 200) return null;
+         const response = await fetch("https://" + instance + "/api/v1/accounts/lookup?acct=" + userName);
+         if (response.status != 200) return new Error(`Could not look up account. Server responded with status code ${response.status}`);
          return (await response.json()) as MastodonAccount;
       } catch (e) {
-         return null;
+         return new Error("Network error.");
       }
    }
 
-   static async getRelationship(otherAccountId: string, userInfo: MastodonUserInfo): Promise<MastodonRelationship | null> {
+   static async getRelationship(otherAccountId: string, userInfo: MastodonUserInfo): Promise<MastodonRelationship | Error> {
       try {
          const options = this.getAuthHeader(userInfo);
          const response = await fetch("https://" + userInfo.instance + "/api/v1/accounts/relationships?id[]=" + otherAccountId, options);
-         if (response.status != 200) return null;
+         if (response.status != 200) return new Error(`Could not load relationship. Server responded with status code ${response.status}`);
          return (await response.json())[0] as MastodonRelationship;
       } catch (e) {
-         return null;
+         return new Error("Network error.");
       }
    }
 
-   static async getPostContext(postId: string, userInfo: MastodonUserInfo): Promise<MastodonPostContext | null> {
+   static async getPostContext(postId: string, userInfo: MastodonUserInfo): Promise<MastodonPostContext | Error> {
       try {
          const options = this.getAuthHeader(userInfo);
          const response = await fetch(`https://${userInfo.instance}/api/v1/statuses/${postId}/context`, options);
-         if (response.status != 200) return null;
+         if (response.status != 200) return new Error(`Could not load post context. Server responded with status code ${response.status}`);
          return (await response.json()) as MastodonPostContext;
       } catch (e) {
-         return null;
+         return new Error("Network error.");
       }
    }
 
-   static async getPost(postId: string, userInfo: MastodonUserInfo): Promise<MastodonPost | null> {
+   static async getPost(postId: string, userInfo: MastodonUserInfo): Promise<MastodonPost | Error> {
       try {
          const options = this.getAuthHeader(userInfo);
          const response = await fetch(`https://${userInfo.instance}/api/v1/statuses/${postId}`, options);
-         if (response.status != 200) return null;
+         if (response.status != 200) return new Error(`Could not load post. Server responded with status code ${response.status}`);
          return (await response.json()) as MastodonPost;
       } catch (e) {
-         return null;
+         return new Error("Network error.");
       }
    }
 
-   static async resolvePost(postUrl: string, userInfo: MastodonUserInfo): Promise<MastodonPost | null> {
+   static async resolvePost(postUrl: string, userInfo: MastodonUserInfo): Promise<MastodonPost | Error> {
       try {
          const options = this.getAuthHeader(userInfo);
          const response = await fetch(`https://${userInfo.instance}/api/v2/search/?q=${postUrl}&resolve=true`, options);
-         if (response.status != 200) return null;
+         if (response.status != 200) return new Error(`Could not resolve post. Server responded with status code ${response.status}`);
          const searchResult = (await response.json()) as any as { statuses: MastodonPost[] };
-         if (searchResult.statuses.length == 0) return null;
+         if (searchResult.statuses.length == 0) return new Error(`Post ${postUrl} could not be found.`);
          return searchResult.statuses[0];
       } catch (e) {
-         return null;
+         return new Error("Network error.");
       }
    }
 
-   static async resolveAccount(accountUrl: string, userInfo: MastodonUserInfo): Promise<MastodonAccount | null> {
+   static async resolveAccount(accountUrl: string, userInfo: MastodonUserInfo): Promise<MastodonAccount | Error> {
       try {
          const options = this.getAuthHeader(userInfo);
          const response = await fetch(`https://${userInfo.instance}/api/v2/search/?q=${accountUrl}&resolve=true`, options);
-         if (response.status != 200) return null;
+         if (response.status != 200) return new Error(`Could not resolve account. Server responded with status code ${response.status}`);
          const searchResult = (await response.json()) as any as { accounts: MastodonAccount[]; statuses: MastodonPost[] };
-         if (searchResult.accounts.length == 0) return null;
+         if (searchResult.accounts.length == 0) return new Error(`Account ${accountUrl} could not be found.`);
          return searchResult.accounts[0];
       } catch (e) {
-         return null;
+         return new Error("Network error.");
       }
    }
 
-   static async getAccountPosts(accountId: string, maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonPost[] | null> {
+   static async getAccountPosts(accountId: string, maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonPost[] | Error> {
       try {
          const options = this.getAuthHeader(userInfo);
          const response = await fetch(`https://${userInfo.instance}/api/v1/accounts/${accountId}/statuses?limit=40${maxId ? maxId : ""}`, options);
-         if (response.status != 200) return null;
+         if (response.status != 200) return new Error(`Could not get posts for account. Server responded with status code ${response.status}`);
          return (await response.json()) as MastodonPost[];
       } catch (e) {
-         return null;
+         return new Error("Network error.");
       }
    }
 
-   static async getFollowing(accountId: string, userInfo: MastodonUserInfo): Promise<MastodonAccount[] | null> {
+   static async getFollowing(account: MastodonAccount, nextPage: PageIdentifier, userInfo: MastodonUserInfo): Promise<Page<MastodonAccount> | Error> {
       try {
-         const options = this.getAuthHeader(userInfo);
+         const instance = new URL(account.url).host;
          const following: MastodonAccount[] = [];
-         let nextPage: string | null = `https://${userInfo.instance}/api/v1/accounts/${accountId}/following`;
-         while (nextPage) {
-            const response = await fetch(nextPage, options);
-            if (response.status != 200) return null;
-            const result = (await response.json()) as MastodonAccount[];
-            if (result.length == 0) break;
-            following.push(...result);
-            nextPage = response.headers.get("link")?.match(/<([^>]+)>;\s*rel="next"/)?.[1] || null;
-         }
-         return following;
+         if (!nextPage) nextPage = `https://${instance}/api/v1/accounts/${account.id}/following`;
+         const response = await fetch(nextPage, instance == userInfo.instance ? this.getAuthHeader(userInfo) : undefined);
+         if (response.status != 200)
+            return new Error(`Could not get following list for account. Server responded with status code ${response.status}`);
+         const result = (await response.json()) as MastodonAccount[];
+         if (result.length == 0) return { items: [], nextPage: "end" };
+         following.push(...result);
+         nextPage = response.headers.get("link")?.match(/<([^>]+)>;\s*rel="next"/)?.[1] || null;
+         return { items: following, nextPage: nextPage ?? "end" };
       } catch (e) {
-         return null;
+         return new Error("Network error.");
       }
    }
 
-   static async getFollowers(accountId: string, userInfo: MastodonUserInfo): Promise<MastodonAccount[] | null> {
+   static async getFollowers(account: MastodonAccount, nextPage: string | null, userInfo: MastodonUserInfo): Promise<Page<MastodonAccount> | Error> {
       try {
-         const options = this.getAuthHeader(userInfo);
-         const followers: MastodonAccount[] = [];
-         let nextPage: string | null = `https://${userInfo.instance}/api/v1/accounts/${accountId}/followers`;
-         while (nextPage) {
-            const response = await fetch(nextPage, options);
-            if (response.status != 200) return null;
-            const result = (await response.json()) as MastodonAccount[];
-            if (result.length == 0) break;
-            followers.push(...result);
-            nextPage = response.headers.get("link")?.match(/<([^>]+)>;\s*rel="next"/)?.[1] || null;
-         }
-         return followers;
+         const instance = new URL(account.url).host;
+         const following: MastodonAccount[] = [];
+         if (!nextPage) nextPage = `https://${instance}/api/v1/accounts/${account.id}/followers`;
+         const response = await fetch(nextPage, instance == userInfo.instance ? this.getAuthHeader(userInfo) : undefined);
+         if (response.status != 200)
+            return new Error(`Could not get following list for account. Server responded with status code ${response.status}`);
+         const result = (await response.json()) as MastodonAccount[];
+         if (result.length == 0) return { items: [], nextPage: "end" };
+         following.push(...result);
+         nextPage = response.headers.get("link")?.match(/<([^>]+)>;\s*rel="next"/)?.[1] || null;
+         return { items: following, nextPage: nextPage ?? "end" };
       } catch (e) {
-         return null;
+         return new Error("Network error.");
       }
    }
 
-   static async getNotifications(maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonNotification[] | null> {
-      if (!userInfo.bearer) return null;
+   static async getNotifications(maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonNotification[] | Error> {
+      if (!userInfo.bearer) return new Error(`No access token given for ${userInfo.username}@${userInfo.instance}`);
       try {
          const options = this.getAuthHeader(userInfo);
          const response = await fetch(`https://${userInfo.instance}/api/v1/notifications?limit=40${maxId ? maxId : ""}`, options);
-         if (response.status != 200) return null;
+         if (response.status != 200)
+            return new Error(`Could not get notifications for account. Server responded with status code ${response.status}`);
          return (await response.json()) as MastodonNotification[];
       } catch (e) {
-         return null;
+         return new Error("Network error.");
       }
    }
 
-   static async getHomeTimeline(maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonPost[] | null> {
-      if (!userInfo.bearer) return null;
+   static async getHomeTimeline(maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonPost[] | Error> {
+      if (!userInfo.bearer) return new Error(`No access token given for ${userInfo.username}@${userInfo.instance}`);
       try {
          const options = this.getAuthHeader(userInfo);
          const response = await fetch(`https://${userInfo.instance}/api/v1/timelines/home?limit=40${maxId ? maxId : ""}`, options);
-         if (response.status != 200) return null;
+         if (response.status != 200) return new Error(`Could not load home timeline. Server responded with status code ${response.status}`);
          return (await response.json()) as MastodonPost[];
       } catch (e) {
-         return null;
+         return new Error("Networking error.");
       }
    }
 
-   static async getLocalTimeline(maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonPost[] | null> {
-      if (!userInfo.bearer) return null;
+   static async getLocalTimeline(maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonPost[] | Error> {
+      if (!userInfo.bearer) return new Error(`No access token given for ${userInfo.username}@${userInfo.instance}`);
       try {
          const options = this.getAuthHeader(userInfo);
          const response = await fetch(`https://${userInfo.instance}/api/v1/timelines/public?limit=40${maxId ? maxId : ""}`, options);
-         if (response.status != 200) return null;
+         if (response.status != 200) return new Error(`Could not load home timeline. Server responded with status code ${response.status}`);
          return (await response.json()) as MastodonPost[];
       } catch (e) {
-         return null;
+         return new Error("Network error.");
       }
    }
 
-   static async publishPost(replyTo: MastodonPost | null, text: string, userInfo: MastodonUserInfo): Promise<MastodonPost | null> {
-      if (!userInfo.bearer) return null;
+   static async getEmojis(instance: string): Promise<MastodonEmoji[] | Error> {
+      try {
+         const response = await fetch(`https://${instance}/api/v1/custom_emojis`);
+         if (response.status != 200) return new Error(`Could not load home timeline. Server responded with status code ${response.status}`);
+         return (await response.json()) as MastodonEmoji[];
+      } catch (e) {
+         return new Error("Network error.");
+      }
+   }
+
+   static async publishPost(replyTo: MastodonPost | null, text: string, userInfo: MastodonUserInfo): Promise<MastodonPost | Error> {
+      if (!userInfo.bearer) return new Error(`No access token given for ${userInfo.username}@${userInfo.instance}`);
       const resolvedPost = replyTo ? await this.resolvePost(replyTo.uri, userInfo) : null;
-      if (replyTo && !resolvedPost) return null;
+      if (resolvedPost instanceof Error) return new Error("Could not resolve post to reply to.");
       try {
          const response = await fetch(`https://${userInfo.instance}/api/v1/statuses`, {
             method: "POST",
@@ -306,41 +314,49 @@ export class MastodonApi {
          const json = await response.json();
          if (response.status != 200) {
             console.error(JSON.stringify(json));
-            return null;
+            return new Error(`Could not load home timeline. Server responded with status code ${response.status}`);
          }
          return json as MastodonPost;
       } catch (e) {
          console.error("Couldn't publish post.", e);
-         return null;
+         return new Error("Network error.");
       }
    }
 
    static async reblogPost(post: MastodonPost, userInfo: MastodonUserInfo): Promise<boolean> {
-      const resolvedPost = await this.resolvePost(post.uri, userInfo);
-      if (!resolvedPost) return false;
-      const url = `https://${userInfo.instance}/api/v1/statuses/${resolvedPost.id}/${post.reblogged ? "reblog" : "unreblog"}`;
-      const options = {
-         method: "POST",
-         headers: {
-            Authorization: "Bearer " + userInfo.bearer,
-         },
-      };
-      const response = await fetch(url, options);
-      return response.status == 200;
+      try {
+         const resolvedPost = await this.resolvePost(post.uri, userInfo);
+         if (resolvedPost instanceof Error) return false;
+         const url = `https://${userInfo.instance}/api/v1/statuses/${resolvedPost.id}/${post.reblogged ? "reblog" : "unreblog"}`;
+         const options = {
+            method: "POST",
+            headers: {
+               Authorization: "Bearer " + userInfo.bearer,
+            },
+         };
+         const response = await fetch(url, options);
+         return response.status == 200;
+      } catch (e) {
+         return false;
+      }
    }
 
    static async favouritePost(post: MastodonPost, userInfo: MastodonUserInfo): Promise<boolean> {
-      const resolvedPost = await this.resolvePost(post.uri, userInfo);
-      if (!resolvedPost) return false;
-      const url = `https://${userInfo.instance}/api/v1/statuses/${resolvedPost.id}/${post.favourited ? "favourite" : "unfavourite"}`;
-      const options = {
-         method: "POST",
-         headers: {
-            Authorization: "Bearer " + userInfo.bearer,
-         },
-      };
-      const response = await fetch(url, options);
-      return response.status == 200;
+      try {
+         const resolvedPost = await this.resolvePost(post.uri, userInfo);
+         if (resolvedPost instanceof Error) return false;
+         const url = `https://${userInfo.instance}/api/v1/statuses/${resolvedPost.id}/${post.favourited ? "favourite" : "unfavourite"}`;
+         const options = {
+            method: "POST",
+            headers: {
+               Authorization: "Bearer " + userInfo.bearer,
+            },
+         };
+         const response = await fetch(url, options);
+         return response.status == 200;
+      } catch (e) {
+         return false;
+      }
    }
 }
 
@@ -348,12 +364,12 @@ function replaceEmojis(text: string, emojis: MastodonEmoji[]) {
    let replacedText = text;
 
    for (const emoji of emojis) {
-     const shortcodeRegExp = new RegExp(`:${emoji.shortcode}:`, 'g');
-     replacedText = replacedText.replace(shortcodeRegExp, `<img class="mastodon-emoji" src="${emoji.url}" alt="${emoji.shortcode}">`);
+      const shortcodeRegExp = new RegExp(`:${emoji.shortcode}:`, "g");
+      replacedText = replacedText.replace(shortcodeRegExp, `<img class="mastodon-emoji" src="${emoji.url}" alt="${emoji.shortcode}">`);
    }
 
    return replacedText;
- }
+}
 
 function getAccountName(account: MastodonAccount, shouldReplaceEmojis = false) {
    let name = account.display_name && account.display_name.length > 0 ? account.display_name : account.username;
@@ -423,9 +439,12 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       if (onlyShowRoots && postToView.in_reply_to_account_id) return null;
       let postUrl = postToView.url;
 
-      let inReplyToPost: MastodonPost | null = null;
+      let inReplyToPost: MastodonPost | Error | null = null;
       if (postToView.in_reply_to_id) {
          inReplyToPost = (await MastodonApi.getPost(postToView.in_reply_to_id, mastodonPost.userInfo ?? userInfo)) ?? inReplyToPost;
+         if (inReplyToPost instanceof Error) {
+            inReplyToPost = null;
+         }
       }
 
       return {
@@ -483,13 +502,12 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
                true,
                async (text) => {
                   const mastodonPost = await MastodonApi.publishPost(null, text, userInfo);
-                  if (mastodonPost) {
-                     const post = await this.mastodonPostToPost(mastodonPost, false, userInfo);
-                     if (!post) return false;
-                     const postsView = document.querySelector("ledit-posts") as PostsView;
-                     postsView.prependPost(post);
-                  }
-                  return mastodonPost != null;
+                  if (mastodonPost instanceof Error) return false;
+                  const post = await this.mastodonPostToPost(mastodonPost, false, userInfo);
+                  if (!post) return false;
+                  const postsView = document.querySelector("ledit-post-list") as PostListView;
+                  postsView.prependPost(post);
+                  return true;
                },
                (name, buffer) => {},
                (name) => {}
@@ -529,14 +547,12 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             true,
             async (text) => {
                const mastodonReply = await MastodonApi.publishPost(mastodonComment, text, userInfo);
-               if (mastodonReply) {
-                  const reply = await this.mastodonPostToComment(mastodonReply, true, userInfo);
-                  if (!reply) return false;
-                  if (commentOrPostView instanceof CommentView) {
-                     commentOrPostView.prependReply(reply);
-                  } else {
-                     commentOrPostView.prependComment(reply);
-                  }
+               if (mastodonReply instanceof Error) return false;
+               const reply = this.mastodonPostToComment(mastodonReply, true, userInfo);
+               if (commentOrPostView instanceof CommentView) {
+                  commentOrPostView.prependReply(reply);
+               } else {
+                  commentOrPostView.prependComment(reply);
                }
                return mastodonReply != null;
             },
@@ -546,8 +562,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       );
    }
 
-   async getPostsForUser(mastodonUser: string, after: string | null): Promise<Post<MastodonPostData>[]> {
-      if (after == "end") return [];
+   async getPostsForUser(mastodonUser: string, nextPage: PageIdentifier): Promise<Post<MastodonPostData>[]> {
       const tokens = mastodonUser.split("/");
       const timeline = tokens.length >= 2 ? tokens[1] : null;
       mastodonUser = tokens[0];
@@ -557,19 +572,18 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       if (!userInfo) return [];
 
       if (!mastodonUserId) {
-         const account = await MastodonApi.getAccount(userInfo.username, userInfo);
-         if (!account) return [];
+         const account = await MastodonApi.lookupAccount(userInfo.username, userInfo.instance);
+         if (account instanceof Error) return [];
          mastodonUserId = account.id;
          mastodonUserIds[mastodonUser] = mastodonUserId;
          localStorage.setItem("mastodonCache", JSON.stringify(mastodonUserIds));
       }
 
-      let maxId = after ? `&max_id=${after}` : "";
+      let maxId = nextPage ? `&max_id=${nextPage}` : "";
 
-      let url;
       if (timeline == "notifications") {
          const mastodonNotifications = await MastodonApi.getNotifications(maxId, userInfo);
-         if (!mastodonNotifications) return [];
+         if (mastodonNotifications instanceof Error) return [];
          const posts: Post<MastodonPostData>[] = [];
          for (const notification of mastodonNotifications) {
             if (notification.type == "mention") {
@@ -599,7 +613,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             timeline == "home"
                ? await MastodonApi.getHomeTimeline(maxId, userInfo)
                : await MastodonApi.getAccountPosts(mastodonUserId, maxId, userInfo);
-         if (!mastodonPosts) return [];
+         if (mastodonPosts instanceof Error) return [];
          const posts: Post<MastodonPostData>[] = [];
          const postPromises: Promise<Post<MastodonPostData> | null>[] = [];
          for (const mastodonPost of mastodonPosts) {
@@ -614,7 +628,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       }
    }
 
-   async getPosts(after: string | null): Promise<Posts<MastodonPostData>> {
+   async getPosts(nextPage: PageIdentifier): Promise<Page<Post<MastodonPostData>> | Error> {
       // We support different m/ url types
       //
       // These do not require an account bookmark and are readonly:
@@ -629,11 +643,11 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       // 7. user@instance/@user(@instance)/, shows the user profile and posts.
       // 7. user@instance/<statusid>, shows the status.
 
-      const noResult = { posts: [], after: null };
-      if (after == "end") return noResult;
-
       const feedTokens = this.getFeed().split("/");
-      if (feedTokens.length == 0) return noResult;
+      if (feedTokens.length == 0)
+         return new Error(
+            `Invalid Mastodon feed ${this.getFeed()}. Must be a user name, e.g. @badlogic@mastodon.gamedev.place, or an instance name, e.g. mastodon.gamedev.place.`
+         );
 
       if (feedTokens.length == 1) {
          if (feedTokens[0].includes("@")) {
@@ -647,10 +661,10 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             }
 
             const urls = this.getFeed().split("+");
-            let afters: (string | null)[] | undefined = after?.split("+");
+            let nextPages: (string | null)[] | undefined = nextPage?.split("+");
             const promises: Promise<Post<MastodonPostData>[]>[] = [];
             for (let i = 0; i < urls.length; i++) {
-               promises.push(this.getPostsForUser(urls[i], afters ? afters[i] : null));
+               promises.push(this.getPostsForUser(urls[i], nextPages ? nextPages[i] : null));
             }
 
             const promisesResult = await Promise.all(promises);
@@ -672,49 +686,55 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             }
 
             // FIXME
-            return { posts, after: newAfters!.join("+") };
+            return { items: posts, nextPage: newAfters!.join("+") };
          }
       }
 
       if (feedTokens.length == 2) {
          const userInfo = getUserInfo(feedTokens[0].trim());
-         if (!userInfo) return noResult;
+         if (!userInfo) return new Error(`Invalid Mastodon user name ${feedTokens[0]}.`);
          if (!userInfo.bearer) {
-            alert(`You must add a Mastodon account for ${userInfo.username}@${userInfo.instance}.`);
-            return noResult;
+            return new Error(`You must add a Mastodon account for ${userInfo.username}@${userInfo.instance}.`);
          }
          const what = feedTokens[1].trim();
-         if (what.length == 0) return noResult;
+         if (what.length == 0) return new Error(`Invalid Mastodon feed ${this.getFeed()}. Expected /home, /@username@instance, or a /<statusid>.`);
 
-         let mastodonAccount: MastodonAccount | null = null;
+         let mastodonAccount: MastodonAccount | null = null;
          let mastodonPosts: MastodonPost[] | null = null;
          let mastodonNotifications: MastodonNotification[] | null = null;
          if (what == "home") {
-            mastodonPosts = await MastodonApi.getHomeTimeline(after, userInfo);
-            if (!mastodonPosts) return noResult;
+            const result = await MastodonApi.getHomeTimeline(nextPage, userInfo);
+            if (result instanceof Error) return result;
+            mastodonPosts = result;
          } else if (what == "notifications") {
-            mastodonNotifications = await MastodonApi.getNotifications(after, userInfo);
+            const result = await MastodonApi.getNotifications(nextPage, userInfo);
+            if (result instanceof Error) return result;
+            mastodonNotifications = result;
          } else if (what == "local") {
-            mastodonPosts = await MastodonApi.getLocalTimeline(after, userInfo);
+            const result = await MastodonApi.getLocalTimeline(nextPage, userInfo);
+            if (result instanceof Error) return result;
+            mastodonPosts = result;
          } else if (what.includes("@")) {
             let otherUserInfo = getUserInfo(what);
             if (!otherUserInfo || otherUserInfo.instance == userInfo.instance) otherUserInfo = userInfo;
-            mastodonAccount = await MastodonApi.getAccount(what, otherUserInfo);
-            if (!mastodonAccount) return noResult;
-            mastodonPosts = await MastodonApi.getAccountPosts(mastodonAccount.id, after, otherUserInfo);
-            if (mastodonPosts) {
-               for (const mastodonPost of mastodonPosts) {
-                  mastodonPost.userInfo = otherUserInfo;
-               }
+            const resultAccount = await MastodonApi.lookupAccount(what, otherUserInfo.instance);
+            if (resultAccount instanceof Error) return resultAccount;
+            mastodonAccount = resultAccount;
+            const resultPosts = await MastodonApi.getAccountPosts(mastodonAccount.id, nextPage, otherUserInfo);
+            if (resultPosts instanceof Error) return resultPosts;
+            mastodonPosts = resultPosts;
+            for (const mastodonPost of resultPosts) {
+               mastodonPost.userInfo = otherUserInfo;
             }
          } else {
             const post = await MastodonApi.getPost(what, userInfo);
-            if (!post) return noResult;
+            if (post instanceof Error) return post;
             mastodonPosts = [post];
          }
 
          const posts: Post<MastodonPostData>[] = [];
-         if (mastodonAccount && !after) {
+         if (mastodonAccount && !nextPage) {
+            // FIXME show account info + posts + following + follows
          }
 
          let maxId: string | null = null;
@@ -768,13 +788,13 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             this.showActionButtons(userInfo);
          }
 
-         return { posts: posts, after: maxId };
+         return { items: posts, nextPage: maxId };
       }
 
-      return noResult;
+      return new Error(`invaInvalid Mastodon feed ${this.getFeed()}`);
    }
 
-   async getComments(post: Post<MastodonPostData>): Promise<Comment<MastodonCommentData>[]> {
+   async getComments(post: Post<MastodonPostData>): Promise<Comment<MastodonCommentData>[] | Error> {
       const mastodonPost = post.data.mastodonPost;
       const userInfo = post.data.userInfo;
       const postToView = mastodonPost.reblog ?? mastodonPost;
@@ -786,8 +806,9 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       const comments: Comment<MastodonCommentData>[] = [];
       const commentsById = new Map<string, Comment<MastodonCommentData>>();
 
-      let context = await MastodonApi.getPostContext(statusId, commentUserInfo);
-      if (!context) return [];
+      let result = await MastodonApi.getPostContext(statusId, commentUserInfo);
+      if (result instanceof Error) return result;
+      let context = result;
 
       if (context.ancestors.length > 0) {
          // FIXME if the root is from our instance, query our instance
@@ -796,10 +817,9 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
          let root = context.ancestors[0];
          if (new URL(root.url).host == userInfo.instance) {
             const resolvedRoot = await MastodonApi.resolvePost(root.url, userInfo);
-            if (resolvedRoot) {
-               root = resolvedRoot;
-               commentUserInfo = userInfo;
-            }
+            if (resolvedRoot instanceof Error) return resolvedRoot;
+            root = resolvedRoot;
+            commentUserInfo = userInfo;
          }
          rootId = root.id;
          // FIXME matching by content is bad
@@ -808,7 +828,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
          comments.push(rootComment);
          commentsById.set(root.id, rootComment);
          const fullContext = await MastodonApi.getPostContext(root.id, commentUserInfo);
-         if (fullContext) context = fullContext;
+         if (!(fullContext instanceof Error)) context = fullContext;
       }
 
       const mastodonComments: MastodonPost[] = [];
@@ -979,6 +999,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
          </div>
       `)[0]
       );
+
       const pollDom = this.getPollDom(postToView);
       if (pollDom) elements.push(pollDom);
       const mediaDom = this.getMediaDom(postToView);
@@ -1304,25 +1325,39 @@ customElements.define("ledit-mastodon-user-editor", MastodonUserEditor);
 
 export class MastodonUserProfileView extends OverlayView {
    relationship: MastodonRelationship | null = null;
+   localAccount: MastodonAccount | null = null;
+   remoteAccount: MastodonAccount | null = null;
 
-   constructor(public account: MastodonAccount, public readonly userInfo: MastodonUserInfo) {
+   constructor(account: MastodonAccount, public readonly userInfo: MastodonUserInfo) {
       super();
 
       const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
       this.content.append(loadingDiv);
       (async () => {
-         const otherAccount = await MastodonApi.resolveAccount(account.url, userInfo);
-         if (!otherAccount) {
+         const resultLocalAccount = await MastodonApi.resolveAccount(account.url, userInfo);
+         if (resultLocalAccount instanceof Error) {
             this.content.innerHTML = `
-               <div class="post-loading">Could not fetch user ${getAccountName(account, true)}</div>
+               <div class="post-loading">Could not lookup user ${getAccountName(account, true)} on ${userInfo.instance}: ${resultLocalAccount.message}.</div>
             `;
+            return;
+         }
+         this.localAccount = resultLocalAccount;
+
+         const remoteInstance = new URL(account.url).host;
+         const resultRemoteAccount = await MastodonApi.lookupAccount(account.username, remoteInstance);
+         if (resultRemoteAccount instanceof Error) {
+            this.content.innerHTML = `
+               <div class="post-loading">Could not lookup user ${getAccountName(account, true)} on ${remoteInstance}: ${resultRemoteAccount.message}</div>
+            `;
+            return;
          } else {
-            this.relationship = await MastodonApi.getRelationship(otherAccount.id, userInfo);
-            if (!this.relationship) {
-               this.content.innerHTML = `<div class="post-loading">Could not fetch user ${getAccountName(account, true)}</div>`;
+            this.remoteAccount = resultRemoteAccount;
+            const resultRelationship = await MastodonApi.getRelationship(this.localAccount.id, userInfo);
+            if (resultRelationship instanceof Error) {
+               this.content.innerHTML = `<div class="post-loading">Could not load user ${getAccountName(this.localAccount, true)}: ${resultRelationship.message}</div>`;
                return;
             }
-            this.account = otherAccount;
+            this.relationship = resultRelationship;
             this.content.innerHTML = "";
             this.renderContent();
          }
@@ -1330,25 +1365,34 @@ export class MastodonUserProfileView extends OverlayView {
    }
 
    renderContent(): void {
+      if (!this.localAccount) return;
+      const localAccount = this.localAccount;
+      if (!this.remoteAccount) return;
+      const remoteAccount = this.remoteAccount;
+
       this.content.style.gap = "0.5em";
-      const avatarImageUrl = this.account.avatar_static;
-      const authorUrl = this.account.url;
-      const hasHeader = this.account.header && !this.account.header.includes("missing");
+      const avatarImageUrl = localAccount.avatar_static;
+      const authorUrl = localAccount.url;
+      const hasHeader = localAccount.header && !localAccount.header.includes("missing");
       const metaDom = dom(/*html*/ `
          <div>
-            ${ hasHeader ? `<div style="max-height: 30vh; overflow: hidden; margin: -1em;"><img src="${this.account.header}" class="mastodon-account-header"></div>` : "" }
+            ${
+               hasHeader
+                  ? `<div style="max-height: 30vh; overflow: hidden; margin: -1em;"><img src="${localAccount.header}" class="mastodon-user-profile-header"></div>`
+                  : ""
+            }
             <div style="display: flex; margin-top: 2em; align-items: center; gap: var(--ledit-padding);">
                <a href="${authorUrl}" style="display: flex; gap: var(--ledit-padding);">
                   ${avatarImageUrl ? `<img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">` : ""}
                   <div style="display: flex; flex-direction: column;">
-                     <span><b>${getAccountName(this.account, true)}</b></span>
-                     <span style="font-size: var(--ledit-font-size-small); color: var(--ledit-color-dim);">@${this.account.username}@${
-         new URL(this.account.url).host
+                     <span><b>${getAccountName(localAccount, true)}</b></span>
+                     <span style="font-size: var(--ledit-font-size-small); color: var(--ledit-color-dim);">@${localAccount.username}@${
+         new URL(localAccount.url).host
       }</span>
                   </div>
                </a>
                ${
-                  this.account.username != this.userInfo.username && new URL(this.account.url).host != this.userInfo.instance
+                  localAccount.username != this.userInfo.username && new URL(localAccount.url).host != this.userInfo.instance
                      ? `<button class="overlay-button" style="margin-left: auto; ${
                           this.relationship?.following ? "border: 1px solid var(--ledit-border-color);" : ""
                        }">${this.relationship?.following ? "Following" : "Follow"}</button>`
@@ -1357,31 +1401,110 @@ export class MastodonUserProfileView extends OverlayView {
             </div>
 
          </div>
-         <div class="mastodon-relationship-status">
+         <div class="mastodon-user-profile-relationship-status">
             ${this.relationship?.followed_by ? `<span class="selected">Follows you</span>` : ""}
             ${this.relationship?.blocked_by ? `<span>Blocks you</span>` : ""}
             ${this.relationship?.blocking ? `<span>>Blocked</span>` : ""}
          </div>
-         <div>
-            ${this.account.note}
+         <div class="content-text">
+            ${localAccount.note}
          </div>
-         <div class="mastodon-account-stats">
-            <div x-id="accountPosts" class="selected"><span><b>${this.account.statuses_count}</b></span><span>Posts</span></div>
-            <div x-id="accountFollowing"><span><b>${this.account.following_count}</b></span><span>Following</span></div>
-            <div x-id="accountFollowers"><span><b>${this.account.followers_count}</b></span><span>Followers</span></div>
+         <div class="mastodon-user-profile-stats">
+            <div x-id="accountPosts" class="selected"><span><b>${this.remoteAccount.statuses_count}</b></span><span>Posts</span></div>
+            <div x-id="accountFollowing"><span><b>${this.remoteAccount.following_count}</b></span><span>Following</span></div>
+            <div x-id="accountFollowers"><span><b>${this.remoteAccount.followers_count}</b></span><span>Followers</span></div>
          </div>
       `);
       this.content.append(...metaDom);
 
       let feed = getSource().getFeed().split("/");
-      let posts = new PostsView(new MastodonSource(feed[0] + "/@" + this.account.username + "@" + new URL(this.account.url).host));
+      let posts = new PostListView(new MastodonSource(feed[0] + "/@" + localAccount.username + "@" + new URL(localAccount.url).host), false);
+      let following = new MastodonAccountListView(
+         async (nextPage) => {
+            return await MastodonApi.getFollowing(remoteAccount, nextPage, this.userInfo);
+         },
+         this.userInfo
+      );
+      let followers = new MastodonAccountListView(
+         async (nextPage) => {
+            return await MastodonApi.getFollowers(remoteAccount, nextPage, this.userInfo);
+         },
+         this.userInfo
+      );
+
       this.content.append(posts);
-      posts.style.marginTop = "var(--ledit-margin)";
-      let links = this.querySelectorAll("a")!;
-      for (let i = 0; i < links.length; i++) {
-         let link = links[i];
-         link.setAttribute("target", "_blank");
-      }
+      posts.style.marginTop = "0";
+
+      const elements = this.elements<{
+         accountPosts: HTMLElement;
+         accountFollowing: HTMLElement;
+         accountFollowers: HTMLElement;
+      }>();
+
+      elements.accountPosts.addEventListener("click", () => {
+         Array.from(this.content.querySelectorAll(".mastodon-user-profile-stats .selected")).forEach((el) => el.classList.remove("selected"));
+         elements.accountPosts.classList.add("selected");
+         followers.remove();
+         following.remove();
+         this.content.append(posts);
+      });
+      elements.accountFollowing.addEventListener("click", () => {
+         Array.from(this.content.querySelectorAll(".mastodon-user-profile-stats .selected")).forEach((el) => el.classList.remove("selected"));
+         elements.accountFollowing.classList.add("selected");
+         followers.remove();
+         posts.remove();
+         this.content.append(following);
+      });
+      elements.accountFollowers.addEventListener("click", () => {
+         Array.from(this.content.querySelectorAll(".mastodon-user-profile-stats .selected")).forEach((el) => el.classList.remove("selected"));
+         elements.accountFollowers.classList.add("selected");
+         following.remove();
+         posts.remove();
+         this.content.append(followers);
+      });
+
+      setLinkTargetsToBlank(this);
    }
 }
 customElements.define("ledit-mastodon-user-profile", MastodonUserProfileView);
+
+export class MastodonAccountListView extends PagedListView<MastodonAccount> {
+   constructor(
+      public readonly fetchAccounts: (nextPage: PageIdentifier) => Promise<Page<MastodonAccount> | Error>,
+      public readonly userInfo: MastodonUserInfo
+   ) {
+      super(fetchAccounts);
+      this.classList.add("mastodon-account-list");
+   }
+
+   renderItems(accounts: MastodonAccount[]) {
+      for (const account of accounts) {
+         const avatarImageUrl = account.avatar_static;
+         const authorUrl = account.url;
+         const accountDom = dom(/*html*/ `
+         <div class="mastodon-account">
+            <a href="${authorUrl}" style="display: flex; gap: var(--ledit-padding);">
+               ${avatarImageUrl ? `<img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">` : ""}
+               <div style="display: flex; flex-direction: column; font-size: var(--ledit-font-size-small);">
+                  <span><b>${getAccountName(account, true)}</b></span>
+                  <span style="color: var(--ledit-color-dim);">@${account.username}@${new URL(account.url).host}</span>
+               </div>
+            </a>
+            ${
+               /*
+                  account.username != this.userInfo.username && new URL(account.url).host != this.userInfo.instance
+                  ? `<button class="overlay-button" style="margin-left: auto; ${
+                     this.relationship?.following ? "border: 1px solid var(--ledit-border-color);" : ""
+                  }">${this.relationship?.following ? "Following" : "Follow"}</button>`
+                  : ""
+               */
+               ""
+            }
+         </div>
+         `);
+         setLinkTargetsToBlank(accountDom[0]);
+         this.append(...accountDom);
+      }
+   }
+}
+customElements.define("ledit-mastodon-account-list", MastodonAccountListView);

@@ -1,10 +1,9 @@
 import { CommentView } from "./comments";
 import { assertNever } from "./utils";
 
-export interface Posts<T> {
-   posts: Post<T>[];
-   after: string | null;
-}
+export type PageIdentifier = string | "end" | null;
+
+export type Page<T> = { items: T[]; nextPage: PageIdentifier };
 
 export interface Post<T> {
    url: string;
@@ -39,12 +38,12 @@ export interface ContentDom {
    toggles: Element[];
 }
 
-export interface Source<POST_DATA, COMMENT_DATA> {
-   getPosts(after: string | null): Promise<Posts<POST_DATA>>,
-   getComments(post: Post<POST_DATA>): Promise<Comment<COMMENT_DATA>[]>,
-   getMetaDom(post: Post<POST_DATA>): HTMLElement[],
-   getContentDom(post: Post<POST_DATA>): ContentDom,
-   getCommentMetaDom(comment: Comment<COMMENT_DATA>, opName: string | null): HTMLElement[],
+export interface Source<P, C> {
+   getPosts(nextPage: PageIdentifier): Promise<Page<Post<P>> | Error>,
+   getComments(post: Post<P>): Promise<Comment<C>[] | Error>,
+   getMetaDom(post: Post<P>): HTMLElement[],
+   getContentDom(post: Post<P>): ContentDom,
+   getCommentMetaDom(comment: Comment<C>, opName: string | null): HTMLElement[],
    getFeed(): string,
    getSourcePrefix(): SourcePrefix,
    getSortingOptions(): SortingOption[],

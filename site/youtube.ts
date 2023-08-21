@@ -1,6 +1,6 @@
 // @ts-ignore
 import { FeedEntry } from "@extractus/feed-extractor";
-import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
+import { Comment, ContentDom, Page, Post, SortingOption, Source, SourcePrefix } from "./data";
 import { RssSource } from "./rss";
 import { dateToText, dom, intersectsViewport, proxyFetch } from "./utils";
 
@@ -8,7 +8,7 @@ const channelIds = localStorage.getItem("youtubeCache") ? JSON.parse(localStorag
 
 export class YoutubeSource implements Source<FeedEntry, void> {
 
-   async getYoutubeChannel(channel: string): Promise<Post<FeedEntry>[]> {
+   async getYoutubeChannel(channel: string): Promise<Post<FeedEntry>[] | Error> {
       let channelId: string | null = channelIds[channel];
 
       if (!channelId) {
@@ -28,10 +28,10 @@ export class YoutubeSource implements Source<FeedEntry, void> {
       return RssSource.getRssPosts("https://www.youtube.com/feeds/videos.xml?channel_id=" + channelId);
    }
 
-   async getPosts(after: string | null): Promise<Posts<FeedEntry>> {
+   async getPosts(nextPage: string | null): Promise<Page<Post<FeedEntry>>> {
       const channels = this.getFeed().split("+");
 
-      const promises: Promise<Post<FeedEntry>[]>[] = [];
+      const promises: Promise<Post<FeedEntry>[] | Error>[] = [];
       for (const channel of channels) {
          promises.push(this.getYoutubeChannel(channel));
       }
@@ -40,6 +40,7 @@ export class YoutubeSource implements Source<FeedEntry, void> {
       const posts: Post<FeedEntry>[] = [];
       for (let i = 0; i < channels.length; i++) {
          const result = promisesResult[i];
+         if (result instanceof Error) continue;
          const channel = channels[i];
          for (const post of result) {
             post.author = channel;
@@ -47,7 +48,7 @@ export class YoutubeSource implements Source<FeedEntry, void> {
          posts.push(...result);
       }
       posts.sort((a, b) => b.createdAt - a.createdAt);
-      return { posts, after: null };
+      return { items: posts, nextPage: "end" };
    }
 
    async getComments(post: Post<FeedEntry>): Promise<Comment<void>[]> {

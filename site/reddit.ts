@@ -1,6 +1,6 @@
 import "video.js/dist/video-js.min.css";
 
-import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix, getSource } from "./data";
+import { Comment, ContentDom, Page, PageIdentifier, Post, SortingOption, Source, SourcePrefix, getSource } from "./data";
 import { svgDownArrow, svgReply, svgUpArrow } from "./svg";
 import { addCommasToNumber, dateToText, dom, htmlDecode, intersectsViewport, makeCollapsible, renderGallery, renderVideo } from "./utils";
 
@@ -166,84 +166,89 @@ function getSortingParameter() {
 }
 
 export class RedditSource implements Source<RedditPost, RedditComment> {
-   async getPosts(after: string | null): Promise<Posts<RedditPost>> {
-      const sortFrag = getSortingFragment();
-      const sortParam = getSortingParameter();
-      const hash = "/r/" + getSubreddit() + "/" + sortFrag + "/.json?" + sortParam + "&" + (after ? "after=" + after : "");
-      const url = "https://www.reddit.com" + (!hash.startsWith("/") ? "/" : "") + hash;
-      const response = await fetch(url);
-      const redditPosts = (await response.json()) as RedditPosts;
-      if (!redditPosts || !redditPosts.data || !redditPosts.data.children) {
-         return {
-            posts: [],
-            after: null,
-         };
-      }
-
-      const convertPost = (redditPost: RedditPost) => {
-         const url = redditPost.data.url.startsWith("/r/") ? "https://www.reddit.com" + redditPost.data.url : redditPost.data.url;
-         let domain = url.includes("redd.it") || url.includes("reddit.com") ? "" : new URL(url).host;
-         const post: Post<RedditPost> = {
-            url,
-            feed: redditPost.data.subreddit,
-            title: redditPost.data.title,
-            author: redditPost.data.author,
-            createdAt: redditPost.data.created_utc,
-            numComments: redditPost.data.num_comments,
-            contentOnly: false,
-            data: redditPost,
-         };
-         return post;
-      };
-
-      const posts: Post<RedditPost>[] = [];
-      for (const redditPost of redditPosts.data.children) {
-         if (redditPost.data.author == undefined) continue;
-         posts.push(convertPost(redditPost));
-      }
-
-      return {
-         posts: posts,
-         after: redditPosts.data.after,
-      };
-   }
-   async getComments(post: Post<RedditPost>): Promise<Comment<RedditComment>[]> {
-      const commentsUrl = "https://www.reddit.com/" + post.data.data.permalink + ".json";
-      const response = await fetch(commentsUrl);
-      const data = await response.json();
-      if (data.length < 2) return [];
-      const redditComments = data[1] as RedditComments;
-      if (!redditComments || !redditComments.data || !redditComments.data.children) {
-         return [];
-      }
-
-      const convertComment = (redditComment: RedditComment) => {
-         const comment: Comment<RedditComment> = {
-            url: "https://www.reddit.com/" + redditComment.data.permalink,
-            author: redditComment.data.author,
-            authorUrl: `http://www.reddit.com/u/${redditComment.data.author}`,
-            createdAt: redditComment.data.created_utc,
-            score: redditComment.data.score,
-            content: redditComment.data.body_html,
-            replies: [],
-            highlight: false,
-            data: redditComment
-         };
-         if (redditComment.data.replies != "" && redditComment.data.replies !== undefined) {
-            for (const reply of redditComment.data.replies.data.children) {
-               if (reply.data.author == undefined) continue;
-               comment.replies.push(convertComment(reply));
-            }
+   async getPosts(nextPage: PageIdentifier): Promise<Page<Post<RedditPost>> | Error> {
+         try {
+         const sortFrag = getSortingFragment();
+         const sortParam = getSortingParameter();
+         const hash = "/r/" + getSubreddit() + "/" + sortFrag + "/.json?" + sortParam + "&" + (nextPage ? "after=" + nextPage : "");
+         const url = "https://www.reddit.com" + (!hash.startsWith("/") ? "/" : "") + hash;
+         const response = await fetch(url);
+         const redditPosts = (await response.json()) as RedditPosts;
+         if (!redditPosts || !redditPosts.data || !redditPosts.data.children) {
+            return new Error(`Could not load posts for subreddit ${getSubreddit()}`);
          }
-         return comment;
-      };
 
-      const comments: Comment<RedditComment>[] = [];
-      for (const comment of redditComments.data.children) {
-         if (comment.data.author == undefined) continue;
-         comments.push(convertComment(comment));
+         const convertPost = (redditPost: RedditPost) => {
+            const url = redditPost.data.url.startsWith("/r/") ? "https://www.reddit.com" + redditPost.data.url : redditPost.data.url;
+            let domain = url.includes("redd.it") || url.includes("reddit.com") ? "" : new URL(url).host;
+            const post: Post<RedditPost> = {
+               url,
+               feed: redditPost.data.subreddit,
+               title: redditPost.data.title,
+               author: redditPost.data.author,
+               createdAt: redditPost.data.created_utc,
+               numComments: redditPost.data.num_comments,
+               contentOnly: false,
+               data: redditPost,
+            };
+            return post;
+         };
+
+         const posts: Post<RedditPost>[] = [];
+         for (const redditPost of redditPosts.data.children) {
+            if (redditPost.data.author == undefined) continue;
+            posts.push(convertPost(redditPost));
+         }
+
+         return {
+            items: posts,
+            nextPage: redditPosts.data.after,
+         };
+      } catch (e) {
+         return new Error("Network error.");
       }
-      return comments;
+   }
+   async getComments(post: Post<RedditPost>): Promise<Comment<RedditComment>[] | Error> {
+      try {
+         const commentsUrl = "https://www.reddit.com/" + post.data.data.permalink + ".json";
+         const response = await fetch(commentsUrl);
+         const data = await response.json();
+         if (data.length < 2) return [];
+         const redditComments = data[1] as RedditComments;
+         if (!redditComments || !redditComments.data || !redditComments.data.children) {
+            return new Error(`Could not load comments.`);
+         }
+
+         const convertComment = (redditComment: RedditComment) => {
+            const comment: Comment<RedditComment> = {
+               url: "https://www.reddit.com/" + redditComment.data.permalink,
+               author: redditComment.data.author,
+               authorUrl: `http://www.reddit.com/u/${redditComment.data.author}`,
+               createdAt: redditComment.data.created_utc,
+               score: redditComment.data.score,
+               content: redditComment.data.body_html,
+               replies: [],
+               highlight: false,
+               data: redditComment
+            };
+            if (redditComment.data.replies != "" && redditComment.data.replies !== undefined) {
+               for (const reply of redditComment.data.replies.data.children) {
+                  if (reply.data.author == undefined) continue;
+                  comment.replies.push(convertComment(reply));
+               }
+            }
+            return comment;
+         };
+
+         const comments: Comment<RedditComment>[] = [];
+         for (const comment of redditComments.data.children) {
+            if (comment.data.author == undefined) continue;
+            comments.push(convertComment(comment));
+         }
+         return comments;
+      } catch (e) {
+         throw new Error("Network error.");
+      }
    }
 
    getMetaDom(post: Post<RedditPost>): HTMLElement[] {
@@ -259,7 +264,7 @@ export class RedditSource implements Source<RedditPost, RedditComment> {
 
    getContentDom(canonicalPost: Post<RedditPost>): ContentDom {
       const post = canonicalPost.data;
-      const postsWidth = document.querySelector(".posts")!.clientWidth; // account for padding in post
+      const postsWidth = document.querySelector("ledit-post-list")!.clientWidth; // account for padding in post
       const toggles: Element[] = [];
       const reply = dom(/*html*/`<a href="${"https://www.reddit.com" + post.data.permalink}" class="color-fill post-button">${svgReply}</a>`)[0];
       toggles.push(reply);

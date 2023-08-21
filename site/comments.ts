@@ -1,7 +1,7 @@
 import "./comments.css";
 import { Post, Comment, getSource } from "./data";
 import { svgLoader, svgReply } from "./svg";
-import { dateToText, dom, htmlDecode, onAddedToDOM, scrollToAndCenter } from "./utils";
+import { dateToText, dom, htmlDecode, onAddedToDOM, scrollToAndCenter, setLinkTargetsToBlank } from "./utils";
 import { View } from "./view";
 
 const commentsCache = new Map<string, Comment<any>[]>();
@@ -22,12 +22,16 @@ export class CommentsView extends View {
       this.append(loadingDiv);
       try {
          const commentsData = commentsCache.has(post.url) ? commentsCache.get(post.url)! : await source.getComments(post);
-         if (!commentsData) return;
-         commentsCache.set(post.url, commentsData);
-         this.comments = commentsData;
-         this.render();
+         if (commentsData instanceof Error) {
+            this.append(...dom(`<div class="post-loading">${commentsData.message}</div>`));
+         } else {
+            commentsCache.set(post.url, commentsData);
+            this.comments = commentsData;
+            this.render();
+         }
       } catch (e) {
-         this.showError("Could not load comments", e);
+         console.error("Couldn't load comments", e);
+         this.append(...dom(`<div class="post-loading">Could not load comments</div>`));
       } finally {
          loadingDiv.remove();
       }
@@ -38,11 +42,6 @@ export class CommentsView extends View {
       for (const comment of this.comments) {
          this.append(new CommentView(comment, this.post.author));
       }
-   }
-
-   showError(message: string, e: any | null = null) {
-      this.append(dom(`<div class="post-loading">${message}</div>`)[0]);
-      if (e) console.error("An error occured: ", e);
    }
 }
 customElements.define("ledit-comments", CommentsView);
@@ -125,11 +124,7 @@ export class CommentView extends View {
       }
 
       // Ensure all links open a new tab.
-      let links = this.querySelectorAll("a")!;
-      for (let i = 0; i < links.length; i++) {
-         let link = links[i];
-         link.setAttribute("target", "_blank");
-      }
+      setLinkTargetsToBlank(this);
 
       // Collapse children on click
       const isLink = (element: HTMLElement) => {

@@ -166,3 +166,9 @@
    color: var(--ledit-color-dim);
    fill: var(--ledit-color-dim);
 }
+
+.paged-list-view {
+   display: flex;
+   flex-direction: column;
+   gap: calc(var(--ledit-padding) * 1.5)
+}

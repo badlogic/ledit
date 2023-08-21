@@ -21,41 +21,62 @@
    margin-bottom: var(--ledit-padding);
 }
 
-.mastodon-relationship-status > * {
+.mastodon-user-profile-relationship-status > * {
    padding: calc(var(--ledit-padding) * 0.5);
    border-radius: 4px;
    background: var(--ledit-background);
    font-size: var(--ledit-font-size-small);
 }
 
-.mastodon-account-header {
+.mastodon-user-profile-header {
    margin: -1em;
-   max-width: calc(100% + var(--ledit-margin)*2);
+   max-width: calc(100% + var(--ledit-margin) * 2);
 }
 
-.mastodon-account-stats {
-   display: flex; gap: 1em; font-size: var(--ledit-font-size-small);
+.mastodon-user-profile-stats {
+   display: flex;
+   gap: 1em;
+   font-size: var(--ledit-font-size-small);
 }
 
-.mastodon-account-stats .selected {
-   background: var(--ledit-background);
-}
-
-.mastodon-account-stats > * {
-   color: var(--ledit-color); display: flex; gap: 0.25em;
+.mastodon-user-profile-stats > * {
+   color: var(--ledit-color);
+   display: flex;
+   gap: 0.25em;
    cursor: pointer;
    padding: var(--ledit-padding);
    border-radius: 8px;
+   border: 1px solid var(--ledit-border-color);
+}
+
+.mastodon-user-profile-stats .selected {
+   background: var(--ledit-background);
+}
+
+.mastodon-user-profile-stats > :hover {
+   border: 1px solid var(--ledit-accent-color);
 }
 
 .mastodon-emoji-container {
    display: flex;
    align-items: center; /* Vertical alignment */
    gap: 0.25em;
- }
+}
 
 .mastodon-emoji {
    height: 1em;
    width: 1em;
    vertical-align: text-top;
+}
+
+.mastodon-account {
+   display: flex;
+   flex-direction: column;
+   gap: var(--ledit-padding);
+   padding: var(--ledit-margin);
+   background: var(--ledit-background);
+   border-radius: 8px;
+   border: 1px solid var(--ledit-border-color);
+   box-shadow: 0px 1px 3px var(--ledit-shadow-color);
+   overflow-wrap: break-word;
 }

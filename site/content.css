@@ -9,8 +9,16 @@
    width: calc(100% + var(--ledit-margin) * 2);
 }
 
-.content > video-js {
-   cursor: pointer;
+.content video-js {
+   cursor: pointer !important;
+}
+
+.content-video-container {
+   display: flex;
+   justify-content: center;
+   background: #000;
+   width: 100%;
+   cursor: pointer !important;
 }
 
 .content-text {

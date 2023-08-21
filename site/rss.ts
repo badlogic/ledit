@@ -3,7 +3,7 @@ import "./rss.css";
 
 // @ts-ignore
 import { FeedEntry, extractFromXml } from "@extractus/feed-extractor";
-import { Comment, ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
+import { Comment, ContentDom, Page, Post, SortingOption, Source, SourcePrefix } from "./data";
 import { dateToText, dom, makeCollapsible, proxyFetch, removeTrailingEmptyParagraphs } from "./utils";
 import { parse, isValid } from "date-fns";
 
@@ -42,7 +42,7 @@ function getChannelImage(rss: Document) {
 }
 
 export class RssSource implements Source<FeedEntry, void> {
-   public static async getRssPosts(url: string): Promise<Post<FeedEntry>[]> {
+   public static async getRssPosts(url: string): Promise<Post<FeedEntry>[] | Error> {
       const options = {
          useISODateFormat: false,
          getExtraEntryFields: (feedEntry: any) => {
@@ -87,7 +87,7 @@ export class RssSource implements Source<FeedEntry, void> {
          const rss = await new window.DOMParser().parseFromString(text, "text/xml");
          const channelImageUrl = getChannelImage(rss);
          const result = extractFromXml(text, options);
-         if (!result || !result.entries) return [];
+         if (!result || !result.entries) return new Error(`Could not load entries for RSS feed ${url}`);
 
          const posts: Post<FeedEntry>[] = [];
          for (const entry of result.entries) {
@@ -110,13 +110,13 @@ export class RssSource implements Source<FeedEntry, void> {
          return posts;
       } catch (e) {
          console.error("Couldn't get RSS feed " + url, e);
-         return [];
+         return new Error(`Could not load entries for RSS feed ${url}`);
       }
    }
 
-   async getPosts(after: string | null): Promise<Posts<FeedEntry>> {
+   async getPosts(nextPage: string | null): Promise<Page<Post<FeedEntry>> | Error> {
       const urls = this.getFeed().split("+");
-      const promises: Promise<Post<FeedEntry>[]>[] = [];
+      const promises: Promise<Post<FeedEntry>[] | Error>[] = [];
       for (const url of urls) {
          promises.push(RssSource.getRssPosts(url));
       }
@@ -124,10 +124,11 @@ export class RssSource implements Source<FeedEntry, void> {
       const promisesResult = await Promise.all(promises);
       const posts: Post<FeedEntry>[] = [];
       for (const result of promisesResult) {
+         if (result instanceof Error) continue;
          posts.push(...result);
       }
       posts.sort((a, b) => b.createdAt - a.createdAt);
-      return { posts, after: null };
+      return { items: posts, nextPage: "end" };
    }
 
    async getComments(post: Post<FeedEntry>): Promise<Comment<void>[]> {

@@ -1,7 +1,7 @@
 import { encodeHTML } from "entities";
-import { Comment, ContentDom as ContentDom, Post, Posts, SortingOption, Source, SourcePrefix } from "./data";
-import { addCommasToNumber, dateToText, dom, htmlDecode, makeCollapsible } from "./utils";
+import { Comment, ContentDom, Page, Post, SortingOption, Source, SourcePrefix } from "./data";
 import { svgReply } from "./svg";
+import { dateToText, dom, htmlDecode, makeCollapsible } from "./utils";
 
 interface HNPost {
    by: string;
@@ -41,115 +41,125 @@ export class HackerNewsSource implements Source<HNPost, HNComment> {
       return "topstories.json";
    }
 
-   async getPosts(after: string | null): Promise<Posts<HNPost>> {
-      const response = await fetch("https://hacker-news.firebaseio.com/v0/" + this.getSortingUrl());
-      const storyIds = (await response.json()) as number[];
-      let startIndex = after ? Number.parseInt(after) : 0;
-      const requests: Promise<HNPost>[] = [];
-      for (let i = startIndex; i < Math.min(storyIds.length, startIndex + 25); i++) {
-         requests.push(getHNItem(storyIds[i].toString()));
-      }
+   async getPosts(after: string | null): Promise<Page<Post<HNPost>> | Error> {
+      try {
+         const response = await fetch("https://hacker-news.firebaseio.com/v0/" + this.getSortingUrl());
+         const storyIds = (await response.json()) as number[];
+         let startIndex = after ? Number.parseInt(after) : 0;
+         const requests: Promise<HNPost>[] = [];
+         for (let i = startIndex; i < Math.min(storyIds.length, startIndex + 25); i++) {
+            requests.push(getHNItem(storyIds[i].toString()));
+         }
 
-      const hnPosts = await Promise.all(requests);
-      const posts: Post<HNPost>[] = [];
-      for (const hnPost of hnPosts) {
-         posts.push({
-            url: hnPost.url ?? "https://news.ycombinator.com/item?id=" + hnPost.id,
-            title: hnPost.title,
-            author: hnPost.by,
-            createdAt: hnPost.time,
-            feed: "",
-            numComments: hnPost.descendants ?? 0,
-            contentOnly: false,
-            data: hnPost,
-         });
-      }
+         const hnPosts = await Promise.all(requests);
+         const posts: Post<HNPost>[] = [];
+         for (const hnPost of hnPosts) {
+            posts.push({
+               url: hnPost.url ?? "https://news.ycombinator.com/item?id=" + hnPost.id,
+               title: hnPost.title,
+               author: hnPost.by,
+               createdAt: hnPost.time,
+               feed: "",
+               numComments: hnPost.descendants ?? 0,
+               contentOnly: false,
+               data: hnPost,
+            });
+         }
 
-      return {
-         posts,
-         after: (startIndex + 25).toString(),
-      };
+         return {
+            items: posts,
+            nextPage: posts.length == 0 ? "end" : (startIndex + 25).toString(),
+         };
+      } catch (e) {
+         console.error(e);
+         return new Error("Couldn't load Hackernews posts.");
+      }
    }
 
-   async getComments(post: Post<HNPost>): Promise<Comment<HNComment>[]> {
-      // Use algolia to get all comments in one go
-      const hnPost = post.data;
-      let response = await fetch("https://hn.algolia.com/api/v1/search?tags=comment,story_" + hnPost.id + "&hitsPerPage=" + hnPost.descendants);
-      const data = await response.json();
-      const hits: HNComment[] = [...data.hits];
-      const lookup = new Map<string, HNComment>();
+   async getComments(post: Post<HNPost>): Promise<Comment<HNComment>[] | Error> {
+      try {
+         // Use algolia to get all comments in one go
+         const hnPost = post.data;
+         let response = await fetch("https://hn.algolia.com/api/v1/search?tags=comment,story_" + hnPost.id + "&hitsPerPage=" + hnPost.descendants);
+         const data = await response.json();
+         const hits: HNComment[] = [...data.hits];
+         const lookup = new Map<string, HNComment>();
 
-      // Build up the comment tree
-      for (const hit of hits) {
-         lookup.set(hit.objectID, hit);
-      }
-      for (const hit of hits) {
-         const parent = lookup.get(hit.parent_id.toString());
-         if (!parent) continue;
-         if (!parent.replies) parent.replies = [];
-         parent.replies.push(hit);
-      }
-
-      // Use the "official" API to get the sorting for each fucking node and reorder the
-      // replies.
-      //
-      // We used the official API to get the post. It's kids are in order. We build up
-      // the root of the true again based on that order.
-      const roots: HNComment[] = [];
-      if (hnPost.kids) {
-         for (const rootId of hnPost.kids) {
-            const root = lookup.get(rootId.toString());
-            if (root) roots.push(root);
+         // Build up the comment tree
+         for (const hit of hits) {
+            lookup.set(hit.objectID, hit);
          }
-      }
+         for (const hit of hits) {
+            const parent = lookup.get(hit.parent_id.toString());
+            if (!parent) continue;
+            if (!parent.replies) parent.replies = [];
+            parent.replies.push(hit);
+         }
 
-      // Next, we traverse the comment tree. Any comment with more than 1 reply
-      // gets its replies re-ordered based on the official API response.
-      const sortReplies = async (hnComment: HNComment) => {
-         if (!hnComment.replies) return;
-         if (hnComment.replies.length > 1) {
-            const info = (await getHNItem(hnComment.objectID)) as { kids: number[] | undefined };
-            hnComment.replies = [];
-            if (info.kids) {
-               for (const kid of info.kids) {
-                  const kidComment = lookup.get(kid.toString());
-                  if (kidComment) hnComment.replies.push(kidComment);
+         // Use the "official" API to get the sorting for each fucking node and reorder the
+         // replies.
+         //
+         // We used the official API to get the post. It's kids are in order. We build up
+         // the root of the true again based on that order.
+         const roots: HNComment[] = [];
+         if (hnPost.kids) {
+            for (const rootId of hnPost.kids) {
+               const root = lookup.get(rootId.toString());
+               if (root) roots.push(root);
+            }
+         }
+
+         // Next, we traverse the comment tree. Any comment with more than 1 reply
+         // gets its replies re-ordered based on the official API response.
+         const sortReplies = async (hnComment: HNComment) => {
+            if (!hnComment.replies) return;
+            if (hnComment.replies.length > 1) {
+               const info = (await getHNItem(hnComment.objectID)) as { kids: number[] | undefined };
+               hnComment.replies = [];
+               if (info.kids) {
+                  for (const kid of info.kids) {
+                     const kidComment = lookup.get(kid.toString());
+                     if (kidComment) hnComment.replies.push(kidComment);
+                  }
                }
             }
-         }
-         for (const reply of hnComment.replies) {
-            await sortReplies(reply);
-         }
-      };
-
-      const promises = [];
-      for (const root of roots) {
-         promises.push(sortReplies(root));
-      }
-      await Promise.all(promises);
-
-      const convertComment = (hnComment: HNComment) => {
-         const comment: Comment<HNComment> = {
-            url: `https://news.ycombinator.com/item?id=${hnComment.objectID}`,
-            author: hnComment.author,
-            authorUrl: `https://news.ycombinator.com/user?id=${hnComment.author}`,
-            createdAt: hnComment.created_at_i,
-            score: 0,
-            content: encodeHTML("<p>" + hnComment.comment_text),
-            replies: [] as Comment<HNComment>[],
-            highlight: false,
-            data: hnComment
-         };
-         if (hnComment.replies) {
             for (const reply of hnComment.replies) {
-               comment.replies.push(convertComment(reply));
+               await sortReplies(reply);
             }
-         }
+         };
 
-         return comment;
-      };
-      const comments = roots.map((root) => convertComment(root));
-      return comments;
+         const promises = [];
+         for (const root of roots) {
+            promises.push(sortReplies(root));
+         }
+         await Promise.all(promises);
+
+         const convertComment = (hnComment: HNComment) => {
+            const comment: Comment<HNComment> = {
+               url: `https://news.ycombinator.com/item?id=${hnComment.objectID}`,
+               author: hnComment.author,
+               authorUrl: `https://news.ycombinator.com/user?id=${hnComment.author}`,
+               createdAt: hnComment.created_at_i,
+               score: 0,
+               content: encodeHTML("<p>" + hnComment.comment_text),
+               replies: [] as Comment<HNComment>[],
+               highlight: false,
+               data: hnComment,
+            };
+            if (hnComment.replies) {
+               for (const reply of hnComment.replies) {
+                  comment.replies.push(convertComment(reply));
+               }
+            }
+
+            return comment;
+         };
+         const comments = roots.map((root) => convertComment(root));
+         return comments;
+      } catch (e) {
+         console.error("Could not load comments.", e);
+         return new Error("Could not load comments");
+      }
    }
 
    getMetaDom(post: Post<HNPost>): HTMLElement[] {
@@ -166,11 +176,7 @@ export class HackerNewsSource implements Source<HNPost, HNComment> {
 
    getContentDom(post: Post<HNPost>): ContentDom {
       const toggles: Element[] = [];
-      toggles.push(
-         dom(
-            /*html*/ `<a href="https://news.ycombinator.com/item?id=${post.data.id}" class="color-fill">${svgReply}</a>`
-         )[0]
-      );
+      toggles.push(dom(/*html*/ `<a href="https://news.ycombinator.com/item?id=${post.data.id}" class="color-fill">${svgReply}</a>`)[0]);
       if (post.data.text) {
          let text = post.data.text;
          text = encodeHTML(text);

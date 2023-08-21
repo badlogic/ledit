@@ -1,8 +1,9 @@
 // @ts-ignore
-import "./view.css";
+import { Page, PageIdentifier } from "./data";
 import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
-import { svgClose } from "./svg";
-import { MastodonUserProfileView } from "./mastodon";
+import { svgClose, svgLoader } from "./svg";
+import { dom, onVisibleOnce } from "./utils";
+import "./view.css";
 
 export abstract class View extends HTMLElement {
    constructor() {
@@ -48,7 +49,7 @@ export abstract class OverlayView extends View {
       this.innerHTML = /*html*/ `
             <div class="overlay">
                 <div x-id="close" class="overlay-close">
-                  ${title && typeof title === "string" ? `<span class="overlay-header">${title}</span>`: ""}
+                  ${title && typeof title === "string" ? `<span class="overlay-header">${title}</span>` : ""}
                   <span class="overlay-close-button color-fill">${svgClose}</span>
                </div>
                 <div x-id="content" class="overlay-content"></div>
@@ -66,9 +67,9 @@ export abstract class OverlayView extends View {
 
       // Close when container is clicked
       this.addEventListener("click", (event) => {
-        if (event.target == this) {
+         if (event.target == this) {
             this.close();
-        }
+         }
       });
 
       // Close when close button is clicked
@@ -91,12 +92,47 @@ export abstract class OverlayView extends View {
       document.body.style.overflow = "hidden";
    }
 
-   abstract renderContent(): void;
-
    close() {
       this.remove();
       navigationGuard.remove(this.navigationCallback!);
       escapeGuard.remove(this.escapeCallback!);
       document.body.style.overflow = "";
    }
+}
+
+export abstract class PagedListView<T> extends View {
+   private nextPage: string | null = null;
+
+   constructor(public readonly fetchPage: (nextPage: PageIdentifier) => Promise<Page<T> | Error>) {
+      super();
+      this.classList.add("paged-list-view");
+      const outerLoadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
+      this.append(outerLoadingDiv);
+      const fetchNextPage = async () => {
+         const result = await fetchPage(this.nextPage);
+         outerLoadingDiv.remove();
+         if (result instanceof Error) {
+            this.append(...dom(`<div class="post-loading">${result.message}</div>`));
+            return;
+         } else {
+            this.renderItems(result.items);
+            requestAnimationFrame(() => {
+               const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
+               if (result.nextPage != "end") {
+                  this.append(loadingDiv);
+                  onVisibleOnce(loadingDiv, async () => {
+                     await fetchNextPage();
+                     loadingDiv.remove();
+                  });
+               } else {
+                  this.append(...dom(`<div class="post-loading">Reached end of list.</div>`));
+               }
+            });
+            this.nextPage = result.nextPage;
+         }
+      };
+      fetchNextPage();
+   }
+
+   abstract renderItems(items: T[]): void;
 }

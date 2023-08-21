@@ -213,13 +213,14 @@ export function renderVideo(
    embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string },
    loop: boolean
 ): Element {
-   let videoDom = dom(/*html*/ `<div style="display: flex; justify-content: center; background: #000; width: 100%">
-     <video-js controls class="video-js" style="width: ${embed.width}px;" ${loop ? "loop" : ""} data-setup="{}">
-         <source src="${embed.dash_url}">
-         <source src="${embed.hls_url}">
-         <source src="${embed.fallback_url}">
-     </video-js>
-   </div>`)[0];
+   let videoDom = dom(/*html*/ `
+      <div class="content-video-container">
+      <video-js controls class="video-js" style="width: ${embed.width}px;" ${loop ? "loop" : ""} data-setup="{}">
+            ${embed.dash_url ? `<source src="${embed.dash_url}">`: ""}
+            ${embed.hls_url ? `<source src="${embed.hls_url}">`: ""}
+            ${embed.fallback_url ? `<source src="${embed.fallback_url}">` : ""}
+      </video-js>
+      </div>`)[0];
    onAddedToDOM(videoDom, () => {
       const videoDiv = videoDom.querySelector("video-js")! as HTMLElement;
       let width = embed.width;
@@ -242,6 +243,10 @@ export function renderVideo(
       const video = videojs(videoDiv);
       var videoElement = video.el().querySelector("video")!;
 
+      // Reset video element width/height so fullscreen works
+      videoElement.style.width = "";
+      videoElement.style.height = "";
+
       // Toggle pause/play on click
       const togglePlay = function () {
          if (video.paused()) {
@@ -252,6 +257,9 @@ export function renderVideo(
       };
       videoElement.addEventListener("clicked", togglePlay);
       onTapped(videoElement, togglePlay);
+      // FIXME this doesn't work, callback is never invoked for some reason
+      videoDom.addEventListener("clicked", togglePlay);
+      onTapped(videoDom, togglePlay);
 
       // Pause when out of view
       document.addEventListener("scroll", () => {
@@ -351,4 +359,15 @@ export function makeChildrenDraggable(container: HTMLElement, complete: () => vo
          complete()
       }
    });
+}
+
+export function setLinkTargetsToBlank(element: HTMLElement) {
+   if(element instanceof HTMLAnchorElement) {
+      element.setAttribute("target", "_blank");
+   }
+   let links = element.querySelectorAll("a")!;
+   for (let i = 0; i < links.length; i++) {
+      let link = links[i];
+      link.setAttribute("target", "_blank");
+   }
 }

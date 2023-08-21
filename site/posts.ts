@@ -1,59 +1,44 @@
+// @ts-ignore
+import "./posts.css";
 import { CommentView, CommentsView } from "./comments";
 import { ContentView } from "./content";
-import { Comment, Post, Posts, Source, getSource } from "./data";
+import { Comment, Post, Source, getSource } from "./data";
 import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
-import "./posts.css";
 import { getSettings, saveSettings } from "./settings";
-import { svgLoader, svgSpeechBubble } from "./svg/index";
-import { addCommasToNumber, dom, intersectsViewport, onVisibleOnce } from "./utils";
-import { View } from "./view";
+import { svgSpeechBubble } from "./svg/index";
+import { addCommasToNumber, dom, intersectsViewport, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
+import { PagedListView, View } from "./view";
 
-export class PostsView extends View {
+export class PostListView extends PagedListView<Post<any>> {
    public static seenPosts = new Set<string>();
    public static hideSeen = false;
    private loadedPages = 1;
+
    static {
-      getSettings().seenIds.forEach((seen) => PostsView.seenPosts.add(seen));
-      PostsView.hideSeen = getSettings().hideSeen;
+      getSettings().seenIds.forEach((seen) => PostListView.seenPosts.add(seen));
+      PostListView.hideSeen = getSettings().hideSeen;
       getSettings().hideSeen = false;
       saveSettings();
    }
-   constructor(public readonly source: Source<any, any> = getSource()) {
-      super();
-      this.classList.add("posts");
-      (async () => await this.loadPosts(null))();
-   }
 
-   async loadPosts(after: string | null) {
-      const source = this.source;
-      const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
-      this.append(loadingDiv);
-      try {
-         let result = await source.getPosts(after);
-         console.log(`Loaded more posts for '${source.getSourcePrefix() + source.getFeed()}'.`);
-         if (after) {
-            this.loadedPages++;
-            this.append(dom(`<div class="post-loading">Page ${this.loadedPages}</div>`)[0]);
-         }
-         await this.renderPosts(result);
-      } catch (e) {
-         this.showError("Could not load " + source.getSourcePrefix() + source.getFeed(), e);
-      } finally {
-         loadingDiv.remove();
-      }
+   constructor(source: Source<any, any>, public readonly showPages = true) {
+      super((nextPage) => {
+         return source.getPosts(nextPage);
+      });
+      this.classList.add("posts");
    }
 
    renderPost(post: Post<any>) {
       const postDiv = new PostView(post);
-      if (PostsView.seenPosts.has(post.url)) {
-         if (PostsView.hideSeen) {
+      if (PostListView.seenPosts.has(post.url)) {
+         if (PostListView.hideSeen) {
             postDiv.classList.add("hidden");
          }
       }
 
       onVisibleOnce(postDiv, () => {
-         if (!PostsView.seenPosts.has(post.url)) {
-            PostsView.seenPosts.add(post.url);
+         if (!PostListView.seenPosts.has(post.url)) {
+            PostListView.seenPosts.add(post.url);
             getSettings().seenIds.push(post.url);
             saveSettings();
             console.log("Seen " + post.url);
@@ -63,56 +48,27 @@ export class PostsView extends View {
       return postDiv;
    }
 
-   async renderPosts(posts: Posts<any>) {
-      const source = getSource();
-      if (posts.posts.length == 0) {
-         this.showError(`${source.getSourcePrefix() + source.getFeed()} does not exist or has no posts.`);
-         return;
+   async renderItems(posts: Post<any>[]) {
+      if (this.loadedPages > 1 && this.showPages) {
+         this.append(...dom(`<div class="post-loader">Page ${this.loadedPages}</div>`));
       }
-
-      // Render posts
       let hiddenPosts = 0;
-      for (let i = 0; i < posts.posts.length; i++) {
-         const post = posts.posts[i];
-         const postDiv = this.renderPost(post);
-         if (postDiv.classList.contains("hidden")) hiddenPosts++;
-         this.append(postDiv);
+      for (let i = 0; i < posts.length; i++) {
+         const post = posts[i];
+         const postView = this.renderPost(post);
+         if (postView.classList.contains("hidden")) hiddenPosts++;
+         this.append(postView);
       }
-
-      // Setup infinite scroll
-      if (posts.after) {
-         const loadMoreDiv = dom(`<div class="post-loading">Load more</div>`)[0];
-         this.append(loadMoreDiv);
-         const loadMore = async () => {
-            loadMoreDiv.remove();
-            await this.loadPosts(posts.after);
-         };
-
-         if (hiddenPosts == posts.posts.length) {
-            // Load more if all posts where hidden.
-            requestAnimationFrame(() => {
-               loadMore();
-            });
-         } else {
-            // Otherwise the user will have to scroll.
-            onVisibleOnce(loadMoreDiv, loadMore);
-            loadMoreDiv.addEventListener("click", loadMore);
-         }
-      }
-   }
-
-   showError(message: string, e: any | null = null) {
-      this.append(dom(`<div class="post-loading">${message}</div>`)[0]);
-      if (e) console.error("An error occured: ", e);
+      this.loadedPages++;
    }
 
    prependPost(post: Post<any>) {
-      const postDiv = this.renderPost(post);
-      this.insertBefore(postDiv, this.children[0]);
+      const postVIew = this.renderPost(post);
+      this.insertBefore(postVIew, this.children[0]);
       window.scrollTo({ top: 0 });
    }
 }
-customElements.define("ledit-posts", PostsView);
+customElements.define("ledit-post-list", PostListView);
 
 export class PostView extends View {
    escapeCallback: EscapeCallback | undefined;
@@ -124,35 +80,26 @@ export class PostView extends View {
       this.render();
    }
 
-   private setLinkTargets() {
-      let links = this.querySelectorAll("a")!;
-      for (let i = 0; i < links.length; i++) {
-         let link = links[i];
-         link.setAttribute("target", "_blank");
-      }
-   }
-
    render() {
       const post = this.post;
       if (!post.contentOnly) {
          this.renderFullPost(post);
-         this.setLinkTargets();
+         setLinkTargetsToBlank(this);
       } else {
          onVisibleOnce(this, () => {
-            console.log("Showing content of " + this.post.title);
             const content = new ContentView(this.post);
             this.append(content);
             for (const toggle of content.toggles) {
                this.append(toggle);
             }
-            this.setLinkTargets();
+            setLinkTargetsToBlank(this);
          });
       }
    }
 
    renderFullPost(post: Post<any>) {
       const showFeed = getSource().getFeed().toLowerCase() != post.feed.toLowerCase();
-      const collapse = getSettings().collapseSeenPosts && PostsView.seenPosts.has(post.url) ? "post-seen" : "";
+      const collapse = getSettings().collapseSeenPosts && PostListView.seenPosts.has(post.url) ? "post-seen" : "";
       this.innerHTML = /*html*/ `
          ${post.title && post.title.length > 0 ? `<div class="post-title"><a href="${post.url}">${post.title}</a></div>` : ""}
          <div x-id="meta" class="post-meta"></div>
@@ -180,7 +127,6 @@ export class PostView extends View {
       elements.meta.append(...getSource().getMetaDom(post));
 
       onVisibleOnce(this, () => {
-         console.log("Showing content of " + this.post.title);
          const content = new ContentView(this.post);
 
          for (const toggle of content.toggles) {
@@ -193,7 +139,7 @@ export class PostView extends View {
 
          if (!post.numComments && content.toggles.length == 0) elements.buttonsRow.classList.add("hidden");
 
-         this.setLinkTargets();
+         setLinkTargetsToBlank(this);
       });
 
       if (post.numComments && post.numComments > 0) {
