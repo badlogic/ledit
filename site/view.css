@@ -13,7 +13,6 @@
    margin: 0 auto;
    background: var(--ledit-background-dim);
    padding: var(--ledit-padding) 0;
-   font-size: var(--ledit-font-size-big);
    display: flex;
    flex-direction: column;
    box-shadow: 0px 2px 5px var(--ledit-shadow-color);
@@ -149,7 +148,7 @@
 }
 
 .overlay-button {
-   padding: var(--ledit-padding);
+   padding: var(--ledit-padding) var(--ledit-margin);
    border: 1px solid var(--ledit-border-color);
    background: var(--ledit-background);
    border-radius: 4px;

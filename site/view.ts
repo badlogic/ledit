@@ -2,6 +2,7 @@
 import "./view.css";
 import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
 import { svgClose } from "./svg";
+import { MastodonUserProfileView } from "./mastodon";
 
 export abstract class View extends HTMLElement {
    constructor() {
@@ -41,7 +42,7 @@ export abstract class OverlayView extends View {
    navigationCallback: NavigationCallback | undefined;
    readonly content: HTMLElement;
 
-   constructor(title: string | HTMLElement | undefined) {
+   constructor(title?: string | HTMLElement, public readonly zIndex = 1000) {
       super();
       this.classList.add("overlay-container");
       this.innerHTML = /*html*/ `
@@ -76,12 +77,12 @@ export abstract class OverlayView extends View {
       });
 
       // Close when escape is pressed
-      this.escapeCallback = escapeGuard.register(1000, () => {
+      this.escapeCallback = escapeGuard.register(zIndex, () => {
          this.close();
       });
 
       // Close on back navigation
-      this.navigationCallback = navigationGuard.register(1000, () => {
+      this.navigationCallback = navigationGuard.register(zIndex, () => {
          this.close();
          return false;
       });

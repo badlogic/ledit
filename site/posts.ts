@@ -1,6 +1,6 @@
 import { CommentView, CommentsView } from "./comments";
 import { ContentView } from "./content";
-import { Comment, Post, Posts, getSource } from "./data";
+import { Comment, Post, Posts, Source, getSource } from "./data";
 import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
 import "./posts.css";
 import { getSettings, saveSettings } from "./settings";
@@ -18,14 +18,14 @@ export class PostsView extends View {
       getSettings().hideSeen = false;
       saveSettings();
    }
-   constructor() {
+   constructor(public readonly source: Source<any, any> = getSource()) {
       super();
       this.classList.add("posts");
       (async () => await this.loadPosts(null))();
    }
 
    async loadPosts(after: string | null) {
-      const source = getSource();
+      const source = this.source;
       const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
       this.append(loadingDiv);
       try {

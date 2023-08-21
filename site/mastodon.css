@@ -20,3 +20,42 @@
    color: var(--ledit-color-dim);
    margin-bottom: var(--ledit-padding);
 }
+
+.mastodon-relationship-status > * {
+   padding: calc(var(--ledit-padding) * 0.5);
+   border-radius: 4px;
+   background: var(--ledit-background);
+   font-size: var(--ledit-font-size-small);
+}
+
+.mastodon-account-header {
+   margin: -1em;
+   max-width: calc(100% + var(--ledit-margin)*2);
+}
+
+.mastodon-account-stats {
+   display: flex; gap: 1em; font-size: var(--ledit-font-size-small);
+}
+
+.mastodon-account-stats .selected {
+   background: var(--ledit-background);
+}
+
+.mastodon-account-stats > * {
+   color: var(--ledit-color); display: flex; gap: 0.25em;
+   cursor: pointer;
+   padding: var(--ledit-padding);
+   border-radius: 8px;
+}
+
+.mastodon-emoji-container {
+   display: flex;
+   align-items: center; /* Vertical alignment */
+   gap: 0.25em;
+ }
+
+.mastodon-emoji {
+   height: 1em;
+   width: 1em;
+   vertical-align: text-top;
+}
