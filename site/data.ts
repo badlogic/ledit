@@ -5,7 +5,7 @@ export type PageIdentifier = string | "end" | null;
 
 export type Page<T> = { items: T[]; nextPage: PageIdentifier };
 
-export interface Post<T> {
+export type Post<T> = {
    url: string;
    title: string;
    author: string | null;
@@ -16,7 +16,7 @@ export interface Post<T> {
    data: T
 }
 
-export interface Comment<T> {
+export type Comment<T> = {
    url: string;
    author: string;
    authorUrl: string;
@@ -28,12 +28,12 @@ export interface Comment<T> {
    data: T;
 }
 
-export interface SortingOption {
+export type SortingOption = {
    value: string;
    label: string;
 }
 
-export interface ContentDom {
+export type ContentDom = {
    elements: Element[];
    toggles: Element[];
 }

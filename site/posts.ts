@@ -7,7 +7,7 @@ import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from
 import { getSettings, saveSettings } from "./settings";
 import { svgSpeechBubble } from "./svg/index";
 import { addCommasToNumber, dom, intersectsViewport, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
-import { PagedListView, View } from "./view";
+import { OverlayView, PagedListView, View } from "./view";
 
 export class PostListView extends PagedListView<Post<any>> {
    public static seenPosts = new Set<string>();
@@ -146,11 +146,6 @@ export class PostView extends View {
          elements.commentsToggle?.addEventListener("click", () => {
             this.toggleComments();
          });
-
-         // Close when escape is pressed
-         escapeGuard.register(0, () => {
-            if (this.showingComments && intersectsViewport(this.commentsView)) this.toggleComments();
-         });
       }
 
       if (collapse) {
@@ -190,6 +185,7 @@ export class PostView extends View {
          // Hide the comments, triggered by a click on the comments button
          this.commentsView?.remove();
          navigationGuard.remove(this.navigationCallback);
+         escapeGuard.remove(this.escapeCallback);
 
          if (elements.buttonsRow.getBoundingClientRect().top < 16 * 4) {
             requestAnimationFrame(() => {
@@ -204,12 +200,29 @@ export class PostView extends View {
          this.showingComments = true;
          if (!this.commentsView) this.commentsView = new CommentsView(this.post, this);
          this.append(this.commentsView);
-         this.navigationCallback = navigationGuard.register(0, () => {
+
+         let parent = this.parentElement;
+         let zIndex = 0;
+         while (parent) {
+            if (parent instanceof OverlayView) {
+               zIndex = parent.zIndex + 1;
+               break;
+            }
+            parent = parent.parentElement;
+         }
+
+         // Close on back navigation
+         this.navigationCallback = navigationGuard.register(zIndex, () => {
             if (intersectsViewport(this.commentsView)) {
                hideComments();
                return false;
             }
             return true;
+         });
+
+         // Close when escape is pressed
+         this.escapeCallback = escapeGuard.register(zIndex, () => {
+            if (this.showingComments && intersectsViewport(this.commentsView)) this.toggleComments();
          });
       } else {
          hideComments();

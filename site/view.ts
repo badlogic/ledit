@@ -42,8 +42,15 @@ export abstract class OverlayView extends View {
    escapeCallback: EscapeCallback | undefined;
    navigationCallback: NavigationCallback | undefined;
    readonly content: HTMLElement;
+   static stackZIndex = 100;
 
-   constructor(title?: string | HTMLElement, public readonly zIndex = 1000) {
+   static nextStackZIndex() {
+      const next = this.stackZIndex;
+      this.stackZIndex += 100;
+      return next;
+   }
+
+   constructor(title?: string | HTMLElement, public readonly zIndex = OverlayView.nextStackZIndex()) {
       super();
       this.classList.add("overlay-container");
       this.innerHTML = /*html*/ `
@@ -97,6 +104,7 @@ export abstract class OverlayView extends View {
       navigationGuard.remove(this.navigationCallback!);
       escapeGuard.remove(this.escapeCallback!);
       document.body.style.overflow = "";
+      OverlayView.stackZIndex -= 100;
    }
 }
 
@@ -115,7 +123,7 @@ export abstract class PagedListView<T> extends View {
             this.append(...dom(`<div class="post-loading">${result.message}</div>`));
             return;
          } else {
-            this.renderItems(result.items);
+            await this.renderItems(result.items);
             requestAnimationFrame(() => {
                const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
                if (result.nextPage != "end") {
@@ -134,5 +142,5 @@ export abstract class PagedListView<T> extends View {
       fetchNextPage();
    }
 
-   abstract renderItems(items: T[]): void;
+   abstract renderItems(items: T[]): Promise<void>;
 }

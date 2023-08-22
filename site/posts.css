@@ -101,13 +101,10 @@
    display: inline-flex;
    align-items: center;
    gap: 0.25em;
-   margin-bottom: -1em;
-   margin: 0 var(--ledit-margin);
 }
 
 .post-notification-text {
    color: var(--ledit-color-dim) !important;
-   margin: 0 var(--ledit-margin);
 }
 
 .post-notification-text > :last-child {

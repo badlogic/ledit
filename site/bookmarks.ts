@@ -33,7 +33,7 @@ function sourcePrefixToFeedPlaceholder(source: SourcePrefix) {
       case "yt/":
          return "RedLetterMedia\nVeritasium\n...";
       case "m/":
-         // FIXME
+         // FIXME how would a non-account Mastodon bookmark look?
          return "Mastodon accounts";
       default:
          assertNever(source);

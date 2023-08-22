@@ -183,7 +183,7 @@ export class MastodonApi {
          const options = this.getAuthHeader(userInfo);
          const response = await fetch(`https://${userInfo.instance}/api/v2/search/?q=${postUrl}&resolve=true`, options);
          if (response.status != 200) return new Error(`Could not resolve post. Server responded with status code ${response.status}`);
-         const searchResult = (await response.json()) as any as { statuses: MastodonPost[] };
+         const searchResult = (await response.json()) as { statuses: MastodonPost[] };
          if (searchResult.statuses.length == 0) return new Error(`Post ${postUrl} could not be found.`);
          return searchResult.statuses[0];
       } catch (e) {
@@ -196,7 +196,7 @@ export class MastodonApi {
          const options = this.getAuthHeader(userInfo);
          const response = await fetch(`https://${userInfo.instance}/api/v2/search/?q=${accountUrl}&resolve=true`, options);
          if (response.status != 200) return new Error(`Could not resolve account. Server responded with status code ${response.status}`);
-         const searchResult = (await response.json()) as any as { accounts: MastodonAccount[]; statuses: MastodonPost[] };
+         const searchResult = (await response.json()) as { accounts: MastodonAccount[]; statuses: MastodonPost[] };
          if (searchResult.accounts.length == 0) return new Error(`Account ${accountUrl} could not be found.`);
          return searchResult.accounts[0];
       } catch (e) {
@@ -251,14 +251,20 @@ export class MastodonApi {
       }
    }
 
-   static async getNotifications(maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonNotification[] | Error> {
+   static async getNotifications(nextPage: PageIdentifier, userInfo: MastodonUserInfo): Promise<Page<MastodonNotification> | Error> {
       if (!userInfo.bearer) return new Error(`No access token given for ${userInfo.username}@${userInfo.instance}`);
       try {
          const options = this.getAuthHeader(userInfo);
-         const response = await fetch(`https://${userInfo.instance}/api/v1/notifications?limit=40${maxId ? maxId : ""}`, options);
+         if (!nextPage) nextPage = `https://${userInfo.instance}/api/v1/notifications?limit=40}`;
+         const response = await fetch(nextPage, options);
          if (response.status != 200)
             return new Error(`Could not get notifications for account. Server responded with status code ${response.status}`);
-         return (await response.json()) as MastodonNotification[];
+         const result = (await response.json()) as MastodonNotification[];
+         if (result.length == 0) return { items: [], nextPage: "end" };
+         const notifications: MastodonNotification[] = [];
+         notifications.push(...result);
+         nextPage = response.headers.get("link")?.match(/<([^>]+)>;\s*rel="next"/)?.[1] || null;
+         return { items: notifications, nextPage: nextPage ?? "end" };
       } catch (e) {
          return new Error("Network error.");
       }
@@ -280,7 +286,7 @@ export class MastodonApi {
       if (!userInfo.bearer) return new Error(`No access token given for ${userInfo.username}@${userInfo.instance}`);
       try {
          const options = this.getAuthHeader(userInfo);
-         const response = await fetch(`https://${userInfo.instance}/api/v1/timelines/public?limit=40${maxId ? maxId : ""}`, options);
+         const response = await fetch(`https://${userInfo.instance}/api/v1/timelines/public?local=true&limit=40${maxId ? maxId : ""}`, options);
          if (response.status != 200) return new Error(`Could not load home timeline. Server responded with status code ${response.status}`);
          return (await response.json()) as MastodonPost[];
       } catch (e) {
@@ -434,7 +440,11 @@ export type MastodonCommentData = { mastodonComment: MastodonPost; userInfo: Mas
 export class MastodonSource implements Source<MastodonPostData, MastodonCommentData> {
    constructor(public readonly fixedHash?: string) {}
 
-   async mastodonPostToPost(mastodonPost: MastodonPost, onlyShowRoots: boolean, userInfo: MastodonUserInfo): Promise<Post<MastodonPostData> | null> {
+   static async mastodonPostToPost(
+      mastodonPost: MastodonPost,
+      onlyShowRoots: boolean,
+      userInfo: MastodonUserInfo
+   ): Promise<Post<MastodonPostData> | null> {
       let postToView = mastodonPost.reblog ?? mastodonPost;
       if (onlyShowRoots && postToView.in_reply_to_account_id) return null;
       let postUrl = postToView.url;
@@ -464,8 +474,8 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       };
    }
 
-   mastodonPostToComment(reply: MastodonPost, highlight: boolean, userInfo: MastodonUserInfo): Comment<MastodonCommentData> {
-      const content = this.getPostOrCommentContentDom(reply, null, userInfo, true);
+   static mastodonPostToComment(reply: MastodonPost, highlight: boolean, userInfo: MastodonUserInfo): Comment<MastodonCommentData> {
+      const content = MastodonSource.getPostOrCommentContentDom(reply, null, userInfo, true);
       return {
          url: reply.url,
          author: getAccountName(reply.account),
@@ -485,12 +495,8 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
    showActionButtons(userInfo: MastodonUserInfo) {
       if (!userInfo.bearer) return;
       const actionButtons = dom(`<div class="fab-container"></div>`)[0];
-      const publish = dom(`<div class="fab color-fill">${svgPencil}</div>`)[0];
-      const notificationUrl = location.hash.replace("/home", "/notifications").substring(1);
-      const notifications = dom(
-         `<a href="#${notificationUrl}" style="margin-right: var(--ledit-margin);"><div class="fab color-fill">${svgBell}</div></a>`
-      )[0];
 
+      const publish = dom(`<div class="fab color-fill">${svgPencil}</div>`)[0];
       const header = dom(`<span class="overlay-header">New post</span>`)[0];
       publish.addEventListener("click", () =>
          document.body.append(
@@ -503,7 +509,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
                async (text) => {
                   const mastodonPost = await MastodonApi.publishPost(null, text, userInfo);
                   if (mastodonPost instanceof Error) return false;
-                  const post = await this.mastodonPostToPost(mastodonPost, false, userInfo);
+                  const post = await MastodonSource.mastodonPostToPost(mastodonPost, false, userInfo);
                   if (!post) return false;
                   const postsView = document.querySelector("ledit-post-list") as PostListView;
                   postsView.prependPost(post);
@@ -514,11 +520,18 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             )
          )
       );
+
+      const notifications = dom(`<div class="fab color-fill">${svgBell}</div>`)[0];
+      notifications.addEventListener("click", () => {
+         document.body.append(new MastodonNotificationsOverlayView(userInfo));
+      });
+
       actionButtons.append(publish, notifications);
+
       document.body.append(actionButtons);
    }
 
-   showCommentReplyEditor(mastodonComment: MastodonPost, userInfo: MastodonUserInfo, commentOrPostView: CommentView | PostView) {
+   static showCommentReplyEditor(mastodonComment: MastodonPost, userInfo: MastodonUserInfo, commentOrPostView: CommentView | PostView) {
       let userHandles: string[] = [];
       const commentHost = new URL(mastodonComment.uri).host;
       userHandles.push(...extractUsernames(mastodonComment).map((handle) => handle.replace("@" + userInfo.instance, "")));
@@ -548,7 +561,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             async (text) => {
                const mastodonReply = await MastodonApi.publishPost(mastodonComment, text, userInfo);
                if (mastodonReply instanceof Error) return false;
-               const reply = this.mastodonPostToComment(mastodonReply, true, userInfo);
+               const reply = MastodonSource.mastodonPostToComment(mastodonReply, true, userInfo);
                if (commentOrPostView instanceof CommentView) {
                   commentOrPostView.prependReply(reply);
                } else {
@@ -562,72 +575,6 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       );
    }
 
-   async getPostsForUser(mastodonUser: string, nextPage: PageIdentifier): Promise<Post<MastodonPostData>[]> {
-      const tokens = mastodonUser.split("/");
-      const timeline = tokens.length >= 2 ? tokens[1] : null;
-      mastodonUser = tokens[0];
-      let mastodonUserId: string | null = mastodonUserIds[mastodonUser];
-
-      const userInfo = getUserInfo(mastodonUser);
-      if (!userInfo) return [];
-
-      if (!mastodonUserId) {
-         const account = await MastodonApi.lookupAccount(userInfo.username, userInfo.instance);
-         if (account instanceof Error) return [];
-         mastodonUserId = account.id;
-         mastodonUserIds[mastodonUser] = mastodonUserId;
-         localStorage.setItem("mastodonCache", JSON.stringify(mastodonUserIds));
-      }
-
-      let maxId = nextPage ? `&max_id=${nextPage}` : "";
-
-      if (timeline == "notifications") {
-         const mastodonNotifications = await MastodonApi.getNotifications(maxId, userInfo);
-         if (mastodonNotifications instanceof Error) return [];
-         const posts: Post<MastodonPostData>[] = [];
-         for (const notification of mastodonNotifications) {
-            if (notification.type == "mention") {
-               const post = await this.mastodonPostToPost(notification.status!, false, userInfo);
-               if (!post) {
-                  posts.push({
-                     contentOnly: true,
-                     notification,
-                     userInfo,
-                     id: notification.id,
-                  } as any); // FIXME don't use any!
-               } else {
-                  posts.push(post);
-               }
-            } else {
-               posts.push({
-                  contentOnly: true,
-                  notification,
-                  userInfo,
-                  id: notification.id,
-               } as any); // FIXME don't use any!
-            }
-         }
-         return posts;
-      } else {
-         const mastodonPosts =
-            timeline == "home"
-               ? await MastodonApi.getHomeTimeline(maxId, userInfo)
-               : await MastodonApi.getAccountPosts(mastodonUserId, maxId, userInfo);
-         if (mastodonPosts instanceof Error) return [];
-         const posts: Post<MastodonPostData>[] = [];
-         const postPromises: Promise<Post<MastodonPostData> | null>[] = [];
-         for (const mastodonPost of mastodonPosts) {
-            postPromises.push(this.mastodonPostToPost(mastodonPost, getSettings().showOnlyMastodonRoots, userInfo));
-         }
-         const resolvedPosts = await Promise.all(postPromises);
-         for (const post of resolvedPosts) {
-            if (post) posts.push(post);
-         }
-         if (timeline == "home") this.showActionButtons(userInfo);
-         return posts;
-      }
-   }
-
    async getPosts(nextPage: PageIdentifier): Promise<Page<Post<MastodonPostData>> | Error> {
       // We support different m/ url types
       //
@@ -638,7 +585,6 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
 
       // These require an account bookmark and allow read/write, e.g. follow/unfollow, reblog, favourite, reply, publish.
       // 4. user@instance/home, shows the user's home timeline.
-      // 5. user@instance/notifications, shows user's notifications.
       // 6. user@instance/local, shows the local timeline.
       // 7. user@instance/@user(@instance)/, shows the user profile and posts.
       // 7. user@instance/<statusid>, shows the status.
@@ -649,67 +595,25 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             `Invalid Mastodon feed ${this.getFeed()}. Must be a user name, e.g. @badlogic@mastodon.gamedev.place, or an instance name, e.g. mastodon.gamedev.place.`
          );
 
+      const userInfo = getUserInfo(feedTokens[0].trim());
+      if (!userInfo) return new Error(`Invalid Mastodon user name ${feedTokens[0]}.`);
+      if (!userInfo.bearer) {
+         return new Error(`You must add a Mastodon account for ${userInfo.username}@${userInfo.instance}.`);
+      }
+
       if (feedTokens.length == 1) {
-         if (feedTokens[0].includes("@")) {
-            const userTokens = feedTokens[0].split("+");
-            const users: MastodonUserInfo[] = [];
-            for (const userToken of userTokens) {
-               const userInfo = getUserInfo(userToken);
-               if (userInfo) {
-                  users.push(userInfo);
-               }
-            }
-
-            const urls = this.getFeed().split("+");
-            let nextPages: (string | null)[] | undefined = nextPage?.split("+");
-            const promises: Promise<Post<MastodonPostData>[]>[] = [];
-            for (let i = 0; i < urls.length; i++) {
-               promises.push(this.getPostsForUser(urls[i], nextPages ? nextPages[i] : null));
-            }
-
-            const promisesResult = await Promise.all(promises);
-            const posts: Post<MastodonPostData>[] = [];
-            const newAfters = [];
-            for (let i = 0; i < urls.length; i++) {
-               posts.push(...promisesResult[i]);
-               const userInfo = getUserInfo(urls[i]);
-               if (!userInfo) {
-                  newAfters.push(null);
-                  continue;
-               }
-
-               let maxId = promisesResult[i].length == 0 ? "end" : promisesResult[i][promisesResult[i].length - 1].data.id;
-               newAfters.push(maxId);
-            }
-            if (urls.length > 1) {
-               posts.sort((a, b) => b.createdAt - a.createdAt);
-            }
-
-            // FIXME
-            return { items: posts, nextPage: newAfters!.join("+") };
-         }
+         feedTokens.push("");
       }
 
       if (feedTokens.length == 2) {
-         const userInfo = getUserInfo(feedTokens[0].trim());
-         if (!userInfo) return new Error(`Invalid Mastodon user name ${feedTokens[0]}.`);
-         if (!userInfo.bearer) {
-            return new Error(`You must add a Mastodon account for ${userInfo.username}@${userInfo.instance}.`);
-         }
          const what = feedTokens[1].trim();
-         if (what.length == 0) return new Error(`Invalid Mastodon feed ${this.getFeed()}. Expected /home, /@username@instance, or a /<statusid>.`);
 
-         let mastodonAccount: MastodonAccount | null = null;
+         let mastodonAccount: MastodonAccount | null = null;
          let mastodonPosts: MastodonPost[] | null = null;
-         let mastodonNotifications: MastodonNotification[] | null = null;
          if (what == "home") {
             const result = await MastodonApi.getHomeTimeline(nextPage, userInfo);
             if (result instanceof Error) return result;
             mastodonPosts = result;
-         } else if (what == "notifications") {
-            const result = await MastodonApi.getNotifications(nextPage, userInfo);
-            if (result instanceof Error) return result;
-            mastodonNotifications = result;
          } else if (what == "local") {
             const result = await MastodonApi.getLocalTimeline(nextPage, userInfo);
             if (result instanceof Error) return result;
@@ -726,6 +630,16 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             for (const mastodonPost of resultPosts) {
                mastodonPost.userInfo = otherUserInfo;
             }
+         } else if (what.length == 0) {
+            const resultAccount = await MastodonApi.lookupAccount(userInfo.username, userInfo.instance);
+            if (resultAccount instanceof Error) return resultAccount;
+            mastodonAccount = resultAccount;
+            const resultPosts = await MastodonApi.getAccountPosts(mastodonAccount.id, nextPage, userInfo);
+            if (resultPosts instanceof Error) return resultPosts;
+            mastodonPosts = resultPosts;
+            for (const mastodonPost of mastodonPosts) {
+               mastodonPost.userInfo = userInfo;
+            }
          } else {
             const post = await MastodonApi.getPost(what, userInfo);
             if (post instanceof Error) return post;
@@ -741,50 +655,17 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
          if (mastodonPosts) {
             maxId = mastodonPosts.length == 0 ? "end" : mastodonPosts[mastodonPosts.length - 1].id;
          }
-         if (mastodonNotifications) {
-            maxId = mastodonNotifications.length == 0 ? "end" : mastodonNotifications[mastodonNotifications.length - 1].id;
-         }
          maxId = maxId ? `&max_id=${maxId}` : "";
 
          if (mastodonPosts) {
             const postPromises: Promise<Post<MastodonPostData> | null>[] = [];
             for (const mastodonPost of mastodonPosts) {
-               postPromises.push(this.mastodonPostToPost(mastodonPost, getSettings().showOnlyMastodonRoots, userInfo));
+               postPromises.push(MastodonSource.mastodonPostToPost(mastodonPost, getSettings().showOnlyMastodonRoots, userInfo));
             }
             const resolvedPosts = await Promise.all(postPromises);
             for (const post of resolvedPosts) {
                if (post) posts.push(post);
             }
-            this.showActionButtons(userInfo);
-         }
-
-         if (mastodonNotifications) {
-            const postPromises: Promise<any>[] = [];
-
-            for (const notification of mastodonNotifications) {
-               if (notification.type === "mention") {
-                  // Push the promise for fetching the post to the array
-                  postPromises.push(this.mastodonPostToPost(notification.status!, false, userInfo));
-               } else {
-                  // Create a promise that resolves to the current notification data
-                  postPromises.push(
-                     Promise.resolve({
-                        contentOnly: true,
-                        notification,
-                        userInfo,
-                        id: notification.id,
-                     })
-                  );
-               }
-            }
-
-            // Wait for all the promises to resolve in parallel
-            const fetchedPosts = await Promise.all(postPromises);
-
-            // Push the fetched posts to the 'posts' array
-            posts.push(...fetchedPosts);
-
-            // FIXME show home button?
             this.showActionButtons(userInfo);
          }
 
@@ -823,7 +704,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
          }
          rootId = root.id;
          // FIXME matching by content is bad
-         const rootComment = this.mastodonPostToComment(root, root.uri == postToView.uri, userInfo);
+         const rootComment = MastodonSource.mastodonPostToComment(root, root.uri == postToView.uri, userInfo);
          roots.push(rootComment);
          comments.push(rootComment);
          commentsById.set(root.id, rootComment);
@@ -841,7 +722,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
 
       for (const reply of mastodonComments) {
          // FIXME matching by content is bad
-         const comment = this.mastodonPostToComment(reply, reply.uri == postToView.uri, userInfo);
+         const comment = MastodonSource.mastodonPostToComment(reply, reply.uri == postToView.uri, userInfo);
          if (!rootId && reply.in_reply_to_id == statusId) roots.push(comment);
          if (reply.id == rootId) roots.push(comment);
          comments.push(comment);
@@ -886,17 +767,10 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
    }
 
    getContentDom(post: Post<MastodonPostData>): ContentDom {
-      if (!post.contentOnly) {
-         let userInfo = post.data.userInfo;
-         let mastodonPost = post.data.mastodonPost;
-         let inReplyToPost = post.data.inReplyToPost;
-         return this.getPostOrCommentContentDom(mastodonPost, inReplyToPost, userInfo, false);
-      } else {
-         return this.getNotificationContentDom(post);
-      }
+      return MastodonSource.getPostOrCommentContentDom(post.data.mastodonPost, post.data.inReplyToPost, post.data.userInfo, false);
    }
 
-   getPollDom(post: MastodonPost): HTMLElement | null {
+   static getPollDom(post: MastodonPost): HTMLElement | null {
       // FIXME make this interactive and show results if poll has ended.
       if (post.poll) {
          const pollDiv = dom(`<div></div>`)[0];
@@ -909,7 +783,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       return null;
    }
 
-   getMediaDom(post: MastodonPost): ContentDom | null {
+   static getMediaDom(post: MastodonPost): ContentDom | null {
       const toggles: Element[] = [];
       const mediaDom = dom(`<div style="padding-top: var(--ledit-padding);"></div>`)[0];
       if (post.media_attachments.length > 0) {
@@ -956,7 +830,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       return mediaDom.children.length > 0 ? { elements: [mediaDom], toggles } : null;
    }
 
-   getPostOrCommentContentDom(
+   static getPostOrCommentContentDom(
       mastodonPost: MastodonPost,
       inReplyToPost: MastodonPost | null,
       userInfo: MastodonUserInfo,
@@ -1000,9 +874,9 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       `)[0]
       );
 
-      const pollDom = this.getPollDom(postToView);
+      const pollDom = MastodonSource.getPollDom(postToView);
       if (pollDom) elements.push(pollDom);
-      const mediaDom = this.getMediaDom(postToView);
+      const mediaDom = MastodonSource.getMediaDom(postToView);
       if (mediaDom) {
          for (const el of mediaDom.elements) {
             elements.push(el);
@@ -1107,101 +981,22 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       return { elements: elements, toggles: toggles };
    }
 
-   getNotificationContentDom(post: Post<MastodonPostData>) {
-      // FIXME don't use any
-      const notification = (post as any).notification as MastodonNotification;
-      let html = "";
-      switch (notification.type) {
-         case "mention":
-            html = /*html*/ `
-                  <div class="post-notification-header">
-                     ${this.getAuthorDomSmall(notification.account)}
-                     <a href="${notification.status!.url}">mentioned you ${dateToText(new Date(notification.created_at).getTime())} ago</a>
-                  </div>
-                  <div class="post-notification-text">${notification.status?.content}</div>
-                  `;
-            break;
-         case "status":
-            break;
-         case "reblog":
-            html = /*html*/ `
-                  <div class="post-notification-header">
-                     <span class="color-gold-fill">${svgReblog}</span>
-                     ${this.getAuthorDomSmall(notification.account)}
-                     <a href="${notification.status!.url}">reblogged you ${dateToText(new Date(notification.created_at).getTime())} ago</a>
-                  </div>
-                  <div class="post-notification-text">${notification.status?.content}</div>
-                  `;
-            break;
-         case "follow":
-            html = /*html*/ `
-               <div class="post-notification-header">
-               ${this.getAuthorDomSmall(notification.account)}
-                  <span>followed you ${dateToText(new Date(notification.created_at).getTime())} ago</span>
-               </div>`;
-            break;
-         case "follow_request":
-            html = /*html*/ `
-               <div class="post-notification-header">
-                  ${this.getAuthorDomSmall(notification.account)}
-                  <span>wants to follow you</span>
-               </div>`;
-            break;
-         case "favourite":
-            html = /*html*/ `
-                  <div class="post-notification-header">
-                     <span class="color-gold-fill">${svgStar}</span>
-                     ${this.getAuthorDomSmall(notification.account)}
-                     <a href="${notification.status!.url}">favorited your post ${dateToText(new Date(notification.created_at).getTime())} ago</a>
-                  </div>
-                  <div class="post-notification-text">${notification.status?.content}</div>
-                  `;
-            break;
-         case "poll":
-            // FIXME show poll results
-            html = /*html*/ `
-                  <div class="post-notification-header">
-                     ${this.getAuthorDomSmall(notification.account)}
-                     <a href="${notification.status!.url}">poll has ended ${dateToText(new Date(notification.created_at).getTime())} ago</a>
-                  </div>
-                  <div class="post-notification-text">${notification.status?.content}</div>
-                  `;
-            break;
-         case "update":
-            html = /*html*/ `
-                  <div class="post-notification-header">
-                     ${this.getAuthorDomSmall(notification.account)}
-                     <a href="${notification.status!.url}">post was edited ${dateToText(new Date(notification.created_at).getTime())} ago</a>
-                  </div>
-                  <div class="post-notification-text">${notification.status?.content}</div>
-                  `;
-            break;
-      }
-      const content = dom(`<div class="post-content">${html}</div>`)[0];
-      return { elements: [content], toggles: [] };
-   }
-
-   getAuthorDomSmall(account: MastodonAccount) {
-      return /*html*/ `
-         <a href="${account.url}" class="inline-row">
-            <img src="${account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
-            <span>${getAccountName(account, true)}</span>
-         </a>
-         `;
-   }
-
    getCommentMetaDom(comment: Comment<MastodonCommentData>, opName: string | null): HTMLElement[] {
       const mastodonComment = comment.data.mastodonComment;
       const metaDom = dom(/*html*/ `
          <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">
-         <a href="${comment.authorUrl}" class="inline-row">
-            <img src="${mastodonComment.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
-            <span>${getAccountName(comment.data.mastodonComment.account, true)}</span>
-         </a>
+            <a href="${comment.authorUrl}" class="inline-row">
+               <img src="${mastodonComment.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+               <span>${getAccountName(comment.data.mastodonComment.account, true)}</span>
+            </a>
          </span>
          <span>•</span>
          <a href="${comment.url}" style="text-decoration: underline;">${dateToText(comment.createdAt * 1000)}</a>
       `);
+      metaDom[0].addEventListener("click", (event) => {
+         event.preventDefault();
+         document.body.append(new MastodonUserProfileView(comment.data.mastodonComment.account, comment.data.userInfo));
+      });
       return metaDom;
    }
 
@@ -1334,27 +1129,37 @@ export class MastodonUserProfileView extends OverlayView {
       const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
       this.content.append(loadingDiv);
       (async () => {
-         const resultLocalAccount = await MastodonApi.resolveAccount(account.url, userInfo);
+         const promises = [
+            await MastodonApi.resolveAccount(account.url, userInfo),
+            await MastodonApi.lookupAccount(account.username, new URL(account.url).host),
+         ];
+         const results = await Promise.all(promises);
+         const resultLocalAccount = results[0];
          if (resultLocalAccount instanceof Error) {
             this.content.innerHTML = `
-               <div class="post-loading">Could not lookup user ${getAccountName(account, true)} on ${userInfo.instance}: ${resultLocalAccount.message}.</div>
+               <div class="post-loading">Could not lookup user ${getAccountName(account, true)} on ${userInfo.instance}: ${
+               resultLocalAccount.message
+            }.</div>
             `;
             return;
          }
          this.localAccount = resultLocalAccount;
 
-         const remoteInstance = new URL(account.url).host;
-         const resultRemoteAccount = await MastodonApi.lookupAccount(account.username, remoteInstance);
+         const resultRemoteAccount = results[1];
          if (resultRemoteAccount instanceof Error) {
             this.content.innerHTML = `
-               <div class="post-loading">Could not lookup user ${getAccountName(account, true)} on ${remoteInstance}: ${resultRemoteAccount.message}</div>
+               <div class="post-loading">Could not lookup user ${getAccountName(account, true)} on ${new URL(account.url).host}: ${
+               resultRemoteAccount.message
+            }</div>
             `;
             return;
          } else {
             this.remoteAccount = resultRemoteAccount;
             const resultRelationship = await MastodonApi.getRelationship(this.localAccount.id, userInfo);
             if (resultRelationship instanceof Error) {
-               this.content.innerHTML = `<div class="post-loading">Could not load user ${getAccountName(this.localAccount, true)}: ${resultRelationship.message}</div>`;
+               this.content.innerHTML = `<div class="post-loading">Could not load user ${getAccountName(this.localAccount, true)}: ${
+                  resultRelationship.message
+               }</div>`;
                return;
             }
             this.relationship = resultRelationship;
@@ -1393,7 +1198,7 @@ export class MastodonUserProfileView extends OverlayView {
                </a>
                ${
                   localAccount.username != this.userInfo.username && new URL(localAccount.url).host != this.userInfo.instance
-                     ? `<button class="overlay-button" style="margin-left: auto; ${
+                     ? `<button x-id="follow" class="overlay-button" style="margin-left: auto; ${
                           this.relationship?.following ? "border: 1px solid var(--ledit-border-color);" : ""
                        }">${this.relationship?.following ? "Following" : "Follow"}</button>`
                      : ""
@@ -1419,23 +1224,18 @@ export class MastodonUserProfileView extends OverlayView {
 
       let feed = getSource().getFeed().split("/");
       let posts = new PostListView(new MastodonSource(feed[0] + "/@" + localAccount.username + "@" + new URL(localAccount.url).host), false);
-      let following = new MastodonAccountListView(
-         async (nextPage) => {
-            return await MastodonApi.getFollowing(remoteAccount, nextPage, this.userInfo);
-         },
-         this.userInfo
-      );
-      let followers = new MastodonAccountListView(
-         async (nextPage) => {
-            return await MastodonApi.getFollowers(remoteAccount, nextPage, this.userInfo);
-         },
-         this.userInfo
-      );
+      let following = new MastodonAccountListView(async (nextPage) => {
+         return await MastodonApi.getFollowing(remoteAccount, nextPage, this.userInfo);
+      }, this.userInfo);
+      let followers = new MastodonAccountListView(async (nextPage) => {
+         return await MastodonApi.getFollowers(remoteAccount, nextPage, this.userInfo);
+      }, this.userInfo);
 
       this.content.append(posts);
       posts.style.marginTop = "0";
 
       const elements = this.elements<{
+         follow: HTMLElement; // FIXME implement follow/unfollow/mute/block
          accountPosts: HTMLElement;
          accountFollowing: HTMLElement;
          accountFollowers: HTMLElement;
@@ -1477,7 +1277,7 @@ export class MastodonAccountListView extends PagedListView<MastodonAccount> {
       this.classList.add("mastodon-account-list");
    }
 
-   renderItems(accounts: MastodonAccount[]) {
+   async renderItems(accounts: MastodonAccount[]) {
       for (const account of accounts) {
          const avatarImageUrl = account.avatar_static;
          const authorUrl = account.url;
@@ -1508,3 +1308,133 @@ export class MastodonAccountListView extends PagedListView<MastodonAccount> {
    }
 }
 customElements.define("ledit-mastodon-account-list", MastodonAccountListView);
+
+export class MastodonNotificationsListView extends PagedListView<MastodonNotification> {
+   public readonly userInfo: MastodonUserInfo;
+
+   constructor(userInfo: MastodonUserInfo) {
+      super((nextPage) => MastodonApi.getNotifications(nextPage, userInfo));
+      this.userInfo = userInfo;
+   }
+
+   async renderItems(notifications: MastodonNotification[]) {
+      // FIXME support mentions only
+      // FIXME set z-index for nav/escape guard so we can collapse
+      // comments in the overlay.
+      const promises: Promise<Post<MastodonPostData> | null>[] = [];
+      const notificationToPromise: number[] = [];
+      for (let i = 0; i < notifications.length; i++) {
+         const notification = notifications[i];
+         if (notification.type === "mention") {
+            const promise = MastodonSource.mastodonPostToPost(notification.status!, false, this.userInfo);
+            promises.push(promise);
+            notificationToPromise.push(i);
+         } else {
+            notificationToPromise.push(-1);
+         }
+      }
+      const resolved = await Promise.all(promises);
+
+      for (let i = 0; i < notifications.length; i++) {
+         const notification = notifications[i];
+         if (notificationToPromise[i] != -1) {
+            const post = resolved[i];
+            if (!post) continue;
+            this.append(new PostView(post));
+         } else {
+            this.append(...this.getNotificationDom(notification));
+         }
+      }
+
+      setLinkTargetsToBlank(this);
+   }
+
+   getNotificationDom(notification: MastodonNotification) {
+      const getAuthorDomSmall = (account: MastodonAccount) => {
+         return /*html*/ `
+            <a href="${account.url}" class="inline-row">
+               <img src="${account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+               <span>${getAccountName(account, true)}</span>
+            </a>
+            `;
+      };
+
+      let html = "";
+      switch (notification.type) {
+         case "mention":
+            html = /*html*/ `
+                  <div class="post-notification-header">
+                     ${getAuthorDomSmall(notification.account)}
+                     <a href="${notification.status!.url}">mentioned you ${dateToText(new Date(notification.created_at).getTime())} ago</a>
+                  </div>
+                  <div class="post-notification-text">${notification.status?.content}</div>
+                  `;
+            break;
+         case "status":
+            break;
+         case "reblog":
+            html = /*html*/ `
+                  <div class="post-notification-header">
+                     <span class="color-gold-fill">${svgReblog}</span>
+                     ${getAuthorDomSmall(notification.account)}
+                     <a href="${notification.status!.url}">reblogged you ${dateToText(new Date(notification.created_at).getTime())} ago</a>
+                  </div>
+                  <div class="post-notification-text">${notification.status?.content}</div>
+                  `;
+            break;
+         case "follow":
+            html = /*html*/ `
+               <div class="post-notification-header">
+               ${getAuthorDomSmall(notification.account)}
+                  <span>followed you ${dateToText(new Date(notification.created_at).getTime())} ago</span>
+               </div>`;
+            break;
+         case "follow_request":
+            html = /*html*/ `
+               <div class="post-notification-header">
+                  ${getAuthorDomSmall(notification.account)}
+                  <span>wants to follow you</span>
+               </div>`;
+            break;
+         case "favourite":
+            html = /*html*/ `
+                  <div class="post-notification-header">
+                     <span class="color-gold-fill">${svgStar}</span>
+                     ${getAuthorDomSmall(notification.account)}
+                     <a href="${notification.status!.url}">favorited your post ${dateToText(new Date(notification.created_at).getTime())} ago</a>
+                  </div>
+                  <div class="post-notification-text">${notification.status?.content}</div>
+                  `;
+            break;
+         case "poll":
+            // FIXME show poll results
+            html = /*html*/ `
+                  <div class="post-notification-header">
+                     ${getAuthorDomSmall(notification.account)}
+                     <a href="${notification.status!.url}">poll has ended ${dateToText(new Date(notification.created_at).getTime())} ago</a>
+                  </div>
+                  <div class="post-notification-text">${notification.status?.content}</div>
+                  `;
+            break;
+         case "update":
+            html = /*html*/ `
+                  <div class="post-notification-header">
+                     ${getAuthorDomSmall(notification.account)}
+                     <a href="${notification.status!.url}">post was edited ${dateToText(new Date(notification.created_at).getTime())} ago</a>
+                  </div>
+                  <div class="post-notification-text">${notification.status?.content}</div>
+                  `;
+            break;
+      }
+      return dom(`<div class="mastodon-notification">${html}</div>`);
+   }
+}
+customElements.define("ledit-mastodon-notifications-list", MastodonNotificationsListView);
+
+export class MastodonNotificationsOverlayView extends OverlayView {
+   constructor(userInfo: MastodonUserInfo) {
+      super("Notifications");
+      this.content.append(new MastodonNotificationsListView(userInfo));
+   }
+}
+customElements.define("ledit-mastodon-notifications", MastodonNotificationsOverlayView);
