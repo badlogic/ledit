@@ -15,7 +15,7 @@ export class HeaderView extends View {
       const source = getSource();
       const hash = source.getSourcePrefix() + source.getFeed();
       const bookmark = getSettings().bookmarks.find((bookmark) => bookmarkToHash(bookmark) == hash);
-      this.innerHTML = /*html*/ `
+      this.append(...dom(/*html*/ `
       <div class="header-container">
          <div class="header">
             <div x-id="showMenu" class="header-menu color-fill no-user-select" style="padding-left: var(--ledit-padding);">${svgBurger}</div>
@@ -26,7 +26,7 @@ export class HeaderView extends View {
             <span x-id="addBookmark" class="header-bookmark-add color-fill" style="padding-right: var(--ledit-padding);">${svgPlus}</span>
          </div>
       </div>
-        `;
+        `));
 
       const elements = this.elements<{
          showMenu: Element;

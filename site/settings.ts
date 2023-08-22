@@ -57,7 +57,7 @@ export function getSettings(): Settings {
       hideSeen: false,
       seenIds: [],
       theme: "light",
-      collapseSeenPosts: true,
+      collapseSeenPosts: false,
       showOnlyMastodonRoots: false,
    } as Settings;
    settings = JSON.parse(JSON.stringify(defaultSettings));

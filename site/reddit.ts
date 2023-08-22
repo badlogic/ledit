@@ -205,7 +205,7 @@ export class RedditSource implements Source<RedditPost, RedditComment> {
             nextPage: redditPosts.data.after,
          };
       } catch (e) {
-         return new Error("Network error.");
+         return new Error(`Could not load subredd ${getSubreddit()}.`);
       }
    }
    async getComments(post: Post<RedditPost>): Promise<Comment<RedditComment>[] | Error> {

@@ -1,6 +1,6 @@
 import videojs from "video.js";
-import { getSource } from "./data";
 import { svgImages } from "./svg";
+import "dompurify";
 
 export function dateToText(utcTimestamp: number): string {
    const now = Date.now();
@@ -84,9 +84,18 @@ export function intersectsViewport(element: Element | null) {
 }
 
 /**
- * Converts the HTML string to DOM nodes.
+ * Sanitizes and converts the HTML string to DOM nodes. All DOM manipulation
+ * must go through this!
  */
 export function dom(html: string): HTMLElement[] {
+   const originalHTML = html;
+   html = DOMPurify.sanitize(html, { ADD_ATTR: ["x-id"], ADD_TAGS: ["video-js", "iframe"] });
+   const removed = DOMPurify.removed;
+   if (DOMPurify.removed.length > 0) {
+      for (const thing of removed) {
+         console.log("Found potentially malicous markup: " + (thing.attribute?.name + ": " + thing.attribute?.value + " " ?? "") + (thing.from?.tagName + " " ?? "") + (thing.element?.tagName ?? ""));
+      }
+   }
    const div = document.createElement("div");
    div.innerHTML = html;
    const children: Element[] = [];
@@ -149,22 +158,28 @@ export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
 
          let collapsed = true;
          const loadMore = (event: MouseEvent) => {
-            if ((event.target as HTMLElement).tagName != "A") {
-               event.preventDefault();
-               event.stopPropagation();
-
-               if (collapsed) {
-                  div.style.height = "auto";
-                  showMoreDiv.style.display = "none";
-               } else {
-                  div.style.height = `${maxHeight}px`;
-                  showMoreDiv.style.display = "";
-                  if (div.getBoundingClientRect().top < 16 * 4) {
-                     window.scrollTo({ top: div.getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
-                  }
-               }
-               collapsed = !collapsed;
+            const target = event.target as HTMLElement;
+            if (target.tagName == "A") return;
+            let parent = target.parentElement;
+            while (parent) {
+               if (parent.tagName == "A") return;
+               parent = parent.parentElement;
             }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (collapsed) {
+               div.style.height = "auto";
+               showMoreDiv.style.display = "none";
+            } else {
+               div.style.height = `${maxHeight}px`;
+               showMoreDiv.style.display = "";
+               if (div.getBoundingClientRect().top < 16 * 4) {
+                  window.scrollTo({ top: div.getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
+               }
+            }
+            collapsed = !collapsed;
          };
          div.addEventListener("click", loadMore);
          showMoreDiv.addEventListener("click", loadMore);
@@ -216,8 +231,8 @@ export function renderVideo(
    let videoDom = dom(/*html*/ `
       <div class="content-video-container">
       <video-js controls class="video-js" style="width: ${embed.width}px;" ${loop ? "loop" : ""} data-setup="{}">
-            ${embed.dash_url ? `<source src="${embed.dash_url}">`: ""}
-            ${embed.hls_url ? `<source src="${embed.hls_url}">`: ""}
+            ${embed.dash_url ? `<source src="${embed.dash_url}">` : ""}
+            ${embed.hls_url ? `<source src="${embed.hls_url}">` : ""}
             ${embed.fallback_url ? `<source src="${embed.fallback_url}">` : ""}
       </video-js>
       </div>`)[0];
@@ -258,8 +273,8 @@ export function renderVideo(
       videoElement.addEventListener("clicked", togglePlay);
       onTapped(videoElement, togglePlay);
       // FIXME this doesn't work, callback is never invoked for some reason
-      videoDom.addEventListener("clicked", togglePlay);
-      onTapped(videoDom, togglePlay);
+      // videoDom.addEventListener("clicked", togglePlay);
+      // onTapped(videoDom, togglePlay);
 
       // Pause when out of view
       document.addEventListener("scroll", () => {
@@ -318,12 +333,13 @@ export function scrollToAndCenter(element: Element) {
    requestAnimationFrame(() => {
       element.scrollIntoView({
          behavior: "smooth",
-         block: "center"
+         block: "center",
       });
    });
 }
 
-import Sortable from "sortablejs"
+import Sortable from "sortablejs";
+import DOMPurify from "dompurify";
 
 export function makeChildrenDraggable(container: HTMLElement, complete: () => void) {
    const preventContextMenu = (event: any) => {
@@ -338,25 +354,25 @@ export function makeChildrenDraggable(container: HTMLElement, complete: () => vo
       delayOnTouchOnly: true,
       onStart: () => {
          Array.from(container.children).forEach((el) => {
-            el.classList.add("no-hover")
+            el.classList.add("no-hover");
             el.addEventListener("contextmenu", preventContextMenu);
             Array.from(el.querySelectorAll("a")).forEach((el) => el.addEventListener("contextmenu", preventContextMenu));
          });
       },
       onEnd: () => {
          Array.from(container.children).forEach((el) => {
-            el.classList.remove("no-hover")
+            el.classList.remove("no-hover");
             el.removeEventListener("contextmenu", preventContextMenu);
             el.addEventListener("contextmenu", preventContextMenu);
             Array.from(el.querySelectorAll("a")).forEach((el) => el.removeEventListener("contextmenu", preventContextMenu));
          });
-         complete()
-      }
+         complete();
+      },
    });
 }
 
 export function setLinkTargetsToBlank(element: HTMLElement) {
-   if(element instanceof HTMLAnchorElement) {
+   if (element instanceof HTMLAnchorElement) {
       element.setAttribute("target", "_blank");
    }
    let links = element.querySelectorAll("a")!;

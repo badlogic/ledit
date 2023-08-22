@@ -75,6 +75,7 @@
 .post-buttons {
    display: flex;
    gap: var(--ledit-margin);
+   justify-content: space-around;
    height: calc(var(--ledit-font-size) * 1.5);
 }
 

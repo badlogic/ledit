@@ -125,8 +125,8 @@ export class BookmarksView extends OverlayView {
    }
 
    renderContent() {
-      const settings = getSettings();
       this.content.innerHTML = "";
+      const settings = getSettings();
 
       // Add feed & accounts buttons
       const addBookmarkDiv = dom(`<div class="overlay-row"><span class="box color-fill">${svgBookmark}</span>Add feed</div>`)[0];

@@ -53,7 +53,7 @@ export abstract class OverlayView extends View {
    constructor(title?: string | HTMLElement, public readonly zIndex = OverlayView.nextStackZIndex()) {
       super();
       this.classList.add("overlay-container");
-      this.innerHTML = /*html*/ `
+      this.append(...dom(/*html*/ `
             <div class="overlay">
                 <div x-id="close" class="overlay-close">
                   ${title && typeof title === "string" ? `<span class="overlay-header">${title}</span>` : ""}
@@ -61,7 +61,7 @@ export abstract class OverlayView extends View {
                </div>
                 <div x-id="content" class="overlay-content"></div>
             </div>
-        `;
+        `));
       const elements = this.elements<{
          close: HTMLElement;
          content: HTMLElement;

@@ -98,9 +98,7 @@ export class PostView extends View {
    }
 
    renderFullPost(post: Post<any>) {
-      const showFeed = getSource().getFeed().toLowerCase() != post.feed.toLowerCase();
-      const collapse = getSettings().collapseSeenPosts && PostListView.seenPosts.has(post.url) ? "post-seen" : "";
-      this.innerHTML = /*html*/ `
+      this.append(...dom(/*html*/ `
          ${post.title && post.title.length > 0 ? `<div class="post-title"><a href="${post.url}">${post.title}</a></div>` : ""}
          <div x-id="meta" class="post-meta"></div>
          <div x-id="buttonsRow" class="post-buttons">
@@ -115,7 +113,7 @@ export class PostView extends View {
                   : ""
             }
          </div>
-      `;
+      `));
 
       const elements = this.elements<{
          meta: Element;
@@ -148,14 +146,15 @@ export class PostView extends View {
          });
       }
 
-      if (collapse) {
+      if (getSettings().collapseSeenPosts && PostListView.seenPosts.has(post.url) ) {
          const expand = (event: MouseEvent) => {
             event.stopPropagation();
             event.preventDefault();
-            this.querySelector(".post")?.classList.remove("post-seen");
+            this.classList.remove("post-seen");
             this.removeEventListener("click", expand);
          };
          this.addEventListener("click", expand);
+         this.classList.add("post-seen");
       }
    }
 

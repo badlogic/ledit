@@ -44,7 +44,8 @@ export class PostEditor extends OverlayView {
       // Update char count and disable publish button if necessary
       elements.text.addEventListener("input", (event) => {
          const maxCharsExceeded = elements.text.value.length > this.maxChars;
-         elements.charCount.innerHTML = `<span ${maxCharsExceeded ? `style="color: red;"` : ""}>${this.maxChars - elements.text.value.length}</span>`;
+         elements.charCount.innerHTML = "";
+         elements.charCount.append(...dom(/*html*/`<span ${maxCharsExceeded ? `style="color: red;"` : ""}>${this.maxChars - elements.text.value.length}</span>`));
          if (maxCharsExceeded || elements.text.value.trim().length == 0) {
             elements.publish.disabled = true;
          } else {

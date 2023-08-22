@@ -172,7 +172,8 @@ blockquote {
 
 .fab {
    background: var(--ledit-background-dim);
-   color: #fff; /* Change to desired text color */
+   color: var(--ledit-color); /* Change to desired text color */
+   fill: var(--ledit-color); /* Change to desired text color */
    border: none;
    border-radius: 50%;
    width: calc(3 * var(--ledit-font-size));

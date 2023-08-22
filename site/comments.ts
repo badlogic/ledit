@@ -68,12 +68,12 @@ export class CommentView extends View {
    render() {
       const comment = this.comment;
 
-      this.innerHTML = /*html*/ `
+      this.append(...dom(/*html*/ `
          <div x-id="meta" class="comment-meta"></div>
          <div x-id="content" class="comment-content"></div>
          <div x-id="replies" class="comment-replies"></div>
          <div x-id="repliesCount" class="comment-replies-count hidden"></div>
-      `;
+      `));
 
       // Add meta, content, replies and reply count. Setup expand/collapse.
       const elements = this.elements<{
@@ -107,7 +107,7 @@ export class CommentView extends View {
       // Add content and toggle buttons
       const toggles: Element[] = [];
       if (typeof comment.content === "string") {
-         elements.content.innerHTML = htmlDecode(comment.content)!;
+         elements.content.append(...dom(htmlDecode(comment.content)!));
       } else {
          const content = comment.content;
          for (const el of content.elements) {
