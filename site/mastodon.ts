@@ -251,11 +251,11 @@ export class MastodonApi {
       }
    }
 
-   static async getNotifications(nextPage: PageIdentifier, userInfo: MastodonUserInfo): Promise<Page<MastodonNotification> | Error> {
+   static async getNotifications(nextPage: PageIdentifier, userInfo: MastodonUserInfo, sinceId: string | null = null): Promise<Page<MastodonNotification> | Error> {
       if (!userInfo.bearer) return new Error(`No access token given for ${userInfo.username}@${userInfo.instance}`);
       try {
          const options = this.getAuthHeader(userInfo);
-         if (!nextPage) nextPage = `https://${userInfo.instance}/api/v1/notifications?limit=20}`;
+         if (!nextPage) nextPage = `https://${userInfo.instance}/api/v1/notifications?limit=20${sinceId ? "&sinceId=" + sinceId : ""}}`;
          const response = await fetch(nextPage, options);
          if (response.status != 200)
             return new Error(`Could not get notifications for account. Server responded with status code ${response.status}`);
@@ -267,6 +267,22 @@ export class MastodonApi {
          return { items: notifications, nextPage: nextPage ?? "end" };
       } catch (e) {
          return new Error("Network error.");
+      }
+   }
+
+   static async dismissNotifications(userInfo: MastodonUserInfo): Promise<boolean> {
+      try {
+         const url = `https://${userInfo.instance}/api/v1/notifications/clear`;
+         const options = {
+            method: "POST",
+            headers: {
+               Authorization: "Bearer " + userInfo.bearer,
+            },
+         };
+         const response = await fetch(url, options);
+         return response.status == 200;
+      } catch (e) {
+         return false;
       }
    }
 
@@ -538,12 +554,25 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
          )
       );
 
-      const notifications = dom(`<div class="fab margin-right-big">${svgBell}</div>`)[0];
-      notifications.addEventListener("click", () => {
+      const notificationsDom = dom(`<div class="fab margin-right-big">${svgBell}</div>`)[0];
+      notificationsDom.addEventListener("click", () => {
+         notificationsDom.classList.remove("animation-pulsate", "border-accent", "fill-color-accent");
          document.body.append(new MastodonNotificationsOverlayView(userInfo));
       });
+      const checkNotifications = async () => {
+         setTimeout(checkNotifications, 1000 * 10);
+         console.log("Checking notifications");
+         const lastNotificationId = localStorage.getItem("mastodonLastNotificationId");
+         const notifications = await MastodonApi.getNotifications(null, userInfo, lastNotificationId);
+         if (notifications instanceof Error) return;
+         if (notifications.items.length == 0) return;
+         if (lastNotificationId == null || lastNotificationId != notifications.items[0].id) {
+            notificationsDom.classList.add("animation-pulsate", "border-accent", "fill-color-accent");
+         }
+      }
+      checkNotifications();
 
-      actionButtons.append(publish, notifications);
+      actionButtons.append(publish, notificationsDom);
 
       document.body.append(actionButtons);
    }
@@ -731,7 +760,9 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             }
          }
 
-         if (nextPage == null && userInfo.bearer && !this.fixedHash) this.showActionButtons(userInfo);
+         if (nextPage == null && userInfo.bearer && !this.fixedHash) {
+            this.showActionButtons(userInfo);
+         }
 
          return { items: posts, nextPage: maxId };
       }
@@ -944,7 +975,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       for(const el of prelude) {
          contentDom.append(el);
       }
-      contentDom.append(dom(/*html*/`<span>${replaceEmojis(postToView.content, postToView.emojis)}</span>`)[0]);
+      contentDom.append(dom(/*html*/`${replaceEmojis(postToView.content, postToView.emojis)}`)[0]);
       elements.push(contentDom);
 
       const pollDom = MastodonSource.getPollDom(postToView);
@@ -1420,16 +1451,56 @@ customElements.define("ledit-mastodon-account-list", MastodonAccountListView);
 
 export class MastodonNotificationsListView extends PagedListView<MastodonNotification> {
    public readonly userInfo: MastodonUserInfo;
+   public firstPage = true;
+   public lastNotificationId: string | null = null;
+   public displayingOld = false;
+   public onlyMentions = false;
 
    constructor(userInfo: MastodonUserInfo) {
-      super((nextPage) => MastodonApi.getNotifications(nextPage, userInfo));
+      super((nextPage) => MastodonApi.getNotifications(nextPage, userInfo, null));
       this.userInfo = userInfo;
    }
 
+   setupFirstPage(notifications: MastodonNotification[]) {
+      if (this.firstPage) {
+         this.firstPage = false;
+         this.lastNotificationId = localStorage.getItem("mastodonLastNotificationId");
+         localStorage.setItem("mastodonLastNotificationId", notifications[0].id);
+         const notificationTypes = dom(/*html*/`
+            <div class="mastodon-notification-types margin-auto">
+               <div x-id="all"><span>All</span></div>
+               <div x-id="mentions"><span>Mentions</span></div>
+            </div>
+         `)[0];
+
+         const typesElements = View.elements<{
+            all: HTMLElement;
+            mentions: HTMLElement;
+         }>(notificationTypes);
+         typesElements.all.classList.add("selected");
+         typesElements.all.addEventListener("click", () => {
+            if (typesElements.all.classList.contains("selected")) return;
+            typesElements.mentions.classList.remove("selected");
+            typesElements.all.classList.add("selected");
+            Array.from(this.querySelectorAll(".mastodon-notification")).forEach((el) => el.classList.remove("hidden"));
+            this.onlyMentions = false;
+         });
+         typesElements.mentions.addEventListener("click", () => {
+            if (typesElements.mentions.classList.contains("selected")) return;
+            typesElements.all.classList.remove("selected");
+            typesElements.mentions.classList.add("selected");
+            Array.from(this.querySelectorAll(".mastodon-notification")).forEach((el) => el.classList.add("hidden"));
+            this.onlyMentions = true;
+         });
+         this.append(notificationTypes);
+      }
+   }
+
    async renderItems(notifications: MastodonNotification[]) {
+      if (notifications.length == 0) return;
+      this.setupFirstPage(notifications);
+
       // FIXME support mentions only
-      // FIXME set z-index for nav/escape guard so we can collapse
-      // comments in the overlay.
       const promises: Promise<Post<MastodonPostData> | null>[] = [];
       const notificationToPromise: number[] = [];
       for (let i = 0; i < notifications.length; i++) {
@@ -1446,12 +1517,18 @@ export class MastodonNotificationsListView extends PagedListView<MastodonNotific
 
       for (let i = 0; i < notifications.length; i++) {
          const notification = notifications[i];
+         if (notification.id == this.lastNotificationId) {
+            this.append(dom(/*html*/`<div class="post-loading">Previously seen notifications</div>`)[0]);
+         }
          if (notificationToPromise[i] != -1) {
             const post = resolved[i];
             if (!post) continue;
-            this.append(new PostView(post));
+            const postView = new PostView(post);
+            this.append(postView);
          } else {
-            this.append(...this.getNotificationDom(notification));
+            const notificationDom = this.getNotificationDom(notification);
+            if (this.onlyMentions) notificationDom.classList.add("hidden");
+            this.append(notificationDom);
          }
       }
 
@@ -1461,7 +1538,7 @@ export class MastodonNotificationsListView extends PagedListView<MastodonNotific
    getNotificationDom(notification: MastodonNotification) {
       const getAuthorDomSmall = (account: MastodonAccount) => {
          return /*html*/ `
-            <a href="${account.url}" class="inline-row">
+            <a href="${account.url}" class="inline-row notification-account">
                <img src="${account.avatar_static}" class="border-radius-4px max-height-1-5-font-size">
                <span>${getAccountName(account, true)}</span>
             </a>
@@ -1535,13 +1612,21 @@ export class MastodonNotificationsListView extends PagedListView<MastodonNotific
                   `;
             break;
       }
-      return dom(`<div class="mastodon-notification">${html}</div>`);
+      const notificationDom = dom(`<div class="mastodon-notification">${html}</div>`)[0];
+      const accountDom = notificationDom.querySelector(".notification-account");
+      if (accountDom) {
+         accountDom.addEventListener("click", (event) => {
+            event.preventDefault();
+            document.body.append(new MastodonUserProfileView(notification.account, this.userInfo));
+         })
+      }
+      return notificationDom;
    }
 }
 customElements.define("ledit-mastodon-notifications-list", MastodonNotificationsListView);
 
 export class MastodonNotificationsOverlayView extends OverlayView {
-   constructor(userInfo: MastodonUserInfo) {
+   constructor(userInfo: MastodonUserInfo, onlyMentions = false) {
       super("Notifications", true);
       this.content.append(new MastodonNotificationsListView(userInfo));
    }

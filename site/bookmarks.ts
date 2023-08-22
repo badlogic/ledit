@@ -228,8 +228,8 @@ export class BookmarksView extends OverlayView {
    }
 
    static showActionButton() {
-      const actionButtons = dom(`<div class="fab-container"></div>`)[0];
-      const openBookmarks = dom(`<div class="fab fill-color margin-right-auto margin-left-big">${svgPlus}</div>`)[0];
+      const actionButtons = dom(/*html*/`<div class="fab-container"></div>`)[0];
+      const openBookmarks = dom(/*html*/`<div class="fab fill-color margin-right-auto margin-left-big">${svgPlus}</div>`)[0];
       actionButtons.append(openBookmarks);
       openBookmarks.addEventListener("click", () => document.body.append(new BookmarksView()));
       document.body.append(actionButtons);

@@ -226,6 +226,10 @@ blockquote {
 
 /** These replace inline styles, so we can tighten CSP **/
 
+.margin-auto {
+   margin: auto;
+}
+
 .margin-minus-1 {
    margin: calc((var(--ledit-margin) * -1));
 }
@@ -346,6 +350,10 @@ blockquote {
    overflow: hidden !important;
 }
 
+.background-dim {
+   background: var(--ledit-background-dim);
+}
+
 .color {
    color: var(--ledit-color) !important;
 }
@@ -372,6 +380,10 @@ blockquote {
 
 .fill-color-gold {
    fill: rgb(255, 123, 0) !important;
+}
+
+.fill-color-accent {
+   fill: var(--ledit-accent-color);
 }
 
 .border-radius-4px {
@@ -432,3 +444,21 @@ blockquote {
        r: .2px
    }
 }
+
+.border-accent {
+   border: 1px solid var(--ledit-accent-color) !important;
+}
+
+/* animations */
+@keyframes frames-pulsate {
+   0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+ }
+
+ .animation-pulsate {
+   animation: frames-pulsate 1.5s ease-in-out infinite;
+ }

@@ -33,27 +33,29 @@
    max-width: calc(100% + var(--ledit-margin) * 2);
 }
 
-.mastodon-user-profile-stats {
+.mastodon-user-profile-stats, .mastodon-notification-types {
    display: flex;
    gap: 1em;
-   font-size: var(--ledit-font-size-small);
+
 }
 
-.mastodon-user-profile-stats > * {
+.mastodon-user-profile-stats > *, .mastodon-notification-types > * {
    color: var(--ledit-color);
    display: flex;
+   justify-content: center;
    gap: 0.25em;
    cursor: pointer;
    padding: var(--ledit-padding);
    border-radius: 8px;
    border: 1px solid var(--ledit-border-color);
+   min-width: 3em;
 }
 
-.mastodon-user-profile-stats .selected {
+.mastodon-user-profile-stats .selected, .mastodon-notification-types .selected {
    background: var(--ledit-background);
 }
 
-.mastodon-user-profile-stats > :hover {
+.mastodon-user-profile-stats > :hover, .mastodon-notification-types > :hover {
    border: 1px solid var(--ledit-accent-color);
 }
 
