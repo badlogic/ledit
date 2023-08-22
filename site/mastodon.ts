@@ -666,8 +666,9 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             for (const post of resolvedPosts) {
                if (post) posts.push(post);
             }
-            this.showActionButtons(userInfo);
          }
+
+         if (nextPage == null && userInfo.bearer && !this.fixedHash) this.showActionButtons(userInfo);
 
          return { items: posts, nextPage: maxId };
       }
