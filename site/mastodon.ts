@@ -960,14 +960,14 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       const boost = dom(/*html*/ `
          <div x-id="boost" class="post-button color">
             <span x-id="boostIcon" class="${postToView.reblogged ? "fill-color-gold" : "fill-color"}">${svgReblog}</span>
-            <span x-id="boostCount">${addCommasToNumber(postToView.reblogs_count)}</span>
+            <span x-id="boostCount" class="color">${addCommasToNumber(postToView.reblogs_count)}</span>
          </div>
       `)[0];
 
       const favourite = dom(/*html*/ `
          <div x-id="favourite" class="post-button color">
             <span x-id="favouriteIcon" class="${postToView.favourited ? "fill-color-gold" : "fill-color"}">${svgStar}</span>
-            <span x-id="favouriteCount">${addCommasToNumber(postToView.favourites_count)}</span>
+            <span x-id="favouriteCount" class="color">${addCommasToNumber(postToView.favourites_count)}</span>
          </div>
       `)[0];
 

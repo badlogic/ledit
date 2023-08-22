@@ -350,7 +350,7 @@ blockquote {
    color: var(--ledit-color) !important;
 }
 
-.color {
+.color-dim {
    color: var(--ledit-color-dim) !important;
 }
 
