@@ -1,27 +1,4 @@
 <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <style>
-        .spinner_b2T7 {
-            animation: spinner_xe7Q .8s linear infinite
-        }
-
-        .spinner_YRVV {
-            animation-delay: -.65s
-        }
-
-        .spinner_c9oY {
-            animation-delay: -.5s
-        }
-
-        @keyframes spinner_xe7Q {
-            93.75%,100% {
-                r: 3px
-            }
-
-            46.875% {
-                r: .2px
-            }
-        }
-    </style>
     <circle class="spinner_b2T7" fill="var(--ledit-color)"cx="4" cy="12" r="3"/>
     <circle class="spinner_b2T7 spinner_YRVV" fill="var(--ledit-color)" cx="12" cy="12" r="3"/>
     <circle class="spinner_b2T7 spinner_c9oY" fill="var(--ledit-color)" cx="20" cy="12" r="3"/>

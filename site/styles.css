@@ -410,3 +410,25 @@ blockquote {
    text-decoration: underline !important;
 }
 
+/* Needed for loader svg **/
+.spinner_b2T7 {
+   animation: spinner_xe7Q .8s linear infinite
+}
+
+.spinner_YRVV {
+   animation-delay: -.65s
+}
+
+.spinner_c9oY {
+   animation-delay: -.5s
+}
+
+@keyframes spinner_xe7Q {
+   93.75%,100% {
+       r: 3px
+   }
+
+   46.875% {
+       r: .2px
+   }
+}
