@@ -99,7 +99,7 @@ export class RssSource implements Source<FeedEntry, void> {
                createdAt: parseFeedDate(entry.published as any as string).getTime() / 1000,
                feed: `${
                   channelImageUrl
-                     ? `<img src="${channelImageUrl}" style="max-height: calc(1.5 * var(--ledit-font-size));"></img>`
+                     ? `<img src="${channelImageUrl}" class="rss-channel-image"></img>`
                      : new URL(url).hostname
                }`,
                numComments: null,
@@ -162,7 +162,7 @@ export class RssSource implements Source<FeedEntry, void> {
 
       const content = dom(
          `<div class="rss-content">${
-            imageUrl ? `<img src="${imageUrl}" class="rss-content-image" style="flex: 0; max-width: 150px !important;">` : ""
+            imageUrl ? `<img src="${imageUrl}" class="rss-content-image">` : ""
          } <div>${removeTrailingEmptyParagraphs(description)}</div></div>`
       )[0];
       content.querySelectorAll("iframe").forEach((iframe) => iframe.remove());

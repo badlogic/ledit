@@ -196,7 +196,7 @@ export class MastodonApi {
    static async getAccountPosts(accountId: string, maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonPost[] | Error> {
       try {
          const options = this.getAuthHeader(userInfo);
-         const response = await fetch(`https://${userInfo.instance}/api/v1/accounts/${accountId}/statuses?limit=40${maxId ? maxId : ""}`, options);
+         const response = await fetch(`https://${userInfo.instance}/api/v1/accounts/${accountId}/statuses?limit=20${maxId ? maxId : ""}`, options);
          if (response.status != 200) return new Error(`Could not get posts for account. Server responded with status code ${response.status}`);
          return (await response.json()) as MastodonPost[];
       } catch (e) {
@@ -255,7 +255,7 @@ export class MastodonApi {
       if (!userInfo.bearer) return new Error(`No access token given for ${userInfo.username}@${userInfo.instance}`);
       try {
          const options = this.getAuthHeader(userInfo);
-         if (!nextPage) nextPage = `https://${userInfo.instance}/api/v1/notifications?limit=40}`;
+         if (!nextPage) nextPage = `https://${userInfo.instance}/api/v1/notifications?limit=20}`;
          const response = await fetch(nextPage, options);
          if (response.status != 200)
             return new Error(`Could not get notifications for account. Server responded with status code ${response.status}`);
@@ -274,7 +274,7 @@ export class MastodonApi {
       if (!userInfo.bearer) return new Error(`No access token given for ${userInfo.username}@${userInfo.instance}`);
       try {
          const options = this.getAuthHeader(userInfo);
-         const response = await fetch(`https://${userInfo.instance}/api/v1/timelines/home?limit=40${maxId ? maxId : ""}`, options);
+         const response = await fetch(`https://${userInfo.instance}/api/v1/timelines/home?limit=20${maxId ? maxId : ""}`, options);
          if (response.status != 200) return new Error(`Could not load home timeline. Server responded with status code ${response.status}`);
          return (await response.json()) as MastodonPost[];
       } catch (e) {
@@ -285,7 +285,7 @@ export class MastodonApi {
    static async getLocalTimeline(maxId: string | null, userInfo: MastodonUserInfo): Promise<MastodonPost[] | Error> {
       try {
          const options = this.getAuthHeader(userInfo);
-         const response = await fetch(`https://${userInfo.instance}/api/v1/timelines/public?local=true&limit=40${maxId ? maxId : ""}`, options);
+         const response = await fetch(`https://${userInfo.instance}/api/v1/timelines/public?local=true&limit=20${maxId ? maxId : ""}`, options);
          if (response.status != 200) return new Error(`Could not load home timeline. Server responded with status code ${response.status}`);
          return (await response.json()) as MastodonPost[];
       } catch (e) {
@@ -538,7 +538,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
          )
       );
 
-      const notifications = dom(`<div class="fab" style="margin-right: 1em;">${svgBell}</div>`)[0];
+      const notifications = dom(`<div class="fab margin-right-big">${svgBell}</div>`)[0];
       notifications.addEventListener("click", () => {
          document.body.append(new MastodonNotificationsOverlayView(userInfo));
       });
@@ -558,11 +558,11 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
 
       const header = dom(/*html*/ `
                <div class="overlay-supplement">
-                  <div class="inline-row" style="margin-bottom: var(--ledit-padding); color: var(--ledit-color); font-weight: 600;">
+                  <div class="inline-row margin-bottom-small color font-weight-600">
                         <span>Replying to</span>
                         <img src="${
                            mastodonComment.account.avatar_static
-                        }" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+                        }" class="border-radius-4px max-height-1-5-font-size">
                         <span>${getAccountName(mastodonComment.account, true)}</span>
                   </div>
                   <div>${mastodonComment.content}</div>
@@ -809,8 +809,8 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       const authorUrl = postToView.account.url;
       const postUrl = postToView.uri; // "/#m/" + userInfo.username + "@" + userInfo.instance + "/" + postToView.id;
       const metaDom = dom(/*html*/ `
-         <a href="${authorUrl}" style="gap: var(--ledit-padding);">
-            ${avatarImageUrl ? `<img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">` : ""}
+         <a href="${authorUrl}" class="gap-small">
+            ${avatarImageUrl ? /*html*/`<img src="${avatarImageUrl}" class="border-radius-4px max-height-2-5-font-size">` : ""}
             <div>
                <span><b>${getAccountName(postToView.account, true)}</b></span>
                <span>${postToView.account.username}${
@@ -818,7 +818,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       }</span>
             </div>
          </a>
-         <a href="${postUrl}" style="text-decoration: underline; margin-left: auto; align-items: flex-start;">${dateToText(
+         <a href="${postUrl}" class="text-decoration-underline margin-left-auto align-items-flex-start">${dateToText(
          post.createdAt * 1000
       )}</span>
       `);
@@ -839,7 +839,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       if (post.poll) {
          const pollDiv = dom(`<div></div>`)[0];
          for (const option of post.poll.options) {
-            pollDiv.append(dom(`<div class="mastodon-poll-option color-fill">${svgCircle}${option.title}</div>`)[0]);
+            pollDiv.append(dom(`<div class="mastodon-poll-option fill-color">${svgCircle}${option.title}</div>`)[0]);
          }
          pollDiv.append(dom(`<div class="mastodon-poll-summary">${post.poll.votes_count} votes, ${post.poll.voters_count} voters</div>`)[0]);
          return pollDiv;
@@ -849,7 +849,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
 
    static getMediaDom(post: MastodonPost): ContentDom | null {
       const toggles: Element[] = [];
-      const mediaDom = dom(`<div style="padding-top: var(--ledit-padding);"></div>`)[0];
+      const mediaDom = dom(`<div class="padding-top-small"></div>`)[0];
       if (post.media_attachments.length > 0) {
          const images: string[] = [];
          const videos: MastodonMedia[] = [];
@@ -911,7 +911,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             <a x-id="preludeReblog" href="${mastodonPost.account.url}" class="mastodon-prelude">
                <div class="post-meta">
                      <span>Boosted by</span>
-                     <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+                     <img src="${avatarImageUrl}" class="border-radius-4px max-height-1-5-font-size">
                      <span>${getAccountName(mastodonPost.account, true)}</span>
                </div>
             </a>
@@ -929,7 +929,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
          <a x-id="preludeInReplyTo" href="${inReplyToPost.url}" class="mastodon-prelude">
             <div class="post-meta">
                   <span>In reply to</span>
-                  <img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+                  <img src="${avatarImageUrl}" class="border-radius-4px max-height-1-5-font-size">
                   <span>${getAccountName(inReplyToPost.account, true)}</span>
             </div>
          </a>
@@ -958,21 +958,21 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       }
 
       const boost = dom(/*html*/ `
-         <div x-id="boost" class="post-button" style="color: var(--ledit-color);">
-            <span x-id="boostIcon" class="${postToView.reblogged ? "color-gold-fill" : "color-fill"}">${svgReblog}</span>
+         <div x-id="boost" class="post-button color">
+            <span x-id="boostIcon" class="${postToView.reblogged ? "fill-color-gold" : "fill-color"}">${svgReblog}</span>
             <span x-id="boostCount">${addCommasToNumber(postToView.reblogs_count)}</span>
          </div>
       `)[0];
 
       const favourite = dom(/*html*/ `
-         <div x-id="favourite" class="post-button" style="color: var(--ledit-color);">
-            <span x-id="favouriteIcon" class="${postToView.favourited ? "color-gold-fill" : "color-fill"}">${svgStar}</span>
+         <div x-id="favourite" class="post-button color">
+            <span x-id="favouriteIcon" class="${postToView.favourited ? "fill-color-gold" : "fill-color"}">${svgStar}</span>
             <span x-id="favouriteCount">${addCommasToNumber(postToView.favourites_count)}</span>
          </div>
       `)[0];
 
       if (userInfo.bearer) {
-         const reply = dom(`<a class="color-fill post-button"">${svgReply}</a>`)[0];
+         const reply = dom(`<a class="fill-color post-button"">${svgReply}</a>`)[0];
          toggles.push(reply);
          reply.addEventListener("click", (event) => {
             let parent = reply.parentElement;
@@ -1006,11 +1006,11 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             boostElements.boostCount.innerText = addCommasToNumber(postToView.reblogs_count);
 
             if (postToView.reblogged) {
-               boostElements.boostIcon.classList.remove("color-fill");
-               boostElements.boostIcon.classList.add("color-gold-fill");
+               boostElements.boostIcon.classList.remove("fill-color");
+               boostElements.boostIcon.classList.add("fill-color-gold");
             } else {
-               boostElements.boostIcon.classList.remove("color-gold-fill");
-               boostElements.boostIcon.classList.add("color-fill");
+               boostElements.boostIcon.classList.remove("fill-color-gold");
+               boostElements.boostIcon.classList.add("fill-color");
             }
             boosting = false;
          });
@@ -1038,11 +1038,11 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             favouriteElements.favouriteCount.innerText = addCommasToNumber(postToView.favourites_count);
 
             if (postToView.favourited) {
-               favouriteElements.favouriteIcon.classList.remove("color-fill");
-               favouriteElements.favouriteIcon.classList.add("color-gold-fill");
+               favouriteElements.favouriteIcon.classList.remove("fill-color");
+               favouriteElements.favouriteIcon.classList.add("fill-color-gold");
             } else {
-               favouriteElements.favouriteIcon.classList.remove("color-gold-fill");
-               favouriteElements.favouriteIcon.classList.add("color-fill");
+               favouriteElements.favouriteIcon.classList.remove("fill-color-gold");
+               favouriteElements.favouriteIcon.classList.add("fill-color");
             }
             favouriting = false;
          });
@@ -1058,12 +1058,12 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       const metaDom = dom(/*html*/ `
          <span class="comment-author ${opName == comment.author ? "comment-author-op" : ""}">
             <a href="${comment.authorUrl}" class="inline-row">
-               <img src="${mastodonComment.account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+               <img src="${mastodonComment.account.avatar_static}" class="border-radius-4px max-height-1-5-font-size">
                <span>${getAccountName(comment.data.mastodonComment.account, true)}</span>
             </a>
          </span>
          <span>•</span>
-         <a href="${comment.url}" style="text-decoration: underline;">${dateToText(comment.createdAt * 1000)}</a>
+         <a href="${comment.url}" class="text-decoration-underline">${dateToText(comment.createdAt * 1000)}</a>
       `);
       metaDom[0].addEventListener("click", (event) => {
          event.preventDefault();
@@ -1096,7 +1096,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
 
 export class MastodonUserEditor extends OverlayView {
    constructor(public readonly bookmark: Bookmark, public readonly isNew: boolean) {
-      super("Mastodon account");
+      super("Mastodon account", true);
       if (!this.bookmark.supplemental) {
          throw new Error("Need a bookmark with user info!");
       }
@@ -1111,8 +1111,8 @@ export class MastodonUserEditor extends OverlayView {
             }" placeholder="user@instance.com">
             <input x-id="bearer" value="${this.bookmark.supplemental!.bearer}" placeholder="Access token">
             <div class="overlay-buttons">
-               <button x-id="save" class="overlay-button" style="margin-left: auto;">Save</button>
-               <div x-id="progress" class="color-fill hidden">${svgLoader}</div>
+               <button x-id="save" class="overlay-button margin-left-auto">Save</button>
+               <div x-id="progress" class="fill-color hidden">${svgLoader}</div>
             </div>
          </div>
       `);
@@ -1196,7 +1196,7 @@ export class MastodonUserProfileView extends OverlayView {
    remoteAccount: MastodonAccount | null = null;
 
    constructor(account: MastodonAccount, public readonly userInfo: MastodonUserInfo) {
-      super();
+      super("", true);
 
       const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
       this.content.append(loadingDiv);
@@ -1271,22 +1271,22 @@ export class MastodonUserProfileView extends OverlayView {
          <div>
             ${
                hasHeader
-                  ? `<div style="max-height: 30vh; overflow: hidden; margin: -1em;"><img src="${localAccount.header}" class="mastodon-user-profile-header"></div>`
+                  ? `<div class="max-height-30vh overflow-hidden margin-minus-1"><img src="${localAccount.header}" class="mastodon-user-profile-header"></div>`
                   : ""
             }
-            <div style="display: flex; margin-top: 2em; align-items: center; gap: var(--ledit-padding);">
-               <a href="${authorUrl}" style="display: flex; gap: var(--ledit-padding);">
-                  ${avatarImageUrl ? `<img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">` : ""}
-                  <div style="display: flex; flex-direction: column;">
+            <div class="display-flex margin-top-big-2 align-items-center gap-small">
+               <a href="${authorUrl}" class="display-flex gap-small">
+                  ${avatarImageUrl ? `<img src="${avatarImageUrl}" class="border-radius-4px max-height-2-5-font-size">` : ""}
+                  <div class="display-flex flex-direction-column">
                      <span><b>${getAccountName(localAccount, true)}</b></span>
-                     <span style="font-size: var(--ledit-font-size-small); color: var(--ledit-color-dim);">@${localAccount.username}@${
+                     <span class="font-size-small color">@${localAccount.username}@${
          new URL(localAccount.url).host
       }</span>
                   </div>
                </a>
                ${
                   !(localAccount.username == this.userInfo.username && new URL(localAccount.url).host == this.userInfo.instance)
-                     ? `<button x-id="follow" class="overlay-button" style="margin-left: auto;">${this.relationship?.following ? "Following" : "Follow"}</button>`
+                     ? `<button x-id="follow" class="overlay-button margin-left-auto">${this.relationship?.following ? "Following" : "Follow"}</button>`
                      : ""
                }
             </div>
@@ -1297,7 +1297,7 @@ export class MastodonUserProfileView extends OverlayView {
             ${this.relationship?.blocked_by ? `<span>Blocks you</span>` : ""}
             ${this.relationship?.blocking ? `<span>>Blocked</span>` : ""}
          </div>
-         <div class="content-text">
+         <div>
             ${localAccount.note}
          </div>
          <div class="mastodon-user-profile-stats">
@@ -1391,18 +1391,19 @@ export class MastodonAccountListView extends PagedListView<MastodonAccount> {
          const authorUrl = account.url;
          const accountDom = dom(/*html*/ `
          <div class="mastodon-account">
-            <a href="${authorUrl}" style="display: flex; gap: var(--ledit-padding);">
-               ${avatarImageUrl ? `<img src="${avatarImageUrl}" style="border-radius: 4px; max-height: calc(2.5 * var(--ledit-font-size));">` : ""}
-               <div style="display: flex; flex-direction: column; font-size: var(--ledit-font-size-small);">
+            <a href="${authorUrl}" class="display-flex gap-small">
+               ${avatarImageUrl ? `<img src="${avatarImageUrl}" class="border-radius-4px max-height-2-5-font-size">` : ""}
+               <div class="display-flex flex-direction-column font-size-small">
                   <span><b>${getAccountName(account, true)}</b></span>
-                  <span style="color: var(--ledit-color-dim);">@${account.username}@${new URL(account.url).host}</span>
+                  <span class="color-dim">@${account.username}@${new URL(account.url).host}</span>
                </div>
             </a>
             ${
+               // FIXME show relationships if possible
                /*
                   account.username != this.userInfo.username && new URL(account.url).host != this.userInfo.instance
-                  ? `<button class="overlay-button" style="margin-left: auto; ${
-                     this.relationship?.following ? "border: 1px solid var(--ledit-border-color);" : ""
+                  ? `<button class="overlay-button margin-left-auto ${
+                     this.relationship?.following ? "border-1px-solid" : ""
                   }">${this.relationship?.following ? "Following" : "Follow"}</button>`
                   : ""
                */
@@ -1461,7 +1462,7 @@ export class MastodonNotificationsListView extends PagedListView<MastodonNotific
       const getAuthorDomSmall = (account: MastodonAccount) => {
          return /*html*/ `
             <a href="${account.url}" class="inline-row">
-               <img src="${account.avatar_static}" style="border-radius: 4px; max-height: calc(1.5 * var(--ledit-font-size));">
+               <img src="${account.avatar_static}" class="border-radius-4px max-height-1-5-font-size">
                <span>${getAccountName(account, true)}</span>
             </a>
             `;
@@ -1483,7 +1484,7 @@ export class MastodonNotificationsListView extends PagedListView<MastodonNotific
          case "reblog":
             html = /*html*/ `
                   <div class="post-notification-header">
-                     <span class="color-gold-fill">${svgReblog}</span>
+                     <span class="fill-color-gold">${svgReblog}</span>
                      ${getAuthorDomSmall(notification.account)}
                      <a href="${notification.status!.url}">reblogged you ${dateToText(new Date(notification.created_at).getTime())} ago</a>
                   </div>
@@ -1507,7 +1508,7 @@ export class MastodonNotificationsListView extends PagedListView<MastodonNotific
          case "favourite":
             html = /*html*/ `
                   <div class="post-notification-header">
-                     <span class="color-gold-fill">${svgStar}</span>
+                     <span class="fill-color-gold">${svgStar}</span>
                      ${getAuthorDomSmall(notification.account)}
                      <a href="${notification.status!.url}">favorited your post ${dateToText(new Date(notification.created_at).getTime())} ago</a>
                   </div>
@@ -1541,8 +1542,12 @@ customElements.define("ledit-mastodon-notifications-list", MastodonNotifications
 
 export class MastodonNotificationsOverlayView extends OverlayView {
    constructor(userInfo: MastodonUserInfo) {
-      super("Notifications");
+      super("Notifications", true);
       this.content.append(new MastodonNotificationsListView(userInfo));
    }
 }
 customElements.define("ledit-mastodon-notifications", MastodonNotificationsOverlayView);
+
+export class MastodonPostEditor extends PostEditor {
+
+}

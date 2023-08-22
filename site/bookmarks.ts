@@ -83,7 +83,7 @@ function getSourceIcon(source: SourcePrefix) {
 
 export class SourceSelectorView extends OverlayView {
    constructor() {
-      super("Add feed for");
+      super("Add feed for", true);
       this.renderContent();
    }
 
@@ -94,8 +94,8 @@ export class SourceSelectorView extends OverlayView {
          ...dom(/*html*/ `
          ${sources.map((source) =>
             /*html*/`
-            <div class="overlay-row" value="${source}" style="flex: 1; display: flex; align-items: center;">
-               <span class="box" style="fill: var(--ledit-link-color);">${getSourceIcon(source)}</span>
+            <div class="overlay-row flex-1 display-flex align-items-center" value="${source}">
+               <span class="box fill-link-color">${getSourceIcon(source)}</span>
                <span>${sourcePrefixToSourceName(source)}</span>
             </div>`
          )}
@@ -120,7 +120,7 @@ customElements.define("ledit-source-selector", SourceSelectorView);
 
 export class BookmarksView extends OverlayView {
    constructor() {
-      super("Bookmarks");
+      super("Bookmarks", true);
       this.renderContent();
    }
 
@@ -129,14 +129,14 @@ export class BookmarksView extends OverlayView {
       const settings = getSettings();
 
       // Add feed & accounts buttons
-      const addBookmarkDiv = dom(`<div class="overlay-row"><span class="box color-fill">${svgBookmark}</span>Add feed</div>`)[0];
+      const addBookmarkDiv = dom(`<div class="overlay-row"><span class="box fill-color">${svgBookmark}</span>Add feed</div>`)[0];
       this.content.append(addBookmarkDiv);
       addBookmarkDiv.addEventListener("click", () => {
          this.close();
          document.body.append(new SourceSelectorView());
       });
 
-      const addMastodonAccountDiv = dom(`<div class="overlay-row"><span class="box color-fill">${svgBookmark}</span>Add Mastodon account</div>`)[0];
+      const addMastodonAccountDiv = dom(`<div class="overlay-row"><span class="box fill-color">${svgBookmark}</span>Add Mastodon account</div>`)[0];
       this.content.append(addMastodonAccountDiv);
       addMastodonAccountDiv.addEventListener("click", () => {
          this.close();
@@ -162,16 +162,16 @@ export class BookmarksView extends OverlayView {
          const hash = bookmarkToHash(bookmark);
          const bookmarkDiv = dom(/*html*/ `
                <div class="overlay-row">
-                  <a x-id="feed" href="#${hash}" style="flex: 1; display: flex; align-items: center;"><span class="box" style="fill: var(--ledit-link-color);">${getSourceIcon(
+                  <a x-id="feed" href="#${hash}" class="flex-1 display-flex align-items-center"><span class="box fill-link-color">${getSourceIcon(
             bookmark.source
-         )}</span><span style="white-space: pre; text-overflow: ellipsis; overflow: hidden;">${bookmark.label}</span></a>
-                  <div x-id="makeDefaultFeed" class="box ${isDefault ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
+         )}</span><span class="white-space-pre text-overflow-ellipsis overflow-hidden;">${bookmark.label}</span></a>
+                  <div x-id="makeDefaultFeed" class="box ${isDefault ? "fill-color" : "fill-color-dim"}">${svgCheck}</div>
                   ${
                      bookmark.source == "hn/"
                         ? /*html*/ `<div x-id="editFeed" class="box"></div>`
-                        : /*html*/ `<div x-id="editFeed" class="box color-fill">${svgPencil}</div>`
+                        : /*html*/ `<div x-id="editFeed" class="box fill-color">${svgPencil}</div>`
                   }
-                  <div x-id="deleteFeed" class="box color-fill">${svgMinus}</div>
+                  <div x-id="deleteFeed" class="box fill-color">${svgMinus}</div>
                </div>
             `)[0];
          const subElements = View.elements<{
@@ -229,7 +229,7 @@ export class BookmarksView extends OverlayView {
 
    static showActionButton() {
       const actionButtons = dom(`<div class="fab-container"></div>`)[0];
-      const openBookmarks = dom(`<div class="fab color-fill" style="margin-right: auto; margin-left: var(--ledit-margin);">${svgPlus}</div>`)[0];
+      const openBookmarks = dom(`<div class="fab fill-color margin-right-auto margin-left-big">${svgPlus}</div>`)[0];
       actionButtons.append(openBookmarks);
       openBookmarks.addEventListener("click", () => document.body.append(new BookmarksView()));
       document.body.append(actionButtons);
@@ -239,7 +239,7 @@ customElements.define("ledit-bookmarks", BookmarksView);
 
 export class BookmarkEditor extends OverlayView {
    constructor(public readonly bookmark: Bookmark, public readonly isNew = false) {
-      super(sourcePrefixLabel(bookmark.source) + " bookmark");
+      super(sourcePrefixLabel(bookmark.source) + " bookmark", true);
       this.renderContent();
    }
 
@@ -249,7 +249,7 @@ export class BookmarkEditor extends OverlayView {
          <input x-id="label" value="${this.bookmark.label}" placeholder="Label, e.g 'Puppies'">
          <textarea x-id="feedIds" placeholder="${sourcePrefixToFeedPlaceholder(this.bookmark.source)}"></textarea>
          <div class="overlay-buttons">
-            <div x-id="save" class="overlay-button" style="margin-left: auto;">Save</div>
+            <div x-id="save" class="overlay-button margin-left-auto">Save</div>
          </div>
       `);
       this.content.append(...editorDom);

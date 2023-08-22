@@ -88,7 +88,7 @@ export function resetSettings() {
 
 export class SettingsView extends OverlayView {
    constructor() {
-      super("Settings");
+      super("Settings", true);
       this.renderContent();
    }
 
@@ -100,21 +100,21 @@ export class SettingsView extends OverlayView {
             <div x-id="themes"></div>
             <div class="overlay-header">View options</div>
             <div x-id="collapseSeen" class="overlay-row overlay-row-inset">
-               <div style="flex: 1">Collapse seen posts</div>
-               <div class="box ${getSettings().collapseSeenPosts ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
+               <div>Collapse seen posts</div>
+               <div class="box ${getSettings().collapseSeenPosts ? "fill-color" : "fill-color-dim"}">${svgCheck}</div>
             </div>
             <div x-id="showOnlyMastodonRoots" class="overlay-row overlay-row-inset">
-               <div style="flex: 1">Show Mastodon top-level posts only</div>
-               <div class="box ${getSettings().showOnlyMastodonRoots ? "color-fill" : "color-dim-fill"}">${svgCheck}</div>
+               <div>Show Mastodon top-level posts only</div>
+               <div class="box ${getSettings().showOnlyMastodonRoots ? "fill-color" : "fill-color-dim"}">${svgCheck}</div>
             </div>
             <div x-id="hideSeen" class="overlay-row overlay-row-inset">
-               <span style="flex: 1">Hide seen posts (experimental)</span>
+               <span>Hide seen posts (experimental)</span>
             </div>
             <div class="overlay-header">About</div>
 
             <div class="overlay-row overlay-row-inset"><a href="https://github.com/badlogic/ledit#usage">How does this work?</a></div>
-            <div class="overlay-row overlay-row-inset"><a href="https://github.com/badlogic/ledit" class="color-fill">${svgGithub} GitHub</a></div>
-            <div class="overlay-row overlay-row-inset"><a href="https://github.com/sponsors/badlogic" class="color-fill">${svgHeart} Buy me a coffee</a></div>
+            <div class="overlay-row overlay-row-inset"><a href="https://github.com/badlogic/ledit" class="fill-color">${svgGithub} GitHub</a></div>
+            <div class="overlay-row overlay-row-inset"><a href="https://github.com/sponsors/badlogic" class="fill-color">${svgHeart} Buy me a coffee</a></div>
             <div x-id="reset" class="overlay-row">Reset to defaults</div>
          </div>
         `)[0];
@@ -145,7 +145,7 @@ export class SettingsView extends OverlayView {
       for (const theme of ["Dark", "Light"]) {
          const themeDiv = dom(/*html*/ `
          <div class="overlay-row overlay-row-inset">
-           <div style="flex: 1">${theme}</div><div class="checkmark box color-fill hidden">${svgCheck}</div>
+           <div>${theme}</div><div class="checkmark box fill-color hidden">${svgCheck}</div>
          </div>`)[0];
          if (settings.theme.toLowerCase() == theme.toLowerCase()) {
             themeDiv.querySelector(".checkmark")?.classList.remove("hidden");

@@ -176,7 +176,7 @@ export class HackerNewsSource implements Source<HNPost, HNComment> {
 
    getContentDom(post: Post<HNPost>): ContentDom {
       const toggles: Element[] = [];
-      toggles.push(dom(/*html*/ `<a href="https://news.ycombinator.com/item?id=${post.data.id}" class="color-fill">${svgReply}</a>`)[0]);
+      toggles.push(dom(/*html*/ `<a href="https://news.ycombinator.com/item?id=${post.data.id}" class="fill-color margin-right-auto">${svgReply}</a>`)[0]);
       if (post.data.text) {
          let text = post.data.text;
          text = encodeHTML(text);
@@ -196,8 +196,8 @@ export class HackerNewsSource implements Source<HNPost, HNComment> {
          <a href="${comment.authorUrl}">${comment.author}</a>
          </span>
          <span>•</span>
-         <span style="margin-right: 0.25rem">${dateToText(comment.createdAt * 1000)}</span>
-         <a href="${comment.url}" class="post-button color-fill">${svgReply}</a>
+         <span>${dateToText(comment.createdAt * 1000)}</span>
+         <a href="${comment.url}" class="post-button fill-color">${svgReply}</a>
        `);
    }
 

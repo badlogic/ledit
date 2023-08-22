@@ -67,7 +67,7 @@ export class YoutubeSource implements Source<FeedEntry, void> {
       const url = post.url.split("=");
       if (url.length != 2) return {elements: [], toggles: []};
 
-      const videoDom = dom(`<iframe src="https://www.youtube.com/embed/${url[1]}?feature=oembed&amp;enablejsapi=1" style="width: 100%; aspect-ratio: 16/9;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" title="Russ Abbot in Married for Life"></iframe>`)[0];
+      const videoDom = dom(`<iframe src="https://www.youtube.com/embed/${url[1]}?feature=oembed&amp;enablejsapi=1" class="youtube-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" title="Russ Abbot in Married for Life"></iframe>`)[0];
       document.addEventListener("scroll", () => {
          if (!intersectsViewport(videoDom)) {
             (videoDom as HTMLIFrameElement).contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");

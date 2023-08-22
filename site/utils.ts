@@ -220,7 +220,7 @@ export function assertNever(x: never) {
 }
 
 export function proxyFetch(url: string) {
-   const baseUrl = window.location.host.includes("localhost") ? "http://localhost:3000/proxy/?url=" : "https://marioslab.io/proxy/?url=";
+   const baseUrl = window.location.host.includes("localhost") ? "http://localhost:3000/proxy/?url=" : "https://ledit.lol/proxy/?url=";
    return fetch(baseUrl + encodeURI(url));
 }
 
@@ -230,11 +230,11 @@ export function renderVideo(
 ): Element {
    let videoDom = dom(/*html*/ `
       <div class="content-video-container">
-      <video-js controls class="video-js" style="width: ${embed.width}px;" ${loop ? "loop" : ""} data-setup="{}">
-            ${embed.dash_url ? `<source src="${embed.dash_url}">` : ""}
-            ${embed.hls_url ? `<source src="${embed.hls_url}">` : ""}
-            ${embed.fallback_url ? `<source src="${embed.fallback_url}">` : ""}
-      </video-js>
+         <video-js controls class="video-js" width=${embed.width} ${loop ? "loop" : ""} data-setup="{}">
+               ${embed.dash_url ? `<source src="${embed.dash_url}">` : ""}
+               ${embed.hls_url ? `<source src="${embed.hls_url}">` : ""}
+               ${embed.fallback_url ? `<source src="${embed.fallback_url}">` : ""}
+         </video-js>
       </div>`)[0];
    onAddedToDOM(videoDom, () => {
       const videoDiv = videoDom.querySelector("video-js")! as HTMLElement;
@@ -319,7 +319,7 @@ export function renderGallery(imageUrls: string[]): { gallery: Element; toggle: 
 
    const toggle = dom(/*html*/ `
       <div class="post-button">
-         <span class="color-fill">${svgImages}</span>
+         <span class="fill-color">${svgImages}</span>
          <span>${imageUrls.length}</span>
       </div>
    `)[0];

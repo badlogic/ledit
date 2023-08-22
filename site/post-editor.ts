@@ -13,7 +13,7 @@ export class PostEditor extends OverlayView {
       public readonly onMediaAdded: (name: string, bytes: ArrayBuffer) => void,
       public readonly onMediaRemoved: (name: string) => void
    ) {
-      super(header);
+      super(header, false);
       this.renderContent();
    }
 
@@ -21,10 +21,10 @@ export class PostEditor extends OverlayView {
       const editorDom = dom(/*html*/ `
          <textarea x-id="text"></textarea>
          <div class="overlay-buttons">
-            <button x-id="addMedia" class="overlay-button color-fill" style="font-size: var(--ledit-font-size-big)">${svgImages}</button>
-            <div x-id="charCount" style="margin-left: auto; font-size: var(--ledit-font-size-small)">${this.maxChars - (this.text?.length ?? 0)}</div>
+            <button x-id="addMedia" class="overlay-button fill-color font-size-big">${svgImages}</button>
+            <div x-id="charCount" class="margin-left-auto font-size-small">${this.maxChars - (this.text?.length ?? 0)}</div>
             <button x-id="publish" class="overlay-button" ${this.text == null || this.text.length == 0 ? "disabled" : ""}>Publish</button>
-            <div x-id="progress" class="color-fill hidden">${svgLoader}</div>
+            <div x-id="progress" class="fill-color hidden">${svgLoader}</div>
          </div>
       `);
       this.content.style.gap = "0.5em";
@@ -45,7 +45,7 @@ export class PostEditor extends OverlayView {
       elements.text.addEventListener("input", (event) => {
          const maxCharsExceeded = elements.text.value.length > this.maxChars;
          elements.charCount.innerHTML = "";
-         elements.charCount.append(...dom(/*html*/`<span ${maxCharsExceeded ? `style="color: red;"` : ""}>${this.maxChars - elements.text.value.length}</span>`));
+         elements.charCount.append(...dom(/*html*/`<span ${maxCharsExceeded ? `class="red"` : ""}>${this.maxChars - elements.text.value.length}</span>`));
          if (maxCharsExceeded || elements.text.value.trim().length == 0) {
             elements.publish.disabled = true;
          } else {

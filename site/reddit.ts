@@ -266,13 +266,13 @@ export class RedditSource implements Source<RedditPost, RedditComment> {
       const post = canonicalPost.data;
       const postsWidth = document.querySelector("ledit-post-list")!.clientWidth; // account for padding in post
       const toggles: Element[] = [];
-      const reply = dom(/*html*/`<a href="${"https://www.reddit.com" + post.data.permalink}" class="color-fill post-button">${svgReply}</a>`)[0];
+      const reply = dom(/*html*/`<a href="${"https://www.reddit.com" + post.data.permalink}" class="fill-color post-button">${svgReply}</a>`)[0];
       toggles.push(reply);
       const points = dom(/*html*/ `
          <div class="post-points">
-            <span class="color-fill">${svgUpArrow}</span>
+            <span class="fill-color">${svgUpArrow}</span>
             <span>${addCommasToNumber(post.data.score)}</span>
-            <span class="color-fill">${svgDownArrow}</span>
+            <span class="fill-color">${svgDownArrow}</span>
          </div>
       `)[0];
       toggles.push(points);
@@ -324,7 +324,7 @@ export class RedditSource implements Source<RedditPost, RedditComment> {
                   .replace(`height="${embed.height}"`, `height="${embedHeight}"`)
                   .replace("position:absolute;", "")
             );
-            let embedDom = dom(`<div style="width: ${embedWidth}px; height: ${embedHeight}px;">${embedUrl}</div>`)[0];
+            let embedDom = dom(`<div width="${embedWidth}" height="${embedHeight}">${embedUrl}</div>`)[0];
             // Make YouTube videos stop if they scroll out of frame.
             if (embed.content.includes("youtube")) {
                // Pause when out of view
@@ -339,7 +339,7 @@ export class RedditSource implements Source<RedditPost, RedditComment> {
          } else {
             return {
                elements: dom(
-                  `<div style="width: ${embedWidth}px; height: ${embedHeight}px;"><iframe width="${embedWidth}" height="${embedHeight}" src="${embed.media_domain_url}"></iframe></div>`
+                  `<div width="${embedWidth}" height="${embedHeight}"><iframe width="${embedWidth}" height="${embedHeight}" src="${embed.media_domain_url}"></iframe></div>`
                ),
                toggles,
             };
@@ -381,8 +381,9 @@ export class RedditSource implements Source<RedditPost, RedditComment> {
          <span>•</span>
          <span>${dateToText(comment.createdAt * 1000)}</span>
          <span>•</span>
-         <span style="margin-right: 0.25rem">${addCommasToNumber(comment.score!)} pts</span>
-         <a href="${comment.url}" class="color-fill post-button">${svgReply}</a>
+         <span>${addCommasToNumber(comment.score!)} pts</span>
+         <span>•</span>
+         <a href="${comment.url}" class="fill-color post-button">${svgReply}</a>
        `);
    }
 

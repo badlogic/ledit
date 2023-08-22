@@ -1,7 +1,7 @@
 # ledit
 A read-only Reddit/YouTube/Hackernews/RSS client for people who don't like bells and whistles. Ideal for content and comment browsing and nothing else.
 
-[Try it](https://marioslab.io/projects/ledit)
+[Try it](https://ledit.lol)
 
 # Usage
 ledit lets you browse Reddit subreddits, YouTube channels, Hackernews, and RSS feeds in a desktop and mobile friendly way. It is aimed at consumption, not participation. Here's how you use it.
@@ -70,14 +70,14 @@ At the bottom of the settings, you'll find `Rest to defaults`. Clicking this wil
 Instead of clicking the `X` in the top left corner to close the settings, you can also press the `Escape` key on the desktop, or swipe back on your mobile phone.
 
 ## FAQ
-### Does https://marioslab.io/projects/ledit track me?
+### Does https://ledit.lol track me?
 The TL;DR: is: **NO**.
 
 By default, ledit will only serve you 3 files (`index.html`, `index.css`, `index.js`) and not log anything about you requesting those resources. Everything else is done by your browser locally, with one exception:
 
-If you view RSS feeds or YouTube channels, then your browser will ask the server at `marioslab.io` to get the feed/channel information. The reason is that due to browser security policies, that information can not be directly downloaded by your browser (see [same origin policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy) for the gory details).
+If you view RSS feeds or YouTube channels, then your browser will ask the server at `ledit.lol` to get the feed/channel information. The reason is that due to browser security policies, that information can not be directly downloaded by your browser (see [same origin policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy) for the gory details).
 
-E.g., if you view `rss/https://derstandard.at/rss` in ledit, than your browser will ask the server at `marioslab.io` to download the contents of `https://derstandard.at/rss`. This is a transient process, meaning that the server at `marioslab.io` will temporarily get to know the URL `https://derstandard.at/rss`, download it, and send it to your browser. Once that process is complete, it forgets all about it.
+E.g., if you view `rss/https://derstandard.at/rss` in ledit, than your browser will ask the server at `ledit.lol` to download the contents of `https://derstandard.at/rss`. This is a transient process, meaning that the server at `ledit.lol` will temporarily get to know the URL `https://derstandard.at/rss`, download it, and send it to your browser. Once that process is complete, it forgets all about it.
 
 If you are worried about this, you can run ledit yourself! See the development and deployment sections below.
 
@@ -91,14 +91,14 @@ Yes!
 
 1. Open  `https://www.youtube.com/feed/subscriptions` in your browser. You must be logged in.
 2. On the right side, locate the list of subscriptions and click "Show x more" so all your subscriptions are visible in the list. ![docs/expand-subs.png](docs/expand-subs.png)
-3. In the same browser tab, while viewing your subscriptions, enter `javascript:"https://marioslab.io/projects/ledit/#yt/" + Array.from(document.querySelectorAll('a[id="endpoint"]')).filter((link) => link.getAttribute("href") && link.getAttribute("href").startsWith("/@")).map((link) => link.getAttribute("href").substring(2)).join("+")` in the browser address bar and press enter. You should see a link to `https://marioslab.io/projects/ledit`. **NOTE:** copy & pasting the above may omit the `javascript:` part when pasting into the browser address bar. You have to manually add it once pasted.
+3. In the same browser tab, while viewing your subscriptions, enter `javascript:"https://ledit.lol/#yt/" + Array.from(document.querySelectorAll('a[id="endpoint"]')).filter((link) => link.getAttribute("href") && link.getAttribute("href").startsWith("/@")).map((link) => link.getAttribute("href").substring(2)).join("+")` in the browser address bar and press enter. You should see a link to `https://ledit.lol`. **NOTE:** copy & pasting the above may omit the `javascript:` part when pasting into the browser address bar. You have to manually add it once pasted.
 4. Copy the link and open it in another tab. If you have hundreds of subscriptions, the initial loading will take a while. Subsequent loading will be much faster! You are now browsing your YouTube subscriptions on ledit. Click the bookmark icon in the top left to bookmark them.
 
 ### Is there a way to import my Reddit subscriptions?
 Yes!
 
 1. Go to `https://www.reddit.com/subreddits/` and make sure you are logged into Reddit.
-2. In your browser address bar, enter `javascript:document.querySelector(".subscription-box").querySelector("a").getAttribute("href").replace("https://www.reddit.com/", "https://marioslab.io/projects/ledit/#")` and hit enter. **NOTE:** copy & pasting the above may omit the `javascript:` part when pasting into the browser address bar. You have to manually add it once pasted.
+2. In your browser address bar, enter `javascript:document.querySelector(".subscription-box").querySelector("a").getAttribute("href").replace("https://www.reddit.com/", "https://ledit.lol/#")` and hit enter. **NOTE:** copy & pasting the above may omit the `javascript:` part when pasting into the browser address bar. You have to manually add it once pasted.
 3. Copy the link and open it in another tab. You are now browsing your Reddit subscriptions on ledit. Click the bookmark icon in the top left to bookmark them.
 
 ### Is there a way to import my RSS feeds?
@@ -130,7 +130,7 @@ npm run build
 Copy the contents of the `site/` folder to a web server.
 
 ## Using your own CORS proxy
-For YouTube channels and RSS feeds, ledit requires a reverse proxy, that adds CORS headers. If you deploy ledit like described above, it will use `https://marioslab.io/proxy` as the proxy.
+For YouTube channels and RSS feeds, ledit requires a reverse proxy, that adds CORS headers. If you deploy ledit like described above, it will use `https://ledit.lol/proxy` as the proxy.
 
 If you want to use your own CORS proxy, you can run the little NodeJS app in the `proxy/` folder on the same host where you run your web server.
 
@@ -142,6 +142,6 @@ node index.js
 
 The proxy will start on port 3000.
 
-Next, open [site/utils.ts](site/utils.ts) and change the URL of the proxy in the function `proxyFetch()` from `marioslab.io` to the domain or IP address of your web server.
+Next, open [site/utils.ts](site/utils.ts) and change the URL of the proxy in the function `proxyFetch()` from `ledit.lol` to the domain or IP address of your web server.
 
 Finally, execute the deployment steps listed above.

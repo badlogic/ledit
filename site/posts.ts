@@ -106,7 +106,7 @@ export class PostView extends View {
                post.numComments != null
                   ? /*html*/ `
                   <div x-id="commentsToggle" class="post-button">
-                     <span class="color-fill">${svgSpeechBubble}</span>
+                     <span class="fill-color">${svgSpeechBubble}</span>
                      <span>${addCommasToNumber(post.numComments)}</span>
                   </div>
                `

@@ -111,18 +111,10 @@ blockquote {
    justify-content: center;
    height: var(--ledit-font-size);
    padding: 0;
-}
-
-.color-fill {
-   fill: var(--ledit-color);
-}
-
-.color-dim-fill {
-   fill: var(--ledit-default-check-color);
-}
-
-.color-gold-fill {
-   fill: rgb(255, 123, 0);
+   width: 1em;
+   height: 1em;
+   vertical-align: middle;
+   overflow: hidden;
 }
 
 .box {
@@ -192,7 +184,12 @@ blockquote {
    background: initial;
 }
 
-.header, .posts, .post, .overlay, .editor, .fab-container {
+.header,
+.posts,
+.post,
+.overlay,
+.editor,
+.fab-container {
    width: 600px;
    max-width: 100%;
 }
@@ -221,3 +218,195 @@ blockquote {
       border-radius: 0px !important;
    }
 }
+
+.youtube-embed {
+   width: 100%;
+   aspect-ratio: 16/9;
+}
+
+/** These replace inline styles, so we can tighten CSP **/
+
+.margin-minus-1 {
+   margin: calc((var(--ledit-margin) * -1));
+}
+
+.margin-right-auto {
+   margin-right: auto !important;
+}
+
+.margin-right-big {
+   margin-right: var(--ledit-margin) !important;
+}
+
+.margin-right-small {
+   margin-right: var(--ledit-padding) !important;
+}
+
+.margin-left-auto {
+   margin-left: auto !important;
+}
+
+.margin-left-big {
+   margin-left: var(--ledit-margin) !important;
+}
+
+.margin-left-small {
+   margin-left: var(--ledit-padding) !important;
+}
+
+.margin-bottom-auto {
+   margin-bottom: auto !important;
+}
+
+.margin-bottom-big {
+   margin-bottom: var(--ledit-margin) !important;
+}
+
+.margin-bottom-small {
+   margin-bottom: var(--ledit-padding) !important;
+}
+
+.margin-top-auto {
+   margin-top: auto !important;
+}
+
+.margin-top-big {
+   margin-top: var(--ledit-margin) !important;
+}
+
+.margin-top-big-2 {
+   margin-top: calc(2 * var(--ledit-margin)) !important;
+}
+
+.margin-top-small {
+   margin-top: var(--ledit-padding) !important;
+}
+
+.padding-top-small {
+   padding-top: var(--ledit-padding) !important;
+}
+
+.font-size-small {
+   font-size: var(--ledit-font-size-small) !important;
+}
+
+.font-size-big {
+   font-size: var(--ledit-font-size-big) !important;
+}
+
+.font-weight-600 {
+   font-weight: 600 !important;
+}
+
+.padding-right-big {
+   padding-right: var(--ledit-margin) !important;
+}
+
+.padding-right-small {
+   padding-right: var(--ledit-padding) !important;
+}
+
+.padding-right-big {
+   padding-left: var(--ledit-margin) !important;
+}
+
+.padding-left-small {
+   padding-left: var(--ledit-padding) !important;
+}
+
+.flex-1 {
+   flex: 1 !important;
+}
+
+.display-flex {
+   display: flex !important;
+}
+
+.flex-direction-column {
+   flex-direction: column;
+}
+
+.align-items-center {
+   align-items: center !important;
+}
+
+.align-items-flex-start {
+   align-items: flex-start !important;
+}
+
+.white-space-pre {
+   white-space: pre !important;
+}
+
+.text-overflow-ellipsis {
+   text-overflow: ellipsis !important;
+}
+
+.overflow-hidden {
+   overflow: hidden !important;
+}
+
+.color {
+   color: var(--ledit-color) !important;
+}
+
+.color {
+   color: var(--ledit-color-dim) !important;
+}
+
+.red {
+   color: red !important;
+}
+
+.fill-link-color {
+   fill: var(--ledit-link-color) !important;
+}
+
+.fill-color {
+   fill: var(--ledit-color) !important;
+}
+
+.fill-color-dim {
+   fill: var(--ledit-color-dim) !important;
+}
+
+.fill-color-gold {
+   fill: rgb(255, 123, 0) !important;
+}
+
+.border-radius-4px {
+   border-radius: 4px !important;
+}
+
+.border-radius-8px {
+   border-radius: 8px !important;
+}
+
+.border-1px-solid {
+   border: 1px solid var(--ledit-border-color);
+}
+
+.max-height-1-5-font-size {
+   max-height: calc(1.5 * var(--ledit-font-size)) !important;
+}
+
+.max-height-2-5-font-size {
+   max-height: calc(2.5 * var(--ledit-font-size)) !important;
+}
+
+.max-height-30vh {
+   max-height: 30vh !important;
+}
+
+.gap-small {
+   gap: var(--ledit-padding) !important;
+}
+
+.gap-big {
+   gap: var(--ledit-margin) !important;
+}
+
+.text-decoration-underline {
+   text-decoration: underline !important;
+}
+

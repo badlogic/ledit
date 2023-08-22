@@ -50,14 +50,14 @@ export abstract class OverlayView extends View {
       return next;
    }
 
-   constructor(title?: string | HTMLElement, public readonly zIndex = OverlayView.nextStackZIndex()) {
+   constructor(title: string | HTMLElement, public readonly closeOnClickOutside: boolean, public readonly zIndex = OverlayView.nextStackZIndex()) {
       super();
       this.classList.add("overlay-container");
       this.append(...dom(/*html*/ `
             <div class="overlay">
                 <div x-id="close" class="overlay-close">
                   ${title && typeof title === "string" ? `<span class="overlay-header">${title}</span>` : ""}
-                  <span class="overlay-close-button color-fill">${svgClose}</span>
+                  <span class="overlay-close-button fill-color">${svgClose}</span>
                </div>
                 <div x-id="content" class="overlay-content"></div>
             </div>
@@ -72,12 +72,14 @@ export abstract class OverlayView extends View {
          elements.close.append(title);
       }
 
-      // Close when container is clicked
-      this.addEventListener("click", (event) => {
-         if (event.target == this) {
-            this.close();
-         }
-      });
+      if (closeOnClickOutside) {
+         // Close when container is clicked
+         this.addEventListener("click", (event) => {
+            if (event.target == this) {
+               this.close();
+            }
+         });
+      }
 
       // Close when close button is clicked
       elements.close.addEventListener("click", () => {
@@ -118,12 +120,13 @@ export abstract class PagedListView<T> extends View {
       this.append(outerLoadingDiv);
       const fetchNextPage = async () => {
          const result = await fetchPage(this.nextPage);
-         outerLoadingDiv.remove();
          if (result instanceof Error) {
+            outerLoadingDiv.remove();
             this.append(...dom(`<div class="post-loading">${result.message}</div>`));
             return;
          } else {
             await this.renderItems(result.items);
+            outerLoadingDiv.remove();
             requestAnimationFrame(() => {
                const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
                if (result.nextPage != "end") {

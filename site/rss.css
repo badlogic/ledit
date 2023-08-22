@@ -17,7 +17,7 @@
 
 .rss-content-image {
    max-width: 150px !important;
-   flex: 0 0 auto; /* Prevent vertical growth and maintain aspect ratio */
+   flex: 0 0 auto;
    object-fit: contain;
    margin-right: var(--ledit-margin);
 }
@@ -50,4 +50,8 @@
 
 .rss-content h4 {
    font-size: var(--ledit-font-size);
+}
+
+.rss-channel-image {
+   max-height: calc(1.5 * var(--ledit-font-size));
 }
