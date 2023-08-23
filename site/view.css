@@ -28,13 +28,12 @@
    font-size: var(--ledit-font-size);
    line-height: 1em;
    cursor: pointer;
+   min-height: 3em;
 }
 
 .overlay-close-button {
-   line-height: 1em;
    position: absolute;
-   right: calc(var(--ledit-margin) + var(--ledit-padding));
-   top: var(--ledit-margin);
+   right: var(--ledit-margin);
 }
 
 .overlay-content {

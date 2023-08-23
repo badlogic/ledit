@@ -41,7 +41,6 @@ export class PostListView extends PagedListView<Post<any>> {
             PostListView.seenPosts.add(post.url);
             getSettings().seenIds.push(post.url);
             saveSettings();
-            console.log("Seen " + post.url);
          }
       });
 

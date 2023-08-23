@@ -57,7 +57,7 @@ export abstract class OverlayView extends View {
             <div class="overlay">
                 <div x-id="close" class="overlay-close">
                   ${title && typeof title === "string" ? `<span class="overlay-header">${title}</span>` : ""}
-                  <span class="overlay-close-button fill-color">${svgClose}</span>
+                  <span class="overlay-close-button fill-link-color font-weight-600 padding-tiny border-radius-4px background-dim">${svgClose}</span>
                </div>
                 <div x-id="content" class="overlay-content"></div>
             </div>
@@ -136,7 +136,7 @@ export abstract class PagedListView<T> extends View {
                      loadingDiv.remove();
                   });
                } else {
-                  this.append(...dom(`<div class="post-loading">Reached end of list.</div>`));
+                  this.append(...dom(`<div class="post-loading">End of list.</div>`));
                }
             });
             this.nextPage = result.nextPage;

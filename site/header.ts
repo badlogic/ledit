@@ -12,6 +12,7 @@ export class HeaderView extends View {
    }
 
    render() {
+      this.innerHTML = "";
       const source = getSource();
       const hash = source.getSourcePrefix() + source.getFeed();
       const bookmark = getSettings().bookmarks.find((bookmark) => bookmarkToHash(bookmark) == hash);
@@ -30,11 +31,16 @@ export class HeaderView extends View {
 
       const elements = this.elements<{
          showMenu: Element;
-         feed: Element;
+         feed: HTMLElement;
          feedInput: HTMLInputElement;
          sorting: HTMLSelectElement;
          addBookmark: Element;
       }>();
+
+      // listen for hash changes to update the feed text
+      window.addEventListener("hashchange", () => {
+         elements.feed.innerText = window.location.hash.substring(1);
+      })
 
       // Show settings if menu button is clicked.
       elements.showMenu.addEventListener("click", () => {

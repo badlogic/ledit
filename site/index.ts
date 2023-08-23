@@ -51,14 +51,10 @@ if (window.location.hash.length == 0) {
       }
    }
 
-   window.addEventListener("hashchange", () => {
-      if (window.location.hash != hash) {
-         window.location.reload();
-      }
-   });
-
    document.body.append(new HeaderView());
-   document.body.append(new PostListView(getSource()));
+   const posts = new PostListView(getSource());
+   posts.classList.add("header-offset");
+   document.body.append(posts);
 
   BookmarksView.showActionButton();
 }

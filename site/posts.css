@@ -4,7 +4,6 @@
    align-items: center;
    gap: calc(var(--ledit-padding) * 1.5);
    margin: auto;
-   margin-top: calc(var(--ledit-font-size) * 2.5 + var(--ledit-font-size-big));
 }
 
 .post {
@@ -12,6 +11,7 @@
    flex-direction: column;
    gap: var(--ledit-padding);
    padding: var(--ledit-margin);
+   padding-bottom: var(--ledit-padding);
    background: var(--ledit-background);
    border-radius: 8px;
    border: 1px solid var(--ledit-border-color);
@@ -36,7 +36,6 @@
 .post-loading {
    text-align: center;
    margin: var(--ledit-margin);
-   cursor: pointer;
    margin: 0;
    padding: var(--ledit-padding);
 }
@@ -97,23 +96,4 @@
    gap: 0.25em;
    margin-left: auto;
    cursor: pointer;
-}
-
-.post-notification-header {
-   display: inline-flex;
-   align-items: center;
-   gap: 0.25em;
-}
-
-.post-notification-text {
-   color: var(--ledit-color-dim) !important;
-}
-
-.post-notification-text > :last-child {
-   margin-bottom: 0 !important;
-}
-
-.post-notification-text * {
-   color: var(--ledit-color-dim) !important;
-   margin: var(--ledit-padding) 0;
 }

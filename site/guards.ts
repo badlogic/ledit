@@ -49,30 +49,41 @@ export type NavigationCallback = () => boolean;
 
 class NavigationGuard extends BaseGuard<NavigationCallback> {
    private stateSetup = false;
+   private hash: string | null = null;
 
    constructor() {
       super();
       history.scrollRestoration = "manual";
       let state = 0;
-      window.addEventListener('popstate', (event: PopStateEvent) => {
-
-			if(state = event.state){
+      window.addEventListener("popstate", (event: PopStateEvent) => {
+         if ((state = event.state)) {
             if (!this.canNavigateBack()) {
                history.go(1);
             } else {
                history.go(-1);
             }
-			}
-		});
+         } else {
+            if (this.hash) {
+               const hash = this.hash;
+               console.log("Replacing hash " + window.location.hash + " -> " + hash);
+               history.replaceState(history.state, "", hashToUrl(hash!));
+               window.dispatchEvent(new HashChangeEvent("hashchange"));
+               this.hash = null;
+            }
+         }
+         console.log("Popped state " + window.location.hash);
+      });
    }
 
    register(zIndex: number, callback: NavigationCallback): NavigationCallback {
       if (!this.stateSetup) {
+         console.log("Setting up back guard state, " + history.length + ", " + history.state);
          history.replaceState(-1, "");
          history.pushState(0, "");
+         console.log("done, " + history.length + ", " + history.state);
          this.stateSetup = true;
       }
-       return super.register(zIndex, callback);
+      return super.register(zIndex, callback);
    }
 
    canNavigateBack(): boolean {
@@ -85,6 +96,31 @@ class NavigationGuard extends BaseGuard<NavigationCallback> {
       }
       return canNavigate;
    }
+
+   hashes: string[] = [];
+   pushHash(hash: string) {
+      if (hash == window.location.hash) return;
+      this.hashes.push(window.location.hash);
+      history.replaceState(history.state, "", hashToUrl(hash));
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+      console.log("pushing hash " + this.hashes[this.hashes.length - 1] + " -> " + hash);
+   }
+
+   popHash(fallback: string) {
+      const currHash = window.location.hash;
+      const hash = this.hashes.pop();
+      if (hash) this.hash = hash
+      else this.hash = fallback;
+      history.replaceState(history.state, "", hashToUrl(this.hash));
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+      console.log("popping hash " + currHash + " -> " + this.hash);
+   }
+}
+
+function hashToUrl(hash: string) {
+   const currentUrl = new URL(window.location.href);
+   currentUrl.hash = hash;
+   return currentUrl.toString();
 }
 
 export const navigationGuard = new NavigationGuard();

@@ -21,46 +21,13 @@
    margin-bottom: var(--ledit-padding);
 }
 
-.mastodon-user-profile-relationship-status > * {
-   padding: calc(var(--ledit-padding) * 0.5);
-   border-radius: 4px;
-   background: var(--ledit-background);
-   font-size: var(--ledit-font-size-small);
-}
-
 .mastodon-user-profile-header {
    margin: -1em;
    max-width: calc(100% + var(--ledit-margin) * 2);
 }
 
-.mastodon-user-profile-stats, .mastodon-notification-types {
-   display: flex;
-   gap: 1em;
-
-}
-
-.mastodon-user-profile-stats > *, .mastodon-notification-types > * {
-   color: var(--ledit-color);
-   display: flex;
-   justify-content: center;
-   gap: 0.25em;
-   cursor: pointer;
-   padding: var(--ledit-padding);
-   border-radius: 8px;
-   border: 1px solid var(--ledit-border-color);
-   min-width: 3em;
-}
-
-.mastodon-user-profile-stats .selected, .mastodon-notification-types .selected {
-   background: var(--ledit-background);
-}
-
-.mastodon-user-profile-stats > :hover, .mastodon-notification-types > :hover {
-   border: 1px solid var(--ledit-accent-color);
-}
-
 .mastodon-emoji-container {
-   display: flex;
+   display: inline-flex;
    align-items: center; /* Vertical alignment */
    gap: 0.25em;
 }
@@ -81,4 +48,23 @@
    border: 1px solid var(--ledit-border-color);
    box-shadow: 0px 1px 3px var(--ledit-shadow-color);
    overflow-wrap: break-word;
+}
+
+.mastodon-notification-header {
+   display: inline-flex;
+   align-items: center;
+   gap: 0.25em;
+}
+
+.mastodon-notification-text {
+   color: var(--ledit-color-dim) !important;
+}
+
+.mastodon-notification-text > :last-child {
+   margin-bottom: 0 !important;
+}
+
+.mastodon-notification-text * {
+   color: var(--ledit-color-dim) !important;
+   margin: var(--ledit-padding) 0;
 }

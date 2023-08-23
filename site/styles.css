@@ -178,6 +178,26 @@ blockquote {
    font-size: calc(1.25 * var(--ledit-font-size));
 }
 
+.toggle-button {
+   color: var(--ledit-color);
+   display: flex;
+   justify-content: center;
+   gap: 0.25em;
+   cursor: pointer;
+   padding: var(--ledit-padding);
+   border-radius: 8px;
+   border: 1px solid var(--ledit-border-color);
+   min-width: 3em;
+}
+
+.toggle-button.selected {
+   background: var(--ledit-background);
+}
+
+.toggle-button:hover {
+   border: 1px solid var(--ledit-accent-color);
+}
+
 .no-hover:hover {
    background-color: initial;
    color: initial;
@@ -197,7 +217,6 @@ blockquote {
 @media (max-width: 600px) {
    .posts,
    .post,
-   .comments,
    .header,
    .overlay,
    .editor,
@@ -205,17 +224,21 @@ blockquote {
       width: 100% !important;
    }
 
-   .comments > .comment,
-   .post-buttons-sticky {
+   .content-text {
+      padding: 0 var(--ledit-padding);
+   }
+
+   .comments > .comment {
       padding: var(--ledit-margin) !important;
       margin: calc(var(--ledit-padding) * -1.9) !important;
       margin-bottom: 0 !important;
       margin-top: 0 !important;
       padding-bottom: var(--ledit-padding) !important;
+      border-radius: 0px !important;
    }
 
-   .comments > .comment {
-      border-radius: 0px !important;
+   .comments {
+      padding: var(--ledit-padding);
    }
 }
 
@@ -286,6 +309,18 @@ blockquote {
    margin-top: var(--ledit-padding) !important;
 }
 
+.padding-small {
+   padding: var(--ledit-padding) !important;
+}
+
+.padding-tiny {
+   padding: calc(var(--ledit-padding) *0.5) !important;
+}
+
+.padding-big {
+   padding: var(--ledit-margin-) !important;
+}
+
 .padding-top-small {
    padding-top: var(--ledit-padding) !important;
 }
@@ -350,6 +385,10 @@ blockquote {
    overflow: hidden !important;
 }
 
+.background {
+   background: var(--ledit-background);
+}
+
 .background-dim {
    background: var(--ledit-background-dim);
 }
@@ -360,6 +399,14 @@ blockquote {
 
 .color-dim {
    color: var(--ledit-color-dim) !important;
+}
+
+.color-accent {
+   color: var(--ledit-accent-color) !important;
+}
+
+.color-link {
+   color: var(--ledit-link-color) !important;
 }
 
 .red {
@@ -461,4 +508,9 @@ blockquote {
 
  .animation-pulsate {
    animation: frames-pulsate 1.5s ease-in-out infinite;
+ }
+
+ .em-1-2 {
+   width: 1.2em;
+   height: 1.2em;
  }

@@ -62,3 +62,7 @@
    cursor: pointer;
    outline-style: none;
 }
+
+.header-offset {
+   margin-top: calc(var(--ledit-font-size) * 2.5 + var(--ledit-font-size-big));
+}

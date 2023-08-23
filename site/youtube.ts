@@ -22,9 +22,7 @@ export class YoutubeSource implements Source<FeedEntry, void> {
          channelId = text.substring(channelIdIdx + "vnd.youtube://www.youtube.com/channel/".length, channelIdEnd);
          channelIds[channel] = channelId;
          localStorage.setItem("youtubeCache", JSON.stringify(channelIds));
-         console.log(`Cached channel id ${channelId} for channel ${channel}`);
       }
-      console.log(`Fetching recent videos for channel ${channel}, id: ${channelId}`);
       return RssSource.getRssPosts("https://www.youtube.com/feeds/videos.xml?channel_id=" + channelId);
    }
 

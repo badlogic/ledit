@@ -93,7 +93,7 @@ export function dom(html: string): HTMLElement[] {
    const removed = DOMPurify.removed;
    if (DOMPurify.removed.length > 0) {
       for (const thing of removed) {
-         console.log("Found potentially malicous markup: " + (thing.attribute?.name + ": " + thing.attribute?.value + " " ?? "") + (thing.from?.tagName + " " ?? "") + (thing.element?.tagName ?? ""));
+         // console.log("Found potentially malicous markup: " + (thing.attribute?.name + ": " + thing.attribute?.value + " " ?? "") + (thing.from?.tagName + " " ?? "") + (thing.element?.tagName ?? ""));
       }
    }
    const div = document.createElement("div");
@@ -109,6 +109,12 @@ export function dom(html: string): HTMLElement[] {
 export function navigate(feed: string) {
    window.location.hash = feed;
    window.location.reload();
+}
+
+export function replaceLastHashFragment(newFragment: string) {
+   const fragmentIndex = window.location.hash.lastIndexOf("/");
+   if (fragmentIndex == -1) return "#" + newFragment;
+   return window.location.hash.substring(fragmentIndex + 1) + newFragment;
 }
 
 export function addCommasToNumber(number: number) {
