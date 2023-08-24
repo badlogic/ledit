@@ -182,7 +182,7 @@ export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
                div.style.height = `${maxHeight}px`;
                showMoreDiv.style.display = "";
                if (div.getBoundingClientRect().top < 16 * 4) {
-                  window.scrollTo({ top: div.getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
+                  div.scrollIntoView(true);
                }
             }
             collapsed = !collapsed;
@@ -313,7 +313,7 @@ export function renderGallery(imageUrls: string[]): { gallery: Element; toggle: 
             if (scrolled) return;
             scrolled = true;
             if (imageDoms[0].getBoundingClientRect().top < 16 * 4) {
-               window.scrollTo({ top: imageDoms[0].getBoundingClientRect().top + window.pageYOffset - 16 * 3 });
+               imageDoms[0].scrollIntoView(true);
             }
          }
       });
@@ -346,7 +346,6 @@ export function scrollToAndCenter(element: Element) {
 
 import Sortable from "sortablejs";
 import DOMPurify from "dompurify";
-import { navigationGuard } from "./guards";
 
 export function makeChildrenDraggable(container: HTMLElement, complete: () => void) {
    const preventContextMenu = (event: any) => {

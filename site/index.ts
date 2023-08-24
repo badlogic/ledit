@@ -12,7 +12,7 @@ import { RssSource } from "./rss";
 import "./settings";
 import { applySettings, bookmarkToHash, getSettings } from "./settings";
 import "./styles.css";
-import { navigate } from "./utils";
+import { dom, navigate } from "./utils";
 import { YoutubeSource } from "./youtube";
 
 function loadDefaultBookmark() {
@@ -52,9 +52,10 @@ if (window.location.hash.length == 0) {
    }
 
    document.body.append(new HeaderView());
+   const postsContainer = dom(`<div class="posts-container"></div>`)[0];
+   document.body.append(postsContainer);
    const posts = new PostListView(getSource());
-   posts.classList.add("header-offset");
-   document.body.append(posts);
+   postsContainer.append(posts);
 
   BookmarksView.showActionButton();
 }

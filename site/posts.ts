@@ -62,9 +62,9 @@ export class PostListView extends PagedListView<Post<any>> {
    }
 
    prependPost(post: Post<any>) {
-      const postVIew = this.renderPost(post);
-      this.insertBefore(postVIew, this.children[0]);
-      window.scrollTo({ top: 0 });
+      const postView = this.renderPost(post);
+      this.insertBefore(postView, this.children[0]);
+      postView.scrollIntoView(true);
    }
 }
 customElements.define("ledit-post-list", PostListView);
@@ -189,8 +189,7 @@ export class PostView extends View {
 
          if (elements.buttonsRow.getBoundingClientRect().top < 16 * 4) {
             requestAnimationFrame(() => {
-               const scrollTo = elements.buttonsRow.getBoundingClientRect().top + window.pageYOffset - 16 * 4;
-               window.scrollTo({ top: scrollTo });
+               elements.buttonsRow.scrollIntoView(true);
             });
          }
       };

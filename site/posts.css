@@ -1,3 +1,9 @@
+.posts-container {
+   overflow: auto;
+   height: calc(100vh - 48px);
+   padding-top: calc(var(--ledit-padding) * 1.5);
+}
+
 .posts {
    display: flex;
    flex-direction: column;

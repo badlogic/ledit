@@ -1,6 +1,6 @@
 .rss-content {
    display: flex;
-   flex-direction: row;
+   flex-direction: column;
    align-items: flex-start;
    cursor: pointer;
    padding: 0 var(--ledit-margin);
@@ -20,6 +20,7 @@
    flex: 0 0 auto;
    object-fit: contain;
    margin-right: var(--ledit-margin);
+   margin-bottom: var(--ledit-margin);
 }
 
 .rss-content * {
