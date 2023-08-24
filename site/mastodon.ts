@@ -692,7 +692,7 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
       }
 
       if (feedTokens.length == 2) {
-         const what = feedTokens[1].trim();
+         let what = feedTokens[1].trim();
 
          let mastodonAccount: MastodonAccount | null = null;
          let mastodonPosts: MastodonPost[] | null = null;
@@ -707,7 +707,8 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             const result = await MastodonApi.getLocalTimeline(nextPage, userInfo);
             if (result instanceof Error) return result;
             mastodonPosts = result;
-         } else if (what.includes("@")) {
+         } else if (what.includes("@@")) {
+            what = what.substring(1);
             if (!userInfo.bearer) {
                return new Error(`You must add a Mastodon account for ${userInfo.username}@${userInfo.instance}.`);
             }
@@ -727,6 +728,26 @@ export class MastodonSource implements Source<MastodonPostData, MastodonCommentD
             for (const mastodonPost of resultPosts) {
                mastodonPost.userInfo = otherUserInfo;
             }
+         } else if (what.includes("@")) {
+            if (!userInfo.bearer) {
+               return new Error(`You must add a Mastodon account for ${userInfo.username}@${userInfo.instance}.`);
+            }
+            let otherUserInfo = getUserInfo(what);
+            if (!otherUserInfo || otherUserInfo.instance == userInfo.instance) otherUserInfo = userInfo;
+            let resultAccount = await MastodonApi.lookupAccount(what, otherUserInfo.instance);
+            // Remote instance doesn't allow lookup, fetch profile info from our instance
+            if (resultAccount instanceof Error) {
+               otherUserInfo = userInfo;
+               resultAccount = await MastodonApi.lookupAccount(what, otherUserInfo.instance);
+               if (resultAccount instanceof Error) return resultAccount;
+            }
+            mastodonAccount = resultAccount;
+            if (nextPage == null) {
+               document.body.append(new MastodonUserProfileOverlayView(mastodonAccount, userInfo));
+            }
+            const result = await MastodonApi.getHomeTimeline(nextPage, userInfo);
+            if (result instanceof Error) return result;
+            mastodonPosts = result;
          } else if (what == "notifications") {
             if (nextPage == null) {
                document.body.append(new MastodonNotificationsOverlayView(userInfo));
@@ -1317,7 +1338,7 @@ export class MastodonUserProfileView extends View {
                hasHeader
                   ? /*html*/`
                      <div class="max-height-30vh overflow-hidden margin-minus-1">
-                        <img src="${localAccount.header}">
+                        <img class="max-width-100" src="${localAccount.header}">
                      </div>`
                   : ""
             }
@@ -1356,7 +1377,7 @@ export class MastodonUserProfileView extends View {
       this.append(...metaDom);
 
       let feed = getSource().getFeed().split("/");
-      let posts = new PostListView(new MastodonSource(feed[0] + "/@" + localAccount.username + "@" + new URL(localAccount.url).host), false);
+      let posts = new PostListView(new MastodonSource(feed[0] + "/@@" + localAccount.username + "@" + new URL(localAccount.url).host), false);
       this.append(posts);
 
       let following = new MastodonAccountListView(async (nextPage) => {
@@ -1428,8 +1449,8 @@ export class MastodonUserProfileView extends View {
 customElements.define("ledit-mastodon-user-profile", MastodonUserProfileView);
 
 export class MastodonUserProfileOverlayView extends OverlayView {
-   constructor(account: MastodonAccount, userInfo: MastodonUserInfo) {
-      super("", true);
+   constructor(account: MastodonAccount, public readonly userInfo: MastodonUserInfo) {
+      super("", true, `#m/${userInfo.username}@${userInfo.instance}/${account.username}@${new URL(account.url).host}`);
       this.content.append(new MastodonUserProfileView(account, userInfo));
    }
 }
@@ -1655,14 +1676,8 @@ customElements.define("ledit-mastodon-notifications-list", MastodonNotifications
 
 export class MastodonNotificationsOverlayView extends OverlayView {
    constructor(public readonly userInfo: MastodonUserInfo) {
-      super("Notifications", true);
+      super("Notifications", true, `#m/${userInfo.username}@${userInfo.instance}/notifications`);
       this.content.append(new MastodonNotificationsListView(userInfo));
-      navigationGuard.pushHash(`#m/${userInfo.username}@${userInfo.instance}/notifications`);
-   }
-
-   close() {
-      super.close();
-      navigationGuard.popHash(`#m/${this.userInfo.username}@${this.userInfo.instance}`);
    }
 }
 customElements.define("ledit-mastodon-notifications", MastodonNotificationsOverlayView);

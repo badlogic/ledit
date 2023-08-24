@@ -1,119 +1,91 @@
 import { getSource } from "./data";
+import { navigate } from "./utils";
 
 class BaseGuard<T> {
-   private callbacks: { [zIndex: number]: T[] } = {};
+   private callbacks: T[] = [];
 
-   register(zIndex: number, callback: T): T {
-      if (!this.callbacks[zIndex]) {
-         this.callbacks[zIndex] = [];
-      }
-      this.callbacks[zIndex].push(callback);
+   register(callback: T): T {
+      this.callbacks.push(callback);
       return callback;
    }
 
    remove(callback: T | undefined) {
       if (!callback) return;
-      for (const zIndex in this.callbacks) {
-         this.callbacks[zIndex] = this.callbacks[zIndex].filter((cb) => cb !== callback);
-         if (this.callbacks[zIndex].length == 0) {
-            delete this.callbacks[zIndex];
-         }
-      }
+      this.callbacks = this.callbacks.filter((cb) => cb !== callback);
    }
 
-   protected getTop(): T[] {
-      const topZIndex = this.getTopZIndex();
-      const topCallbacks: T[] = [];
-      if (topZIndex >= 0) {
-         topCallbacks.push(...this.callbacks[topZIndex]);
-      }
-      return topCallbacks;
-   }
-
-   protected getTopZIndex(): number {
-      const zIndices = Object.keys(this.callbacks)
-         .map(Number)
-         .sort((a, b) => b - a);
-      if (zIndices.length == 0) return -1;
-      return zIndices[0];
-   }
-
-   protected getZIndices() {
-      return Object.keys(this.callbacks)
-         .map(Number)
-         .sort((a, b) => b - a);
+   protected getTop(): T | undefined {
+      return this.callbacks[this.callbacks.length - 1];
    }
 }
 
 export type NavigationCallback = () => boolean;
 
-class NavigationGuard extends BaseGuard<NavigationCallback> {
-   private stateSetup = false;
-   private hash: string | null = null;
+type NavigationState = { hash: string; guardId: number; navStackIndex: number };
+
+class NavigationGuard extends BaseGuard<{ hash: string | null; callback: NavigationCallback }> {
+   private guardId = 0;
+   private navStack: NavigationState[] = [];
+   private popStateListener;
+   private inPopState = false;
+   private call = true;
 
    constructor() {
       super();
+      // FIXME forward navigation is broken
+      // when we forward navigate, the initial state is wrong as the hash
+      // may contain overlay fragments, e.g. mario@mastodon.com/notifications.
+      // when the state is popped, the fragment doesn't change from notifications,
+      // even though the overlay gets dismissed.
       history.scrollRestoration = "manual";
-      let state = 0;
-      window.addEventListener("popstate", (event: PopStateEvent) => {
-         if ((state = event.state)) {
-            if (!this.canNavigateBack()) {
-               history.go(1);
-            } else {
-               history.go(-1);
-            }
+      const navState: NavigationState = { hash: location.hash, guardId: this.guardId, navStackIndex: 0 };
+      this.navStack.push(navState);
+      history.replaceState(navState, "", null);
+
+      this.popStateListener = (event: PopStateEvent) => {
+         this.inPopState = true;
+         if (this.call) {
+            this.getTop()?.callback();
          } else {
-            if (this.hash) {
-               const hash = this.hash;
-               console.log("Replacing hash " + window.location.hash + " -> " + hash);
-               history.replaceState(history.state, "", hashToUrl(hash!));
-               window.dispatchEvent(new HashChangeEvent("hashchange"));
-               this.hash = null;
-            }
+            this.call = true;
          }
-         console.log("Popped state " + window.location.hash);
+         this.inPopState = false;
+      };
+      window.addEventListener("popstate", this.popStateListener);
+
+      window.addEventListener("hashchange", () => {
+         if (!history.state) return;
+         if (JSON.stringify(this.navStack[history.state.navStackIndex]) == JSON.stringify(history.state)) return;
+         navigate(history.state.hash);
       });
    }
 
-   register(zIndex: number, callback: NavigationCallback): NavigationCallback {
-      if (!this.stateSetup) {
-         console.log("Setting up back guard state, " + history.length + ", " + history.state);
-         history.replaceState(-1, "");
-         history.pushState(0, "");
-         console.log("done, " + history.length + ", " + history.state);
-         this.stateSetup = true;
+   register(callback: { hash: string | null; callback: NavigationCallback }): { hash: string | null; callback: NavigationCallback } {
+      const navState: NavigationState = {
+         hash: callback.hash ? callback.hash : location.hash,
+         guardId: this.guardId,
+         navStackIndex: this.navStack.length,
+      };
+      this.navStack.push(navState);
+      history.pushState(navState, "", callback.hash ? hashToUrl(callback.hash) : null);
+      this.printState();
+
+      return super.register(callback);
+   }
+
+   remove(callback: { hash: string | null; callback: NavigationCallback }) {
+      super.remove(callback);
+      this.navStack.pop();
+      if (!this.inPopState) {
+         this.call = false;
+         history.back();
       }
-      return super.register(zIndex, callback);
    }
 
-   canNavigateBack(): boolean {
-      const callbacks = this.getTop();
-      let canNavigate = true;
-      for (const callback of callbacks) {
-         if (!callback()) {
-            canNavigate = false;
-         }
+   printState() {
+      for (const state of this.navStack) {
+         console.log(state);
       }
-      return canNavigate;
-   }
-
-   hashes: string[] = [];
-   pushHash(hash: string) {
-      if (hash == window.location.hash) return;
-      this.hashes.push(window.location.hash);
-      history.replaceState(history.state, "", hashToUrl(hash));
-      window.dispatchEvent(new HashChangeEvent("hashchange"));
-      console.log("pushing hash " + this.hashes[this.hashes.length - 1] + " -> " + hash);
-   }
-
-   popHash(fallback: string) {
-      const currHash = window.location.hash;
-      const hash = this.hashes.pop();
-      if (hash) this.hash = hash
-      else this.hash = fallback;
-      history.replaceState(history.state, "", hashToUrl(this.hash));
-      window.dispatchEvent(new HashChangeEvent("hashchange"));
-      console.log("popping hash " + currHash + " -> " + this.hash);
    }
 }
 
@@ -138,10 +110,8 @@ export class EscapeGuard extends BaseGuard<EscapeCallback> {
 
    private handleEscape(event: KeyboardEvent): void {
       if (event.keyCode == 27 || event.key == "Escape") {
-         const callbacks = [...this.getTop()];
-         for (const callback of callbacks) {
-            callback();
-         }
+         const callback = this.getTop();
+         if (callback) callback();
       }
    }
 }

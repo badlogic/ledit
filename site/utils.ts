@@ -105,9 +105,9 @@ export function dom(html: string): HTMLElement[] {
    return children as HTMLElement[];
 }
 
-/** Navigate to the given feed. */
-export function navigate(feed: string) {
-   window.location.hash = feed;
+export function navigate(hash: string) {
+   console.log("navigating to " + hash);
+   window.location.hash = hash;
    window.location.reload();
 }
 
@@ -346,6 +346,7 @@ export function scrollToAndCenter(element: Element) {
 
 import Sortable from "sortablejs";
 import DOMPurify from "dompurify";
+import { navigationGuard } from "./guards";
 
 export function makeChildrenDraggable(container: HTMLElement, complete: () => void) {
    const preventContextMenu = (event: any) => {

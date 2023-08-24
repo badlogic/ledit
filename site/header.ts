@@ -73,7 +73,7 @@ export class HeaderView extends View {
       elements.sorting.value = source.getSorting();
       elements.sorting.addEventListener("change", () => {
          const hash = source.getSourcePrefix() + source.getFeed();
-        navigate(hash + (hash.endsWith("/") ? "" : "/") + elements.sorting.value);
+         navigate(hash + (hash.endsWith("/") ? "" : "/") + elements.sorting.value);
       });
 
       // Add bookmark button. Either hide it if the feed is already in the

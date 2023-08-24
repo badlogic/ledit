@@ -40,7 +40,7 @@ export abstract class View extends HTMLElement {
 
 export abstract class OverlayView extends View {
    escapeCallback: EscapeCallback | undefined;
-   navigationCallback: NavigationCallback | undefined;
+   navigationCallback: {hash: string | null, callback: NavigationCallback} | undefined;
    readonly content: HTMLElement;
    static stackZIndex = 100;
 
@@ -50,7 +50,7 @@ export abstract class OverlayView extends View {
       return next;
    }
 
-   constructor(title: string | HTMLElement, public readonly closeOnClickOutside: boolean, public readonly zIndex = OverlayView.nextStackZIndex()) {
+   constructor(title: string | HTMLElement, public readonly closeOnClickOutside: boolean, public readonly hash: string | null = null, public readonly zIndex = OverlayView.nextStackZIndex()) {
       super();
       this.classList.add("overlay-container");
       this.append(...dom(/*html*/ `
@@ -87,15 +87,15 @@ export abstract class OverlayView extends View {
       });
 
       // Close when escape is pressed
-      this.escapeCallback = escapeGuard.register(zIndex, () => {
+      this.escapeCallback = escapeGuard.register(() => {
          this.close();
       });
 
       // Close on back navigation
-      this.navigationCallback = navigationGuard.register(zIndex, () => {
+      this.navigationCallback = navigationGuard.register({hash, callback: () => {
          this.close();
          return false;
-      });
+      }});
 
       // Prevent underlying posts from scrolling
       document.body.style.overflow = "hidden";

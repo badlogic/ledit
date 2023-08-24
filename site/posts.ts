@@ -71,7 +71,7 @@ customElements.define("ledit-post-list", PostListView);
 
 export class PostView extends View {
    escapeCallback: EscapeCallback | undefined;
-   navigationCallback: NavigationCallback | undefined;
+   navigationCallback: { hash: string | null; callback: NavigationCallback } | undefined;
 
    constructor(private readonly post: Post<any>) {
       super();
@@ -97,7 +97,8 @@ export class PostView extends View {
    }
 
    renderFullPost(post: Post<any>) {
-      this.append(...dom(/*html*/ `
+      this.append(
+         ...dom(/*html*/ `
          ${post.title && post.title.length > 0 ? `<div class="post-title"><a href="${post.url}">${post.title}</a></div>` : ""}
          <div x-id="meta" class="post-meta"></div>
          <div x-id="buttonsRow" class="post-buttons">
@@ -112,7 +113,8 @@ export class PostView extends View {
                   : ""
             }
          </div>
-      `));
+      `)
+      );
 
       const elements = this.elements<{
          meta: Element;
@@ -145,7 +147,7 @@ export class PostView extends View {
          });
       }
 
-      if (getSettings().collapseSeenPosts && PostListView.seenPosts.has(post.url) ) {
+      if (getSettings().collapseSeenPosts && PostListView.seenPosts.has(post.url)) {
          const expand = (event: MouseEvent) => {
             event.stopPropagation();
             event.preventDefault();
@@ -182,7 +184,7 @@ export class PostView extends View {
          this.showingComments = false;
          // Hide the comments, triggered by a click on the comments button
          this.commentsView?.remove();
-         navigationGuard.remove(this.navigationCallback);
+         navigationGuard.remove(this.navigationCallback!);
          escapeGuard.remove(this.escapeCallback);
 
          if (elements.buttonsRow.getBoundingClientRect().top < 16 * 4) {
@@ -199,28 +201,18 @@ export class PostView extends View {
          if (!this.commentsView) this.commentsView = new CommentsView(this.post, this);
          this.append(this.commentsView);
 
-         let parent = this.parentElement;
-         let zIndex = 0;
-         while (parent) {
-            if (parent instanceof OverlayView) {
-               zIndex = parent.zIndex + 1;
-               break;
-            }
-            parent = parent.parentElement;
-         }
-
          // Close on back navigation
-         this.navigationCallback = navigationGuard.register(zIndex, () => {
-            if (intersectsViewport(this.commentsView)) {
+         this.navigationCallback = navigationGuard.register({
+            hash: null,
+            callback: () => {
                hideComments();
                return false;
-            }
-            return true;
+            },
          });
 
          // Close when escape is pressed
-         this.escapeCallback = escapeGuard.register(zIndex, () => {
-            if (this.showingComments && intersectsViewport(this.commentsView)) this.toggleComments();
+         this.escapeCallback = escapeGuard.register(() => {
+            if (this.showingComments) this.toggleComments();
          });
       } else {
          hideComments();

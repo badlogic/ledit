@@ -249,6 +249,10 @@ blockquote {
 
 /** These replace inline styles, so we can tighten CSP **/
 
+.max-width-100 {
+   max-width: 100%;;
+}
+
 .margin-auto {
    margin: auto;
 }
