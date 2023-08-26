@@ -17,7 +17,7 @@ import { when } from "lit-html/directives/when.js";
 import { HackerNewsSource, renderHnPost } from "./sources/hackernews";
 // import { MastodonSource } from "./sources/mastodon";
 import { RedditSource } from "./sources/reddit";
-import { YoutubeSource } from "./sources/youtube";
+import { YoutubeSource, renderYoutubePost } from "./sources/youtube";
 import { dom, getFeedFromHash, getSourcePrefixFromHash, renderContentLoader, renderErrorMessage, renderInfoMessage } from "./sources/utils";
 import { PageIdentifier } from "./data";
 import { MastodonSource } from "./sources/mastodon";
@@ -159,6 +159,7 @@ async function main() {
          break;
       case "yt/":
          source = new YoutubeSource(hash);
+         renderPost = renderYoutubePost;
          break;
       case "m/":
          source = new MastodonSource(hash);

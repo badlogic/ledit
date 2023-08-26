@@ -500,6 +500,7 @@ i.icon {
   --tw-border-opacity: 1;
   border-color: rgb(255 255 255 / var(--tw-border-opacity));
   fill: rgba(var(--primary), 1);
+  cursor: pointer;
 }
 
 i > svg {
@@ -797,7 +798,7 @@ main > .post > * {
   border-color: rgba(var(--border), 0.5);
 }
 
-.comments > .comment {
+.comments > div > .comment {
   border-bottom-width: 1px;
   border-color: rgba(var(--border), 0.5);
   padding-top: 1rem;
@@ -806,7 +807,7 @@ main > .post > * {
 
 .comment {
   cursor: pointer;
-  min-width: 350px;
+  min-width: 200px;
 }
 
 .comment .content p:first-child {
@@ -1315,5 +1316,12 @@ body {
 
   .nc-int-icon-slide-up.nc-int-icon-state-b .nc-int-icon-b {
     transform: translateY(0%);
+  }
+}
+
+@layer youtube {
+  .youtube-post iframe {
+    width: 100%;
+    aspect-ratio: 16/9;
   }
 }

@@ -1,10 +1,18 @@
 import { Page, SortingOption, Source, SourcePrefix } from "./data";
-import { RssSource, RssPost, RssComment } from "./rss";
-import { proxyFetch } from "../utils";
+import { RssSource, YoutubePost, RssComment, RssPost } from "./rss";
+import { dateToText, elements, intersectsViewport, onVisibleOnce, proxyFetch, setLinkTargetsToBlank } from "../utils";
+import { dom, makeCollapsible, safeHTML } from "./utils";
+// @ts-ignore
+import { html } from "lit-html";
 
 const channelIds = localStorage.getItem("youtubeCache") ? JSON.parse(localStorage.getItem("youtubeCache")!) : {};
 
-export class YoutubeSource extends Source<RssPost, RssComment> {
+export interface YoutubePost extends YoutubePost {
+   author: string,
+   authorUrl: string
+}
+
+export class YoutubeSource extends Source<YoutubePost, RssComment> {
    async getYoutubeChannel(channel: string): Promise<RssPost[] | Error> {
       let channelId: string | null = channelIds[channel];
 
@@ -23,7 +31,7 @@ export class YoutubeSource extends Source<RssPost, RssComment> {
       return RssSource.getRssPosts("https://www.youtube.com/feeds/videos.xml?channel_id=" + channelId);
    }
 
-   async getPosts(nextPage: string | null): Promise<Page<RssPost> | Error> {
+   async getPosts(nextPage: string | null): Promise<Page<YoutubePost> | Error> {
       const channels = this.getFeed().split("+");
 
       const promises: Promise<RssPost[] | Error>[] = [];
@@ -32,17 +40,23 @@ export class YoutubeSource extends Source<RssPost, RssComment> {
       }
 
       const promisesResult = await Promise.all(promises);
-      const posts: RssPost[] = [];
+      const posts: YoutubePost[] = [];
       for (let i = 0; i < channels.length; i++) {
-         const result = promisesResult[i];
-         if (result instanceof Error) continue;
-         posts.push(...result);
+         const rssPosts = promisesResult[i];
+         if (rssPosts instanceof Error) continue;
+         for (const rssPost of rssPosts) {
+            posts.push({
+               ...rssPost,
+               author: channels[i],
+               authorUrl: "https://www.youtube.com/@" + channels[i]
+            });
+         }
       }
       posts.sort((a, b) => b.createdAt - a.createdAt);
       return { items: posts, nextPage: "end" };
    }
 
-   async getComments(post: RssPost): Promise<RssComment[]> {
+   async getComments(post: YoutubePost): Promise<RssComment[]> {
       return [];
    }
 
@@ -57,4 +71,34 @@ export class YoutubeSource extends Source<RssPost, RssComment> {
    getSorting(): string {
       return "";
    }
+}
+
+export function renderYoutubePost(post: YoutubePost): HTMLElement[] {
+   const date = dateToText(post.createdAt * 1000);
+
+   const postDom = dom(html`
+      <article class="post youtube-post gap-1">
+         <a href="${post.url}" class="font-bold text-lg text-color">${post.title}</a>
+         <div class="flex gap-1 text-xs">
+            <a href="${post.authorUrl}" class="text-color/50">${post.author}</a>
+            <span class="flex items-center text-color/50">•</span>
+            <span class="flex items-center text-color/50">${date}</span>
+         </div>
+         <section x-id="contentDom" class="rss-content"></section>
+      </article>
+   `);
+   const { contentDom } = elements<{ contentDom: HTMLElement }>(postDom[0]);
+   onVisibleOnce(postDom[0], () => {
+      const url = post.url.split("=");
+      if (url.length != 2) return {elements: [], toggles: []};
+
+      const videoDom = dom(safeHTML(`<iframe src="https://www.youtube.com/embed/${url[1]}?feature=oembed&amp;enablejsapi=1" class="youtube-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen=""></iframe>`))[0];
+      contentDom.append(videoDom);
+      document.addEventListener("scroll", () => {
+         if (!intersectsViewport(videoDom)) {
+            (videoDom as HTMLIFrameElement).contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
+         }
+      });
+   });
+   return postDom;
 }

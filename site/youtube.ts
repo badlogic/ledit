@@ -1,14 +1,13 @@
 // @ts-ignore
-import { FeedEntry } from "@extractus/feed-extractor";
 import { Comment, ContentDom, Page, Post, SortingOption, Source, SourcePrefix } from "./data";
-import { RssSource } from "./rss";
+import { RssPostData, RssSource } from "./rss";
 import { dateToText, dom, intersectsViewport, proxyFetch } from "./utils";
 
 const channelIds = localStorage.getItem("youtubeCache") ? JSON.parse(localStorage.getItem("youtubeCache")!) : {};
 
-export class YoutubeSource extends Source<FeedEntry, void> {
+export class YoutubeSource extends Source<RssPostData, void> {
 
-   async getYoutubeChannel(channel: string): Promise<Post<FeedEntry>[] | Error> {
+   async getYoutubeChannel(channel: string): Promise<Post<RssPostData>[] | Error> {
       let channelId: string | null = channelIds[channel];
 
       if (!channelId) {
@@ -26,16 +25,16 @@ export class YoutubeSource extends Source<FeedEntry, void> {
       return RssSource.getRssPosts("https://www.youtube.com/feeds/videos.xml?channel_id=" + channelId);
    }
 
-   async getPosts(nextPage: string | null): Promise<Page<Post<FeedEntry>>> {
+   async getPosts(nextPage: string | null): Promise<Page<Post<RssPostData>>> {
       const channels = this.getFeed().split("+");
 
-      const promises: Promise<Post<FeedEntry>[] | Error>[] = [];
+      const promises: Promise<Post<RssPostData>[] | Error>[] = [];
       for (const channel of channels) {
          promises.push(this.getYoutubeChannel(channel));
       }
 
       const promisesResult = await Promise.all(promises);
-      const posts: Post<FeedEntry>[] = [];
+      const posts: Post<RssPostData>[] = [];
       for (let i = 0; i < channels.length; i++) {
          const result = promisesResult[i];
          if (result instanceof Error) continue;
@@ -49,11 +48,11 @@ export class YoutubeSource extends Source<FeedEntry, void> {
       return { items: posts, nextPage: "end" };
    }
 
-   async getComments(post: Post<FeedEntry>): Promise<Comment<void>[]> {
+   async getComments(post: Post<RssPostData>): Promise<Comment<void>[]> {
       return [];
    }
 
-   getMetaDom(post: Post<FeedEntry>): HTMLElement[] {
+   getMetaDom(post: Post<RssPostData>): HTMLElement[] {
       return dom(/*html*/ `
       <a href="${"https://youtube.com/@" + post.author}">${post.author}</a>
       <span>•</span>
@@ -61,7 +60,7 @@ export class YoutubeSource extends Source<FeedEntry, void> {
    `);
    }
 
-   getContentDom(post: Post<FeedEntry>): ContentDom {
+   getContentDom(post: Post<RssPostData>): ContentDom {
       const url = post.url.split("=");
       if (url.length != 2) return {elements: [], toggles: []};
 

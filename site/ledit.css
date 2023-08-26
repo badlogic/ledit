@@ -96,6 +96,7 @@ body {
       align-items: center;
       justify-content: center;
       @apply w-[1em] h-[1em] border-white fill-primary;
+      cursor: pointer;
    }
 
    i > svg {
@@ -214,13 +215,13 @@ body {
       @apply border-b border-border/50;
    }
 
-   .comments > .comment {
+   .comments > div > .comment {
       @apply py-4 border-b border-border/50;
    }
 
    .comment {
       @apply cursor-pointer;
-      min-width: 350px;
+      min-width: 200px;
    }
 
    .comment .content p:first-child {
@@ -333,5 +334,12 @@ body {
 
    .rss-channel-image {
       max-height: calc(1.5 * var(--ledit-font-size));
+   }
+}
+
+@layer youtube {
+   .youtube-post iframe {
+      width: 100%;
+      aspect-ratio: 16/9;
    }
 }
