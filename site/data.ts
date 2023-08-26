@@ -1,4 +1,3 @@
-import { CommentView } from "./comments";
 import { assertNever } from "./utils";
 
 export type PageIdentifier = string | "end" | null;
@@ -12,7 +11,6 @@ export type Post<T> = {
    createdAt: number;
    feed: string;
    numComments: number | null;
-   contentOnly: boolean;
    data: T
 }
 
@@ -21,7 +19,6 @@ export type Comment<T> = {
    author: string;
    authorUrl: string;
    createdAt: number;
-   score: number | null;
    content: string | ContentDom;
    replies: Comment<T>[];
    highlight: boolean;
@@ -38,16 +35,17 @@ export type ContentDom = {
    toggles: Element[];
 }
 
-export interface Source<P, C> {
-   getPosts(nextPage: PageIdentifier): Promise<Page<Post<P>> | Error>,
-   getComments(post: Post<P>): Promise<Comment<C>[] | Error>,
-   getMetaDom(post: Post<P>): HTMLElement[],
-   getContentDom(post: Post<P>): ContentDom,
-   getCommentMetaDom(comment: Comment<C>, opName: string | null): HTMLElement[],
-   getFeed(): string,
-   getSourcePrefix(): SourcePrefix,
-   getSortingOptions(): SortingOption[],
-   getSorting(): string,
+export abstract class Source<P, C> {
+   constructor(public readonly hash: string) {}
+   abstract getPosts(nextPage: PageIdentifier): Promise<Page<Post<P>> | Error>;
+   abstract getComments(post: Post<P>): Promise<Comment<C>[] | Error>;
+   abstract getMetaDom(post: Post<P>): HTMLElement[];
+   abstract getContentDom(post: Post<P>): ContentDom;
+   abstract getCommentMetaDom(comment: Comment<C>, opName: string | null): HTMLElement[];
+   abstract getFeed(): string;
+   abstract getSourcePrefix(): SourcePrefix;
+   abstract getSortingOptions(): SortingOption[];
+   abstract getSorting(): string;
 }
 
 let source: Source<any, any> | null = null;

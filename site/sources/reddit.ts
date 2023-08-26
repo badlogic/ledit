@@ -1,8 +1,8 @@
 import "video.js/dist/video-js.min.css";
 
 import { Comment, ContentDom, Page, PageIdentifier, Post, SortingOption, Source, SourcePrefix, getSource } from "./data";
-import { svgDownArrow, svgReply, svgUpArrow } from "./svg";
-import { addCommasToNumber, dateToText, dom, htmlDecode, intersectsViewport, makeCollapsible, renderGallery, renderVideo } from "./utils";
+import { svgDownArrow, svgReply, svgUpArrow } from "../svg";
+import { addCommasToNumber, dateToText, dom, htmlDecode, intersectsViewport, makeCollapsible, renderGallery, renderVideo } from "../utils";
 
 interface RedditPosts {
    kind: "listing";

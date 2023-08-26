@@ -1,0 +1,283 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+   --font-size: 15px;
+   --font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji,
+      Segoe UI Symbol, Noto Color Emoji;
+   --font-family-code: Menlo, monospace;
+   --line-height: 1.5rem;
+}
+
+/** New colors need to be added to tailwind.config.json **/
+body[data-theme="dark"] {
+   --background: 17, 17, 17;
+   --color: 250, 250, 250;
+   --border: 55, 55, 55;
+   --primary: 204, 125, 36;
+}
+
+body[data-theme="light"] {
+   --background: 250, 250, 250;
+   --color: 35, 35, 35;
+   --border: 238, 238, 238;
+   --primary: 204, 125, 36;
+}
+
+html,
+body {
+   font-size: var(--font-size);
+   font-family: var(--font-family);
+   line-height: var(--line-height);
+   color: rgb(var(--color));
+   background-color: rgb(var(--background));
+   -webkit-tap-highlight-color: transparent;
+}
+
+code {
+   font-family: var(--font-family-code);
+}
+
+@layer base {
+   a {
+      text-decoration: none;
+      color: rgb(var(--primary));
+   }
+
+   p {
+      @apply my-2;
+   }
+
+   h1,
+   h2,
+   h3,
+   h4,
+   h5,
+   h6 {
+      @apply block;
+   }
+
+   h1 {
+      @apply text-3xl;
+   }
+
+   h2 {
+      @apply text-2xl;
+   }
+
+   h3 {
+      @apply text-xl;
+   }
+
+   h4 {
+      @apply text-lg;
+   }
+
+   h5,
+   h6 {
+      @apply text-base;
+   }
+
+   button {
+      cursor: pointer;
+      border-radius: 0.25em;
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      text-align: center;
+   }
+
+   button:hover {
+      background-color: var(--primary);
+   }
+
+   i {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      @apply w-[1em] h-[1em] border-white fill-primary;
+   }
+
+   i > svg {
+      @apply w-full h-full;
+   }
+}
+
+@layer utilities {
+   .force-hidden {
+      display: none !important;
+   }
+   .bg {
+      background-color: rgb(var(--background));
+   }
+
+   .bg-primary {
+      background-color: rgb(var(--primary));
+   }
+
+   .primary {
+      color: rgb(var(--primary));
+   }
+}
+
+@layer animation {
+   .nc-int-icon-slide-up {
+      --animation-duration: 0.3s;
+   }
+   .nc-int-icon {
+      position: relative;
+   }
+   .nc-int-icon-b {
+      position: absolute;
+      top: calc(50% - 0.5em);
+      left: calc(50% - 0.5em);
+      opacity: 0;
+   }
+   .nc-int-icon-slide-up {
+      overflow: hidden;
+   }
+   .nc-int-icon-slide-up .nc-int-icon-a,
+   .nc-int-icon-slide-up .nc-int-icon-b {
+      transition: opacity var(--animation-duration), transform var(--animation-duration);
+   }
+   .nc-int-icon-slide-up .nc-int-icon-b {
+      transform: translateY(100%);
+   }
+   .nc-int-icon-state-b .nc-int-icon-a {
+      opacity: 0;
+   }
+   .nc-int-icon-state-b .nc-int-icon-b {
+      opacity: 1;
+   }
+   .nc-int-icon-slide-up.nc-int-icon-state-b .nc-int-icon-a {
+      transform: translateY(-100%);
+   }
+   .nc-int-icon-slide-up.nc-int-icon-state-b .nc-int-icon-b {
+      transform: translateY(0%);
+   }
+}
+
+@layer components {
+   .header {
+      @apply w-full max-w-[600px] mx-auto sticky top-0 text-lg flex items-center p-2 bg-background/70 backdrop-blur-[8px] border-b border-border/50 mb-4 z-[1];
+   }
+
+   .header select {
+      background: none;
+      color: rgb(var(--primary));
+      border: none;
+      appearance: none;
+      padding: 0;
+      text-align: center;
+      cursor: pointer;
+      outline-style: none;
+   }
+
+   .post {
+      @apply w-full md:max-w-[600px] mx-auto flex flex-col px-2 pb-4 border-b border-border;
+   }
+
+   .post :first-child {
+      @apply mt-0;
+   }
+
+   .post :last-child {
+      @apply mb-0;
+   }
+}
+
+@layer rss {
+   .rss-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      cursor: pointer;
+      padding: 0 var(--ledit-margin);
+      margin-bottom: calc(var(--ledit-padding) * 1.5);
+   }
+
+   .rss-content > div > p:last-child {
+      margin-bottom: 0;
+   }
+
+   .rss-content > div {
+      width: 100%;
+   }
+
+   .rss-content-image {
+      flex: 0 0 auto;
+      object-fit: contain;
+      margin-right: var(--ledit-margin);
+      margin-bottom: var(--ledit-margin);
+   }
+
+   .rss-content * {
+      max-width: 100%;
+   }
+
+   .rss-content a::after {
+      @apply w-4 h-4 ml-1 fill-primary;
+      display: inline-block;
+      content: "";
+      -webkit-mask: url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19L18.9999 6.413L11.2071 14.2071L9.79289 12.7929L17.5849 5H13V3H21Z'></path></svg>") no-repeat 50% 50%;
+      mask: url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19L18.9999 6.413L11.2071 14.2071L9.79289 12.7929L17.5849 5H13V3H21Z'></path></svg>") no-repeat 50% 50%;
+      -webkit-mask-size: cover;
+      mask-size: cover;
+      background-color: rgb(var(--primary));
+   }
+
+   .rss-content p:first-child {
+      @apply pt-2;
+   }
+
+   .rss-content video {
+      height: auto !important;
+      border-radius: 8px;
+   }
+
+   .rss-content img {
+      @apply rounded;
+      width: auto;
+      max-height: 40vh;
+      margin: auto;
+   }
+
+   .rss-content figcaption {
+      text-align: center;
+   }
+
+   .rss-content svg {
+      width: 1em;
+      height: 1em;
+   }
+
+   .rss-content h1 {
+      font-size: 1em;
+   }
+
+   .rss-content h2 {
+      font-size: 1em;
+   }
+
+   .rss-content h3 {
+      font-size: 1em
+   }
+
+   .rss-content h4 {
+      font-size: 1em
+   }
+
+   .rss-channel-image {
+      max-height: calc(1.5 * var(--ledit-font-size));
+   }
+}
+
+@layer {
+   .hn-comments p:first-child {
+      margin-top: 0 !important;
+   }
+
+   .hn-comments p:last-child {
+      margin-bottom: 0 !important;
+   }
+}

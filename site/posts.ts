@@ -1,13 +1,12 @@
-// @ts-ignore
-import "./posts.css";
 import { CommentView, CommentsView } from "./comments";
 import { ContentView } from "./content";
 import { Comment, Post, Source, getSource } from "./data";
 import { EscapeCallback, NavigationCallback, escapeGuard, navigationGuard } from "./guards";
+import "./posts.css";
 import { getSettings, saveSettings } from "./settings";
 import { svgSpeechBubble } from "./svg/index";
-import { addCommasToNumber, dom, intersectsViewport, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
-import { OverlayView, PagedListView, View } from "./view";
+import { addCommasToNumber, dom, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
+import { PagedListView, View } from "./view";
 
 export class PostListView extends PagedListView<Post<any>> {
    public static seenPosts = new Set<string>();
@@ -81,22 +80,7 @@ export class PostView extends View {
 
    render() {
       const post = this.post;
-      if (!post.contentOnly) {
-         this.renderFullPost(post);
-         setLinkTargetsToBlank(this);
-      } else {
-         onVisibleOnce(this, () => {
-            const content = new ContentView(this.post);
-            this.append(content);
-            for (const toggle of content.toggles) {
-               this.append(toggle);
-            }
-            setLinkTargetsToBlank(this);
-         });
-      }
-   }
 
-   renderFullPost(post: Post<any>) {
       this.append(
          ...dom(/*html*/ `
          ${post.title && post.title.length > 0 ? `<div class="post-title"><a href="${post.url}">${post.title}</a></div>` : ""}
@@ -157,6 +141,8 @@ export class PostView extends View {
          this.addEventListener("click", expand);
          this.classList.add("post-seen");
       }
+
+      setLinkTargetsToBlank(this);
    }
 
    prependComment(comment: Comment<any>) {

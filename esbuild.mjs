@@ -7,12 +7,16 @@ let watch = process.argv.length >= 3 && process.argv[2] == "--watch";
 const config = {
   entryPoints: {
     index: "site/index.ts",
+    ledit: "site/ledit.ts"
   },
   bundle: true,
   sourcemap: true,
   outdir: "site/build/",
   loader: {
     ".ttf": "dataurl",
+    ".woff": "dataurl",
+    ".woff2": "dataurl",
+    ".eot": "dataurl",
     ".html": "text",
     ".svg": "text",
   },

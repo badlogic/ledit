@@ -6,7 +6,7 @@ import { dateToText, dom, intersectsViewport, proxyFetch } from "./utils";
 
 const channelIds = localStorage.getItem("youtubeCache") ? JSON.parse(localStorage.getItem("youtubeCache")!) : {};
 
-export class YoutubeSource implements Source<FeedEntry, void> {
+export class YoutubeSource extends Source<FeedEntry, void> {
 
    async getYoutubeChannel(channel: string): Promise<Post<FeedEntry>[] | Error> {
       let channelId: string | null = channelIds[channel];
@@ -79,7 +79,7 @@ export class YoutubeSource implements Source<FeedEntry, void> {
    }
 
    getFeed(): string {
-      const hash = window.location.hash;
+      const hash = this.hash;
       if (hash.length == 0) {
          return "";
       }

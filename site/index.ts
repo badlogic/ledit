@@ -32,22 +32,22 @@ if (window.location.hash.length == 0) {
       const source = (tokens[0] + "/") as SourcePrefix;
       switch (source) {
          case "r/":
-            setSource(new RedditSource());
+            setSource(new RedditSource(hash));
             break;
          case "hn/":
-            setSource(new HackerNewsSource());
+            setSource(new HackerNewsSource(hash));
             break;
          case "rss/":
-            setSource(new RssSource());
+            setSource(new RssSource(hash));
             break;;
          case "yt/":
-            setSource(new YoutubeSource());
+            setSource(new YoutubeSource(hash));
             break;
          case "m/":
-            setSource(new MastodonSource());
+            setSource(new MastodonSource(hash));
             break;
          default:
-            setSource(new RedditSource());
+            setSource(new RedditSource(hash));
       }
    }
 

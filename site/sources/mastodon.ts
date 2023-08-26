@@ -1,14 +1,11 @@
 // @ts-ignore
-import "./mastodon.css";
-import { CommentView } from "./comments";
+import { CommentView } from "../comments";
 import { Comment, ContentDom, Page, PageIdentifier, Post, SortingOption, Source, SourcePrefix, getSource } from "./data";
-import { PostEditor } from "./post-editor";
-import { PostListView, PostView } from "./posts";
-import { Bookmark, bookmarkToHash, getSettings, saveSettings } from "./settings";
-import { svgBell, svgCircle, svgLoader, svgPencil, svgReblog, svgReply, svgStar } from "./svg";
-import { addCommasToNumber, dateToText, dom, navigate, renderGallery, renderVideo, replaceLastHashFragment, setLinkTargetsToBlank } from "./utils";
-import { OverlayView, PagedListView, View } from "./view";
-import { navigationGuard } from "./guards";
+import { PostEditor } from "../post-editor";
+import { Bookmark, bookmarkToHash, getSettings, saveSettings } from "../settings";
+import { svgBell, svgCircle, svgLoader, svgPencil, svgReblog, svgReply, svgStar } from "../svg";
+import { addCommasToNumber, dateToText, dom, navigate, renderGallery, renderVideo, setLinkTargetsToBlank } from "../utils";
+import { OverlayView, PagedListView, View } from "../view";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
 
@@ -514,7 +511,6 @@ export class MastodonSource extends Source<MastodonPostData, MastodonCommentData
          author: getAccountName(reply.account),
          authorUrl: reply.account.url,
          createdAt: new Date(reply.created_at).getTime() / 1000,
-         score: null,
          content,
          replies: [],
          highlight,

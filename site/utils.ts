@@ -87,9 +87,9 @@ export function intersectsViewport(element: Element | null) {
  * Sanitizes and converts the HTML string to DOM nodes. All DOM manipulation
  * must go through this!
  */
-export function dom(html: string): HTMLElement[] {
+export function dom(html: string, sanitize = true): HTMLElement[] {
    const originalHTML = html;
-   html = DOMPurify.sanitize(html, { ADD_ATTR: ["x-id"], ADD_TAGS: ["video-js", "iframe"] });
+   html = sanitize ? DOMPurify.sanitize(html, { ADD_ATTR: ["x-id"], ADD_TAGS: ["video-js", "iframe"] }) : html;
    const removed = DOMPurify.removed;
    if (DOMPurify.removed.length > 0) {
       for (const thing of removed) {
@@ -195,7 +195,8 @@ export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
    });
 }
 
-export function removeTrailingEmptyParagraphs(htmlString: string): string {
+export function removeTrailingEmptyParagraphs(htmlString: string | null): string | null {
+   if (htmlString == null) return null;
    const parser = new DOMParser();
    const parsedDoc = parser.parseFromString(htmlString, "text/html");
 
@@ -386,4 +387,93 @@ export function setLinkTargetsToBlank(element: HTMLElement) {
       let link = links[i];
       link.setAttribute("target", "_blank");
    }
+}
+
+export function elements<T>(view: HTMLElement): T {
+   let elements: HTMLElement[] = [];
+   view.querySelectorAll("[x-id]").forEach((el) => elements.push(el as HTMLElement));
+   const result = {};
+   elements.forEach((element) => {
+      // @ts-ignore
+      if (result[element.getAttribute("x-id")]) {
+         console.log(`View - Duplicate element x-id ${element.getAttribute("x-id")} in ${view.localName}`);
+      }
+      // @ts-ignore
+      result[element.getAttribute("x-id")] = element;
+   });
+   return result as T;
+}
+
+// https://nucleoapp.com/tool/icon-transition
+export function animateSvgIcon(i: HTMLElement) {
+   if (i.classList.contains("js-nc-int-icon-loaded")) return i;
+   i.classList.add("js-nc-int-icon-loaded");
+   i.querySelector("svg")?.addEventListener("click", function (n) {
+      (i.querySelector("svg")?.children[0] as any).classList.toggle("nc-int-icon-state-b");
+   });
+   return i;
+}
+
+export function firstTextChild(divElement: HTMLElement): HTMLElement | null {
+   const firstNonWhitespaceSequence = divElement.innerText.trim().match(/\S+/);
+
+   if (firstNonWhitespaceSequence) {
+       const sequence = firstNonWhitespaceSequence[0];
+
+       for (const child of Array.from(divElement.children) as HTMLElement[]) {
+           if (child.innerText.includes(sequence)) {
+               const childChild = firstTextChild(child);
+               return childChild ? childChild : child;
+           }
+
+           const foundInChildren = firstTextChild(child);
+           if (foundInChildren) {
+               return foundInChildren;
+           }
+       }
+   }
+
+   return null;
+}
+
+export function waitForMediaLoaded(element: HTMLElement, callback: () => void): void {
+   const mediaElements: HTMLMediaElement[] = Array.from(element.querySelectorAll("img, video"));
+   let mediaLoaded = 0;
+   let callbackCalled = false;
+   const checkAllLoaded = () => {
+      if (mediaLoaded == mediaElements.length) {
+         if (!callbackCalled) {
+            callbackCalled = true;
+            callback();
+         }
+      }
+   }
+
+   mediaElements.forEach((el) => {
+      const handleImageLoad = () => {
+         mediaLoaded++;
+         checkAllLoaded();
+      };
+      if ((el as any).complete || el.readyState === 4) {
+         // Already loaded or errored
+         handleImageLoad();
+     } else {
+         el.addEventListener("load", handleImageLoad);
+         el.addEventListener("error", handleImageLoad);
+     }
+   });
+
+   checkAllLoaded();
+}
+
+export function isLink(element: HTMLElement | Element | null) {
+   if(element == null) return false;
+   element = element as HTMLElement;
+   if (element.tagName == "A") return true;
+   let parent = element.parentElement;
+   while (parent) {
+      if (parent.tagName == "A") return true;
+      parent = parent.parentElement;
+   }
+   return false;
 }

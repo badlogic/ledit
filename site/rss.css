@@ -1,58 +1,61 @@
-.rss-content {
-   display: flex;
-   flex-direction: column;
-   align-items: flex-start;
-   cursor: pointer;
-   padding: 0 var(--ledit-margin);
-   margin-bottom: calc(var(--ledit-padding) * 1.5);
-}
+@layer rss {
+   .rss-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      cursor: pointer;
+      padding: 0 var(--ledit-margin);
+      margin-bottom: calc(var(--ledit-padding) * 1.5);
+   }
 
-.rss-content > div > p:last-child {
-   margin-bottom: 0;
-}
+   .rss-content > div > p:last-child {
+      margin-bottom: 0;
+   }
 
-.rss-content > div {
-   width: 100%;
-}
+   .rss-content > div {
+      width: 100%;
+   }
 
-.rss-content-image {
-   max-width: 150px !important;
-   flex: 0 0 auto;
-   object-fit: contain;
-   margin-right: var(--ledit-margin);
-   margin-bottom: var(--ledit-margin);
-}
+   .rss-content-image {
+      max-width: 150px !important;
+      flex: 0 0 auto;
+      object-fit: contain;
+      margin-right: var(--ledit-margin);
+      margin-bottom: var(--ledit-margin);
+   }
 
-.rss-content * {
-   max-width: 100% !important;
-}
+   .rss-content * {
+      max-width: 100% !important;
+   }
 
-.rss-content video, .rss-content img {
-   height: auto !important;
-   border-radius: 8px;
-}
+   .rss-content video,
+   .rss-content img {
+      height: auto !important;
+      border-radius: 8px;
+   }
 
-.rss-content svg {
-   width: 1em;
-   height: 1em;
-}
+   .rss-content svg {
+      width: 1em;
+      height: 1em;
+   }
 
-.rss-content h1 {
-   font-size: var(--ledit-font-size);
-}
+   .rss-content h1 {
+      font-size: var(--ledit-font-size);
+   }
 
-.rss-content h2 {
-   font-size: var(--ledit-font-size);
-}
+   .rss-content h2 {
+      font-size: var(--ledit-font-size);
+   }
 
-.rss-content h3 {
-   font-size: var(--ledit-font-size);
-}
+   .rss-content h3 {
+      font-size: var(--ledit-font-size);
+   }
 
-.rss-content h4 {
-   font-size: var(--ledit-font-size);
-}
+   .rss-content h4 {
+      font-size: var(--ledit-font-size);
+   }
 
-.rss-channel-image {
-   max-height: calc(1.5 * var(--ledit-font-size));
+   .rss-channel-image {
+      max-height: calc(1.5 * var(--ledit-font-size));
+   }
 }
