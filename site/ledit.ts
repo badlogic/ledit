@@ -1,11 +1,11 @@
 import { Page, SortingOption, Source, SourcePrefix } from "./sources/data";
 import "./guards";
 import "./ledit-bundle.css";
-import { applySettings, bookmarkToHash, getSettings } from "./settings";
+import { applySettings, bookmarkToHash, getSettings, saveSettings } from "./settings";
 import { RssSource, renderRssPost } from "./sources/rss";
 // @ts-ignore
 import sunAndMoonSvg from "./svg/sun-moon.svg";
-import { animateSvgIcon, elements, navigate, onVisibleOnce, replaceLastHashFragment, setLinkTargetsToBlank } from "./utils";
+import { animateSvgIcon, elements, navigate, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
 // @ts-ignore
 import { html } from "lit-html";
 // @ts-ignore
@@ -15,15 +15,16 @@ import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 // @ts-ignore
 import { when } from "lit-html/directives/when.js";
 import { HackerNewsSource, renderHnPost } from "./sources/hackernews";
-import { MastodonSource } from "./sources/mastodon";
+// import { MastodonSource } from "./sources/mastodon";
 import { RedditSource } from "./sources/reddit";
 import { YoutubeSource } from "./sources/youtube";
-import { contentLoader, dom, getFeedFromHash, getSourcePrefixFromHash } from "./sources/utils";
+import { dom, getFeedFromHash, getSourcePrefixFromHash, renderContentLoader, renderErrorMessage, renderInfoMessage } from "./sources/utils";
 import { PageIdentifier } from "./data";
+import { MastodonSource } from "./sources/mastodon";
 
 export function renderPostPage<T>(container: HTMLElement, page: Page<T> | Error, renderPost: (post: T) => HTMLElement[], getNextPage: (nextPage: PageIdentifier) => Promise<Page<T> | Error>) {
    if (page instanceof Error) {
-      container.append(...dom(html`<div>Could not load feed: ${page.message}</div>`));
+      container.append(...renderErrorMessage(`Could not load feed`, page));
       return;
    }
 
@@ -35,19 +36,19 @@ export function renderPostPage<T>(container: HTMLElement, page: Page<T> | Error,
    setLinkTargetsToBlank(container);
 
    if (page.nextPage != "end") {
-      const loader = dom(contentLoader)[0];
+      const loader = renderContentLoader();
       container.append(loader);
       onVisibleOnce(loader, async () => {
          const newPage = await getNextPage(page.nextPage);
          loader.remove();
          if (newPage instanceof Error) {
-            container.append(dom(html`<div>Could not load posts: ${newPage.message}</div>`)[0]);
+            container.append(...renderErrorMessage("Could not load next page", newPage));
          } else {
             renderPostPage(container, newPage, renderPost, getNextPage);
          }
       });
    } else {
-      container.append(dom(html`<div>No more posts<div>`)[0]);
+      container.append(...renderInfoMessage("No more posts"));
    }
 }
 
@@ -109,7 +110,10 @@ export function renderHeader(hash: string, sortingOptions: SortingOption[], sort
 
    animateSvgIcon(themeToggle);
    themeToggle.addEventListener("click", () => {
-      document.body.setAttribute("data-theme", document.body.getAttribute("data-theme") == "dark" ? "light" : "dark");
+      const theme = document.documentElement.getAttribute("data-theme") == "dark" ? "light" : "dark";
+      getSettings().theme = theme;
+      saveSettings();
+      document.documentElement.setAttribute("data-theme", theme);
    });
 
    return header;
@@ -163,9 +167,9 @@ async function main() {
          source = new RedditSource(hash);
    }
 
-   const main = dom(html`<main class="flex flex-col gap-4"></main>`)[0];
+   const main = dom(html`<main class="flex flex-col"></main>`)[0];
    const header = renderHeader(hash, source.getSortingOptions(), source.getSorting());
-   const loader = dom(contentLoader)[0];
+   const loader = renderContentLoader();
    document.body.append(header);
    document.body.append(main);
    main.append(loader);
@@ -181,8 +185,8 @@ async function main() {
       loader.remove();
       renderPostPage(main, postsPage, renderPost, (after: PageIdentifier) => { return source!.getPosts(after)});
    } catch (e) {
-      let message = e instanceof Error ? ": " + e.message : "";
-      dom(html`<div>Could not load '${hash}'${message}</div>`, main);
+      loader.remove();
+      main.append(...renderErrorMessage(`Could not load '${hash}'`, e instanceof Error ? e : undefined));
    }
 }
 

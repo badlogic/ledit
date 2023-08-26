@@ -162,8 +162,8 @@ export function renderRssPost(post: RssPost) {
    const postDom = dom(html`
       <article class="post gap-1">
          <a href="${post.url}" class="font-bold text-lg text-color">${post.title}</a>
-         <div class="flex gap-1 text-sm">
-            <a href="https://${domain}" class="text-primary/90"> ${channelImage ? html`<img src="${channelImage}" class="max-h-6" />` : domain} </a>
+         <div class="flex gap-1 text-xs">
+            <a href="https://${domain}" class="text-color/50"> ${channelImage ? html`<img src="${channelImage}" class="max-h-4" />` : domain} </a>
             <span class="flex items-center text-color/50">•</span>
             <span class="flex items-center text-color/50">${date}</span>
          </div>

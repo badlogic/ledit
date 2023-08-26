@@ -5,20 +5,6 @@ import DOMPurify from "dompurify";
 import { escapeGuard, navigationGuard } from "./guards";
 import { Source, SourcePrefix } from "../data";
 
-export const contentLoader = html` <div class="flex space-x-4 animate-pulse w-[80%] max-w-[300px] m-auto">
-   <div class="rounded-full bg-slate-200 dark:bg-slate-700 h-10 w-10"></div>
-   <div class="flex-1 space-y-6 py-1">
-      <div class="h-2 bg-slate-200 dark:bg-slate-700 rounded"></div>
-      <div class="space-y-3">
-         <div class="grid grid-cols-3 gap-4">
-            <div class="h-2 bg-slate-200 dark:bg-slate-700 rounded col-span-2"></div>
-            <div class="h-2 bg-slate-200 dark:bg-slate-700 rounded col-span-1"></div>
-         </div>
-         <div class="h-2 bg-slate-200 dark:bg-slate-700 rounded"></div>
-      </div>
-   </div>
-</div>`;
-
 export function dom(template: TemplateResult, container?: HTMLElement | DocumentFragment): HTMLElement[] {
    if (container) {
       render(template, container);
@@ -34,10 +20,91 @@ export function dom(template: TemplateResult, container?: HTMLElement | Document
    return children as HTMLElement[];
 }
 
+export function safeHTML(unsafeHtml: string) {
+   unsafeHtml = DOMPurify.sanitize(unsafeHtml, { ADD_ATTR: ["x-id"], ADD_TAGS: ["video-js", "iframe"] });
+   const stringArray: any = [unsafeHtml];
+   stringArray.raw = [unsafeHtml];
+   return html(stringArray as TemplateStringsArray);
+}
+
+export function renderErrorMessage(message: string | TemplateResult, error?: Error) {
+   let stack = error ? error.message + "\n" + error.stack : "";
+   return dom(
+      html`<div class="error m-auto p-4 w-full flex flex-col gap-4">
+         <span class="m-auto">${message}</span>${error
+            ? safeHTML(`<pre class="w-full overflow-auto rounded bg-surface-dim p-4"><code>${stack}</code></pre>`)
+            : ""}
+      </div>`
+   );
+}
+
+export function renderInfoMessage(message: string | TemplateResult) {
+   return dom(html`<div class="info w-full m-auto py-4">${message}</div>`);
+}
+
+export function renderContentLoader() {
+   return dom(html`<div class="flex space-x-4 animate-pulse w-[80%] max-w-[300px] m-auto py-4">
+      <div class="rounded-full bg-surface-dim h-10 w-10"></div>
+      <div class="flex-1 space-y-6 py-1">
+         <div class="h-2 bg-surface-dim rounded"></div>
+         <div class="space-y-3">
+            <div class="grid grid-cols-3 gap-4">
+               <div class="h-2 bg-surface-dim rounded col-span-2"></div>
+               <div class="h-2 bg-surface-dim rounded col-span-1"></div>
+            </div>
+            <div class="h-2 bg-surface-dim rounded"></div>
+         </div>
+      </div>
+   </div>`)[0];
+}
+
+let overlayZIndex = 10;
+export function renderOverlay(header: HTMLElement[], content: HTMLElement[], closeCallback = () => {}) {
+   const overlay = dom(html` <div class="fixed top-0 w-full h-full overflow-auto bg-background">
+      <div class="overlay m-auto backdrop-blur-[8px] flex flex-col" x-id="container"></div>
+   </div>`)[0];
+   overlay.style.zIndex = (++overlayZIndex).toString();
+
+   const { container } = elements<{ container: HTMLElement }>(overlay);
+   container.append(...header);
+   container.append(...content);
+
+   const navCallback = navigationGuard.register({
+      hash: null,
+      callback: () => {
+         close();
+         return true;
+      },
+   });
+
+   const escapeCallback = escapeGuard.register(() => {
+      close();
+   });
+
+   const close = () => {
+      overlay.remove();
+      document.body.style.overflow = "";
+      navigationGuard.remove(navCallback);
+      escapeGuard.remove(escapeCallback);
+      closeCallback();
+   };
+
+   header.forEach((el) =>
+      el.addEventListener("click", () => {
+         close();
+      })
+   );
+
+   document.body.append(overlay);
+   document.body.style.overflow = "hidden";
+
+   return overlay;
+}
+
 export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
    maxHeightInLines = Math.max(4, maxHeightInLines);
    div.classList.add("force-hidden");
-   const loader = dom(contentLoader)[0];
+   const loader = renderContentLoader();
    div.parentElement?.append(loader);
    waitForMediaLoaded(div, () => {
       loader.remove();
@@ -66,7 +133,10 @@ export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
       div.style.position = "relative";
 
       const more = dom(
-         html`<div class="m-auto mt-[-2em] absolute w-full h-8 font-bold text-primary text-center cursor-pointer bg-background/70 backdrop-blur-[4px] bottom-0">Show more</div>`
+         // prettier-ignore
+         html`<div
+            class="absolute w-full h-10 left-0 bottom-[-0.5em] flex items-center justify-center bg-surface font-bold text-primary cursor-pointer"
+         >Show more</div>`
       )[0];
       div.append(more);
       more.addEventListener("click", (event) => {
@@ -84,59 +154,16 @@ export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
             div.style.height = `${maxHeight}px`;
             div.append(more);
             requestAnimationFrame(() => {
-               if (!intersectsViewport(more)) scrollToAndCenter(more);
+               if (!intersectsViewport(more)) {
+                  div.scrollIntoView({
+                     behavior: "smooth",
+                     block: "nearest",
+                  });
+               }
             });
          }
       });
    });
-}
-
-export function safeHTML(unsafeHtml: string) {
-   unsafeHtml = DOMPurify.sanitize(unsafeHtml, { ADD_ATTR: ["x-id"], ADD_TAGS: ["video-js", "iframe"] });
-   const stringArray: any = [unsafeHtml];
-   stringArray.raw = [unsafeHtml];
-   return html(stringArray as TemplateStringsArray);
-}
-
-let overlayZIndex = 10;
-export function renderOverlay(header: HTMLElement[], content: HTMLElement[], closeCallback = () => {}) {
-   const overlay = dom(html` <div class="fixed top-0 w-full h-full overflow-auto bg-background">
-      <div class="max-w-[600px] m-auto backdrop-blur-[8px] flex flex-col" x-id="container"></div>
-   </div>`)[0];
-   overlay.style.zIndex = (++overlayZIndex).toString();
-
-   const { container } = elements<{ container: HTMLElement }>(overlay);
-   container.append(...header);
-   container.append(...content);
-
-   const navCallback = navigationGuard.register({
-      hash: null,
-      callback: () => {
-         close();
-         return true;
-      },
-   });
-
-   const escapeCallback = escapeGuard.register(() => {
-      close();
-   });
-
-   const close = () => {
-      overlay.remove();
-      document.body.style.overflow = "";
-      navigationGuard.remove(navCallback);
-      escapeGuard.remove(escapeCallback);
-      closeCallback();
-   };
-
-   overlay.addEventListener("click", () => {
-      close();
-   });
-
-   document.body.append(overlay);
-   document.body.style.overflow = "hidden";
-
-   return overlay;
 }
 
 export function getSourcePrefixFromHash(): string | null {
@@ -159,7 +186,7 @@ export function getFeedFromHash(): string | null {
    const afterPrefix = hash.substring(prefix.length + 2);
    if (afterPrefix.includes("+")) return afterPrefix;
 
-   const tokens = afterPrefix.split("/")
+   const tokens = afterPrefix.split("/");
    if (tokens.length == 0) return null;
    return tokens[0];
 }

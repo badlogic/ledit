@@ -9,9 +9,7 @@ export type SortingOption = {
    label: string;
 }
 
-export type Comment = { replies: Comment[] };
-
-export abstract class Source<P, C extends Comment> {
+export abstract class Source<P, C> {
    constructor(public readonly feed: string) {}
    abstract getPosts(nextPage: PageIdentifier): Promise<Page<P> | Error>;
    abstract getComments(post: P): Promise<C[] | Error>;

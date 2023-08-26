@@ -75,6 +75,7 @@ export function applySettings() {
    document.body.classList.remove("dark-theme");
    document.body.classList.remove("light-theme");
    document.body.classList.add(getSettings().theme.toLowerCase() + "-theme");
+   document.documentElement.setAttribute("data-theme", getSettings().theme.toLowerCase());
 }
 
 export function saveSettings() {

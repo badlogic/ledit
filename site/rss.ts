@@ -160,7 +160,7 @@ export class RssSource extends Source<RssPostData, void> {
       }
 
       const content = dom(
-         `<div class="rss-content">${
+         `<div class="content rss-content">${
             imageUrl ? `<img src="${imageUrl}" class="rss-content-image">` : ""
          } <div>${removeTrailingEmptyParagraphs(description)}</div></div>`
       )[0];

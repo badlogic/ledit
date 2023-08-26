@@ -1,10 +1,8 @@
 // @ts-ignore
-import { CommentView } from "../comments";
-import { Comment, ContentDom, Page, PageIdentifier, Post, SortingOption, Source, SourcePrefix, getSource } from "./data";
+// import { CommentView } from "../comments";
+import { Page, PageIdentifier, SortingOption, Source, SourcePrefix, getSource } from "./data";
 import { PostEditor } from "../post-editor";
-import { Bookmark, bookmarkToHash, getSettings, saveSettings } from "../settings";
-import { svgBell, svgCircle, svgLoader, svgPencil, svgReblog, svgReply, svgStar } from "../svg";
-import { addCommasToNumber, dateToText, dom, navigate, renderGallery, renderVideo, setLinkTargetsToBlank } from "../utils";
+
 import { OverlayView, PagedListView, View } from "../view";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};

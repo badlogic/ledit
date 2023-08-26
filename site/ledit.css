@@ -11,18 +11,22 @@
 }
 
 /** New colors need to be added to tailwind.config.json **/
-body[data-theme="dark"] {
+html[data-theme="dark"] {
    --background: 17, 17, 17;
    --color: 250, 250, 250;
    --border: 55, 55, 55;
    --primary: 204, 125, 36;
+   --surface: 17, 17, 17;
+   --surface-dim: 39, 39, 39;
 }
 
-body[data-theme="light"] {
-   --background: 250, 250, 250;
-   --color: 35, 35, 35;
-   --border: 238, 238, 238;
+html[data-theme="light"] {
+   --background: 255, 255, 255;
+   --color: 75, 85, 99;
+   --border: 200, 200, 200;
    --primary: 204, 125, 36;
+   --surface: 255, 255, 255;
+   --surface-dim: 230, 230, 230;
 }
 
 html,
@@ -33,10 +37,6 @@ body {
    color: rgb(var(--color));
    background-color: rgb(var(--background));
    -webkit-tap-highlight-color: transparent;
-}
-
-code {
-   font-family: var(--font-family-code);
 }
 
 @layer base {
@@ -91,7 +91,7 @@ code {
       background-color: var(--primary);
    }
 
-   i {
+   i.icon {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -101,22 +101,23 @@ code {
    i > svg {
       @apply w-full h-full;
    }
+
+   pre {
+      overflow: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+   }
+
+   code {
+      font-family: var(--font-family-code);
+      font-size: 0.8em;
+      line-height: 1em;
+   }
 }
 
 @layer utilities {
    .force-hidden {
       display: none !important;
-   }
-   .bg {
-      background-color: rgb(var(--background));
-   }
-
-   .bg-primary {
-      background-color: rgb(var(--primary));
-   }
-
-   .primary {
-      color: rgb(var(--primary));
    }
 }
 
@@ -159,7 +160,7 @@ code {
 
 @layer components {
    .header {
-      @apply w-full max-w-[600px] mx-auto sticky top-0 text-lg flex items-center p-2 bg-background/70 backdrop-blur-[8px] border-b border-border/50 mb-4 z-[1];
+      @apply w-full sm:max-w-[640px] mx-auto sticky top-0 text-lg flex items-center p-2 bg-background backdrop-blur-[8px] border-b border-border/50 z-[1];
    }
 
    .header select {
@@ -173,8 +174,16 @@ code {
       outline-style: none;
    }
 
+   main {
+      @apply w-full sm:max-w-[640px] mx-auto;
+   }
+
+   .overlay {
+      @apply w-full sm:max-w-[640px] mx-auto;
+   }
+
    .post {
-      @apply w-full md:max-w-[600px] mx-auto flex flex-col px-2 pb-4 border-b border-border;
+      @apply w-full mx-auto flex flex-col;
    }
 
    .post :first-child {
@@ -184,10 +193,50 @@ code {
    .post :last-child {
       @apply mb-0;
    }
-}
 
-@layer rss {
-   .rss-content {
+   main > .post {
+      @apply py-4 rounded bg-surface border-b border-border/30;
+   }
+
+   main > .post > * {
+      @apply px-4;
+   }
+
+   .comments > * {
+      @apply px-4;
+   }
+
+   .comments > .post {
+      @apply mt-4;
+   }
+
+   .comments > .info {
+      @apply border-b border-border/50;
+   }
+
+   .comments > .comment {
+      @apply py-4 border-b border-border/50;
+   }
+
+   .comment .content p:first-child {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+   }
+
+   .comment .content > p:last-child {
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+   }
+
+   .reply {
+      @apply pl-4 py-2 border-dotted border-l border-border;
+   }
+
+   .reply:last-child {
+      @apply pb-0;
+   }
+
+   .content {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -196,38 +245,40 @@ code {
       margin-bottom: calc(var(--ledit-padding) * 1.5);
    }
 
-   .rss-content > div > p:last-child {
+   .content * {
+      max-width: 100%;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+   }
+
+   .content > p:last-child {
       margin-bottom: 0;
    }
 
-   .rss-content > div {
-      width: 100%;
-   }
-
-   .rss-content-image {
-      flex: 0 0 auto;
-      object-fit: contain;
-      margin-right: var(--ledit-margin);
-      margin-bottom: var(--ledit-margin);
-   }
-
-   .rss-content * {
-      max-width: 100%;
-   }
-
-   .rss-content a::after {
+   .content a::after {
       @apply w-4 h-4 ml-1 fill-primary;
       display: inline-block;
       content: "";
-      -webkit-mask: url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19L18.9999 6.413L11.2071 14.2071L9.79289 12.7929L17.5849 5H13V3H21Z'></path></svg>") no-repeat 50% 50%;
-      mask: url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19L18.9999 6.413L11.2071 14.2071L9.79289 12.7929L17.5849 5H13V3H21Z'></path></svg>") no-repeat 50% 50%;
+      -webkit-mask: url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19L18.9999 6.413L11.2071 14.2071L9.79289 12.7929L17.5849 5H13V3H21Z'></path></svg>")
+         no-repeat 50% 50%;
+      mask: url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19L18.9999 6.413L11.2071 14.2071L9.79289 12.7929L17.5849 5H13V3H21Z'></path></svg>")
+         no-repeat 50% 50%;
       -webkit-mask-size: cover;
       mask-size: cover;
       background-color: rgb(var(--primary));
    }
 
-   .rss-content p:first-child {
+   .content p:first-child {
       @apply pt-2;
+   }
+}
+
+@layer components {
+   .rss-content-image {
+      flex: 0 0 auto;
+      object-fit: contain;
+      margin-right: var(--ledit-margin);
+      margin-bottom: var(--ledit-margin);
    }
 
    .rss-content video {
@@ -260,24 +311,14 @@ code {
    }
 
    .rss-content h3 {
-      font-size: 1em
+      font-size: 1em;
    }
 
    .rss-content h4 {
-      font-size: 1em
+      font-size: 1em;
    }
 
    .rss-channel-image {
       max-height: calc(1.5 * var(--ledit-font-size));
-   }
-}
-
-@layer {
-   .hn-comments p:first-child {
-      margin-top: 0 !important;
-   }
-
-   .hn-comments p:last-child {
-      margin-bottom: 0 !important;
    }
 }
