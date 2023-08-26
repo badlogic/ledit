@@ -350,14 +350,15 @@ export function renderHnComment(comment: HnComment, state: { op: string; isReply
             <span class="flex items-center text-color/50">${date}</span>
          </div>
          <div class="content">${safeHTML(comment.content)}</div>
-         <div class="flex items-flex-start gap-4">
+         <div class="comment-buttons">
             <a href="https://news.ycombinator.com/item?id=${comment.raw.objectID}" class="flex items-center h-[2em] text"
                ><i class="icon mr-1">${unsafeHTML(replyIcon)}</i> Reply</a
             >
          </div>
          ${comment.replies.length > 0
-            ? html` <div class="ml-2">${map(comment.replies, (reply) => renderHnComment(reply, { op: state?.op, isReply: true }))}</div> `
+            ? html` <div class="replies">${map(comment.replies, (reply) => renderHnComment(reply, { op: state?.op, isReply: true }))}</div> `
             : ""}
+         </div>
       </div>
    `;
 }

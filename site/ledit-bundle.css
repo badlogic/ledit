@@ -804,6 +804,11 @@ main > .post > * {
   padding-bottom: 1rem;
 }
 
+.comment {
+  cursor: pointer;
+  min-width: 350px;
+}
+
 .comment .content p:first-child {
   margin-top: 0 !important;
   padding-top: 0 !important;
@@ -812,6 +817,20 @@ main > .post > * {
 .comment .content > p:last-child {
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
+}
+
+.comment-buttons {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.\!replies {
+  margin-left: 0.5rem;
+}
+
+.replies {
+  margin-left: 0.5rem;
 }
 
 .reply {
@@ -963,10 +982,6 @@ main > .post > * {
 .mx-2 {
   margin-left: 0.5rem;
   margin-right: 0.5rem;
-}
-
-.ml-2 {
-  margin-left: 0.5rem;
 }
 
 .mr-1 {

@@ -218,6 +218,11 @@ body {
       @apply py-4 border-b border-border/50;
    }
 
+   .comment {
+      @apply cursor-pointer;
+      min-width: 350px;
+   }
+
    .comment .content p:first-child {
       margin-top: 0 !important;
       padding-top: 0 !important;
@@ -226,6 +231,14 @@ body {
    .comment .content > p:last-child {
       margin-bottom: 0 !important;
       padding-bottom: 0 !important;
+   }
+
+   .comment-buttons {
+      @apply flex items-start gap-4;
+   }
+
+   .replies {
+      @apply ml-2;
    }
 
    .reply {
