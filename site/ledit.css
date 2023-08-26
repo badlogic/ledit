@@ -217,7 +217,7 @@ body {
 
 @layer components {
    .post.reddit-post {
-      @apply pb-2;
+      @apply pb-3;
    }
 
    .reddit-post .content {

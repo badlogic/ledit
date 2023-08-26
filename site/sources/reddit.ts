@@ -1,8 +1,16 @@
 import "video.js/dist/video-js.min.css";
 
 import { Page, PageIdentifier, SortingOption, Source, SourcePrefix, getSource } from "./data";
-import { addCommasToNumber, dateToText, elements, htmlDecode, intersectsViewport, makeCollapsible, onVisibleOnce, setLinkTargetsToBlank } from "../utils";
-import { dom, renderGallery, renderVideo, safeHTML } from "./utils";
+import {
+   addCommasToNumber,
+   dateToText,
+   elements,
+   htmlDecode,
+   intersectsViewport,
+   onVisibleOnce,
+   setLinkTargetsToBlank,
+} from "../utils";
+import { dom, renderGallery, renderVideo, makeCollapsible, safeHTML } from "./utils";
 // @ts-ignore
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 // @ts-ignore
@@ -11,6 +19,8 @@ import { html } from "lit-html";
 import commentIcon from "remixicon/icons/Communication/chat-4-line.svg";
 // @ts-ignore
 import replyIcon from "remixicon/icons/Business/reply-line.svg";
+// @ts-ignore
+import imageIcon from "remixicon/icons/Media/image-line.svg";
 // @ts-ignore
 import closeIcon from "remixicon/icons/System/close-circle-line.svg";
 
@@ -151,7 +161,7 @@ export class RedditSource extends Source<RedditPost, RedditComment> {
             nextPage: redditPosts.data.after,
          };
       } catch (e) {
-         return new Error(`Could not load subredd ${this.getSubreddit()}.`);
+         return new Error(`Could not load subreddit 'r/${this.getSubreddit()}'. It may not exist.`);
       }
    }
    async getComments(post: RedditPost): Promise<RedditComment[] | Error> {
@@ -226,19 +236,18 @@ export class RedditSource extends Source<RedditPost, RedditComment> {
    }
 }
 
-function renderRedditMedia(canonicalPost: RedditPost, container: HTMLElement): { elements: HTMLElement[]; toggles: HTMLElement[] } {
+function renderRedditMedia(canonicalPost: RedditPost, container: HTMLElement): HTMLElement[] {
    const post = canonicalPost.data;
    const computed = getComputedStyle(container);
    const postsWidth = Number.parseInt(computed.width) - Number.parseFloat(computed.paddingLeft) - Number.parseFloat(computed.paddingRight);
-   const toggles: HTMLElement[] = [];
    // Self post, show text, dim it, cap vertical size, and make it expand on click.
    if (post.is_self) {
       let selfPost = dom(html`<div class="content-text">${safeHTML(htmlDecode(post.selftext_html ?? ""))}</div>`)[0];
 
       requestAnimationFrame(() => {
-         makeCollapsible(selfPost, 4.5);
+         makeCollapsible(selfPost, 10);
       });
-      return { elements: [selfPost], toggles };
+      return [selfPost];
    }
 
    // Gallery
@@ -257,8 +266,7 @@ function renderRedditMedia(canonicalPost: RedditPost, container: HTMLElement): {
       }
       const imageUrls = images.map((img) => htmlDecode(img.u)!);
       const gallery = renderGallery(imageUrls);
-      toggles.unshift(gallery.toggle);
-      return { elements: [gallery.gallery], toggles };
+      return [gallery];
    }
 
    // Reddit hosted video
@@ -267,7 +275,7 @@ function renderRedditMedia(canonicalPost: RedditPost, container: HTMLElement): {
       if (post.secure_media.reddit_video.dash_url) embed.urls.push(htmlDecode(post.secure_media.reddit_video.dash_url)!);
       if (post.secure_media.reddit_video.hls_url) embed.urls.push(htmlDecode(post.secure_media.reddit_video.hls_url)!);
       if (post.secure_media.reddit_video.fallback_url) embed.urls.push(htmlDecode(post.secure_media.reddit_video.fallback_url)!);
-      return { elements: [renderVideo(embed, false)], toggles };
+      return [renderVideo(embed, false)];
    }
 
    // External embed like YouTube Vimeo
@@ -292,23 +300,20 @@ function renderRedditMedia(canonicalPost: RedditPost, container: HTMLElement): {
                   videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
                }
             });
-            return { elements: [embedDom], toggles };
+            return [embedDom];
          }
       } else {
-         return {
-            elements: dom(
-               html`<div width="${embedWidth}" height="${embedHeight}">
-                  <iframe width="${embedWidth}" height="${embedHeight}" src="${htmlDecode(embed.media_domain_url)}"></iframe>
-               </div>`
-            ),
-            toggles,
-         };
+         return dom(
+            html`<div width="${embedWidth}" height="${embedHeight}">
+               <iframe width="${embedWidth}" height="${embedHeight}" src="${htmlDecode(embed.media_domain_url)}"></iframe>
+            </div>`
+         );
       }
    }
 
    // Plain old .gif
    if (post.url.endsWith(".gif")) {
-      return { elements: dom(html`<img src="${htmlDecode(post.url)}" />`), toggles };
+      return dom(html`<img src="${htmlDecode(post.url)}" />`);
    }
 
    // Image, pick the one that's one size above the current posts width so pinch zooming
@@ -319,40 +324,48 @@ function renderRedditMedia(canonicalPost: RedditPost, container: HTMLElement): {
          image = img;
          if (img.width >= postsWidth) break;
       }
-      if (!image) return { elements: [document.createElement("div")], toggles };
-      if (!post.preview.reddit_video_preview?.fallback_url) return { elements: dom(html`<img src="${htmlDecode(image.url)}" />`), toggles };
+      if (!image) return [document.createElement("div")];
+      if (!post.preview.reddit_video_preview?.fallback_url) return dom(html`<img src="${htmlDecode(image.url)}" />`);
       const video = { width: post.preview.reddit_video_preview.width, height: post.preview.reddit_video_preview.height, urls: [] as string[] };
       if (post.preview.reddit_video_preview.dash_url) video.urls.push(htmlDecode(post.preview.reddit_video_preview.dash_url)!);
       if (post.preview.reddit_video_preview.hls_url) video.urls.push(htmlDecode(post.preview.reddit_video_preview.hls_url)!);
       if (post.preview.reddit_video_preview.fallback_url) video.urls.push(htmlDecode(post.preview.reddit_video_preview.fallback_url)!);
-      return { elements: [renderVideo(video, post.preview.reddit_video_preview.is_gif)], toggles };
+      return [renderVideo(video, post.preview.reddit_video_preview.is_gif)];
    }
 
    // Fallback to thumbnail which is super low-res.
    const missingThumbnailTags = new Set<String>(["self", "nsfw", "default", "image", "spoiler"]);
    const thumbnailUrl = post.thumbnail.includes("://") ? post.thumbnail : "";
    if (post.thumbnail && !missingThumbnailTags.has(post.thumbnail)) {
-      return { elements: dom(html`<img src="${htmlDecode(thumbnailUrl)}" />`), toggles };
+      return dom(html`<img src="${htmlDecode(thumbnailUrl)}" />`);
    }
-   return { elements: [document.createElement("div")], toggles };
+   return [];
 }
 
 export function renderRedditPost(post: RedditPost, showActionButtons = true): HTMLElement[] {
    const url = post.data.url.startsWith("/r/") ? "https://www.reddit.com" + post.data.url : post.data.url;
    const authorUrl = "https://www.reddit.com/u/" + post.data.author;
    const date = dateToText(post.data.created_utc * 1000);
-   const subReddit = post.data.subreddit.toLowerCase() != getSubreddit(location.hash) ?  html`<a href="https://www.reddit.com/${post.data.subreddit}">r/${post.data.subreddit}</a>` : null;
+   const subReddit =
+      post.data.subreddit.toLowerCase() != getSubreddit(location.hash)
+         ? html`<a href="https://www.reddit.com/${post.data.subreddit}" class="text-color/50">r/${post.data.subreddit}</a>`
+         : null;
 
    const postDom = dom(html`
       <article class="post reddit-post gap-1">
          <a href="${url}" class="font-bold text-lg text-color">${post.data.title}</a>
          <div class="flex gap-1 text-xs">
-            <a href="${authorUrl}" class="text-color/50">${post.data.author}</a>
+            ${subReddit
+               ? html`
+                    <a href="${authorUrl}" class="text-color/50">${subReddit}</a>
+                    <span class="flex items-center text-color/50">•</span>
+                 `
+               : ""}
             <a href="${authorUrl}" class="text-color/50">${post.data.author}</a>
             <span class="flex items-center text-color/50">•</span>
             <span class="flex items-center text-color/50">${date}</span>
          </div>
-         <section x-id="contentDom" class="content"></section>
+         <section x-id="contentDom" class="content mt-2"></section>
          ${showActionButtons
             ? html`
                  <div class="flex items-flex-start gap-4">
@@ -363,17 +376,28 @@ export function renderRedditPost(post: RedditPost, showActionButtons = true): HT
                     <a href="${`https://www.reddit.com${post.data.permalink}`}" class="flex items-center gap-1 h-[2em]">
                        <i class="icon">${unsafeHTML(replyIcon)}</i> Reply
                     </a>
+                    ${post.data.is_gallery ? html`
+                     <span class="flex items-center gap-1 cursor-pointer h-[2em]" x-id="gallery">
+                       <i class="icon">${unsafeHTML(imageIcon)}</i>
+                       <span class="text-primary">${addCommasToNumber(Object.keys(post.data.gallery_data.items ?? []).length)}</span>
+                     </span>`: ""}
                  </div>
               `
             : ""}
       </article>
    `);
-   const { contentDom } = elements<{ contentDom: HTMLElement }>(postDom[0]);
+   const { contentDom, gallery } = elements<{ contentDom: HTMLElement, gallery: HTMLElement }>(postDom[0]);
    onVisibleOnce(postDom[0], () => {
       const media = renderRedditMedia(post, contentDom);
-      contentDom.append(...media.elements);
-      makeCollapsible(contentDom, 10);
+      contentDom.append(...media);
       setLinkTargetsToBlank(contentDom);
+
+      if (gallery) {
+         const img = contentDom.querySelector("img");
+         if (img) {
+            gallery.addEventListener("click", () => img.click());
+         }
+      }
    });
    return postDom;
 }

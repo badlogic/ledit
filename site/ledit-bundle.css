@@ -715,11 +715,11 @@ code {
 }
 
 .\!post.reddit-post {
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.75rem;
 }
 
 .post.reddit-post {
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.75rem;
 }
 
 .reddit-post .content {
@@ -1037,6 +1037,10 @@ main > .post > * {
   margin-right: 0.5rem;
 }
 
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
 .block {
   display: block;
 }
@@ -1145,6 +1149,10 @@ main > .post > * {
 
 .gap-4 {
   gap: 1rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
 }
 
 .space-x-4 > :not([hidden]) ~ :not([hidden]) {

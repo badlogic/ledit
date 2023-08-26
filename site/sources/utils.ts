@@ -108,32 +108,32 @@ export function renderOverlay(header: HTMLElement[], content: HTMLElement[], clo
    return overlay;
 }
 
-export function renderGallery(imageUrls: string[]): { gallery: HTMLElement; toggle: HTMLElement } {
+export function renderGallery(imageUrls: string[]): HTMLElement {
    const galleryDom = dom(html`
-      <div>${imageUrls.map((img, index) => html`<img src="${htmlDecode(img)}" ${index > 0 ? 'class="hidden"' : ""})>`)}</div>
+      <div class="flex flex-col gap-2">${imageUrls.map((img, index) => html`<img src="${htmlDecode(img)}" ${index > 0 ? 'class="hidden"' : ""})>`)}</div>
    `)[0];
    const imageDoms = galleryDom.querySelectorAll("img");
+   imageDoms.forEach((img, index) => {
+      if (index == 0) return;
+      img.classList.toggle("hidden");
+   });
    const imageClickListener = () => {
       imageDoms.forEach((img, index) => {
          if (index == 0) return;
          img.classList.toggle("hidden");
       });
+      if (imageDoms[1].classList.contains("hidden")) {
+         imageDoms[0].scrollIntoView({
+            behavior: "auto",
+            block: "nearest"
+         })
+      }
    };
 
    for (let i = 0; i < imageDoms.length; i++) {
       imageDoms[i].addEventListener("click", imageClickListener);
    }
-
-   const toggle = dom(html`
-      <button>
-         <i class="">${unsafeHTML(imageIcon)}</span>
-         <span>${imageUrls.length}</span>
-   </button>
-   `)[0];
-   toggle.addEventListener("click", () => {
-      imageClickListener();
-   });
-   return { gallery: galleryDom, toggle: toggle };
+   return galleryDom;
 }
 
 export function renderVideo(
