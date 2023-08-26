@@ -160,6 +160,62 @@ body {
 }
 
 @layer components {
+   .rss-content-image {
+      flex: 0 0 auto;
+      object-fit: contain;
+      margin-right: var(--ledit-margin);
+      margin-bottom: var(--ledit-margin);
+   }
+
+   .rss-content video {
+      height: auto !important;
+      border-radius: 8px;
+   }
+
+   .rss-content img {
+      @apply rounded;
+      width: auto;
+      max-height: 40vh;
+      margin: auto;
+   }
+
+   .rss-content figcaption {
+      text-align: center;
+   }
+
+   .rss-content svg {
+      width: 1em;
+      height: 1em;
+   }
+
+   .rss-content h1 {
+      font-size: 1em;
+   }
+
+   .rss-content h2 {
+      font-size: 1em;
+   }
+
+   .rss-content h3 {
+      font-size: 1em;
+   }
+
+   .rss-content h4 {
+      font-size: 1em;
+   }
+
+   .rss-channel-image {
+      max-height: calc(1.5 * var(--ledit-font-size));
+   }
+}
+
+@layer components {
+   .youtube-post .content {
+      @apply w-full mt-4 aspect-video px-0 sm:px-4;
+   }
+}
+
+@layer components {
    .header {
       @apply w-full sm:max-w-[640px] mx-auto sticky top-0 text-lg flex items-center p-2 bg-background backdrop-blur-[8px] border-b border-border/50 z-[1];
    }
@@ -196,7 +252,7 @@ body {
    }
 
    main > .post {
-      @apply py-4 rounded bg-surface border-b border-border/30;
+      @apply py-4 bg-surface border-b border-border/30;
    }
 
    main > .post > * {
@@ -253,10 +309,7 @@ body {
    .content {
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
       cursor: pointer;
-      padding: 0 var(--ledit-margin);
-      margin-bottom: calc(var(--ledit-padding) * 1.5);
    }
 
    .content * {
@@ -284,62 +337,5 @@ body {
 
    .content p:first-child {
       @apply pt-2;
-   }
-}
-
-@layer components {
-   .rss-content-image {
-      flex: 0 0 auto;
-      object-fit: contain;
-      margin-right: var(--ledit-margin);
-      margin-bottom: var(--ledit-margin);
-   }
-
-   .rss-content video {
-      height: auto !important;
-      border-radius: 8px;
-   }
-
-   .rss-content img {
-      @apply rounded;
-      width: auto;
-      max-height: 40vh;
-      margin: auto;
-   }
-
-   .rss-content figcaption {
-      text-align: center;
-   }
-
-   .rss-content svg {
-      width: 1em;
-      height: 1em;
-   }
-
-   .rss-content h1 {
-      font-size: 1em;
-   }
-
-   .rss-content h2 {
-      font-size: 1em;
-   }
-
-   .rss-content h3 {
-      font-size: 1em;
-   }
-
-   .rss-content h4 {
-      font-size: 1em;
-   }
-
-   .rss-channel-image {
-      max-height: calc(1.5 * var(--ledit-font-size));
-   }
-}
-
-@layer youtube {
-   .youtube-post iframe {
-      width: 100%;
-      aspect-ratio: 16/9;
    }
 }

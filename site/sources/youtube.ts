@@ -84,15 +84,16 @@ export function renderYoutubePost(post: YoutubePost): HTMLElement[] {
             <span class="flex items-center text-color/50">•</span>
             <span class="flex items-center text-color/50">${date}</span>
          </div>
-         <section x-id="contentDom" class="rss-content"></section>
+         <section x-id="contentDom" class="content px-0 w-full aspect-video"></section>
       </article>
    `);
    const { contentDom } = elements<{ contentDom: HTMLElement }>(postDom[0]);
    onVisibleOnce(postDom[0], () => {
+      console.log("Rendering video " + post.title);
       const url = post.url.split("=");
       if (url.length != 2) return {elements: [], toggles: []};
 
-      const videoDom = dom(safeHTML(`<iframe src="https://www.youtube.com/embed/${url[1]}?feature=oembed&amp;enablejsapi=1" class="youtube-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen=""></iframe>`))[0];
+      const videoDom = dom(safeHTML(`<iframe src="https://www.youtube.com/embed/${url[1]}?feature=oembed&amp;enablejsapi=1" class="youtube-embed w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen=""></iframe>`))[0];
       contentDom.append(videoDom);
       document.addEventListener("scroll", () => {
          if (!intersectsViewport(videoDom)) {
