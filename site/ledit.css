@@ -216,6 +216,25 @@ body {
 }
 
 @layer components {
+   .post.reddit-post {
+      @apply pb-2;
+   }
+
+   .reddit-post .content {
+      @apply w-full px-0 sm:px-4;
+   }
+
+   .reddit-post .content img {
+      @apply sm:rounded;
+      align-self: start;
+      margin: 0 auto;
+      max-width: 100%;
+      max-height: 75vh;
+      object-fit: contain;
+   }
+}
+
+@layer components {
    .header {
       @apply w-full sm:max-w-[640px] mx-auto sticky top-0 text-lg flex items-center p-2 bg-background backdrop-blur-[8px] border-b border-border/50 z-[1];
    }
@@ -314,12 +333,15 @@ body {
 
    .content * {
       max-width: 100%;
-      white-space: pre-wrap;
       overflow-wrap: anywhere;
    }
 
-   .content > p:last-child {
-      margin-bottom: 0;
+   .content p:first-child {
+      @apply mt-0;
+   }
+
+   .content p:last-child {
+      @apply pb-0 mb-1;
    }
 
    .content a::after {
@@ -333,9 +355,5 @@ body {
       -webkit-mask-size: cover;
       mask-size: cover;
       background-color: rgb(var(--primary));
-   }
-
-   .content p:first-child {
-      @apply pt-2;
    }
 }

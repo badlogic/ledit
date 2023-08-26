@@ -16,7 +16,7 @@ import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import { when } from "lit-html/directives/when.js";
 import { HackerNewsSource, renderHnPost } from "./sources/hackernews";
 // import { MastodonSource } from "./sources/mastodon";
-import { RedditSource } from "./sources/reddit";
+import { RedditSource, renderRedditPost } from "./sources/reddit";
 import { YoutubeSource, renderYoutubePost } from "./sources/youtube";
 import { dom, getFeedFromHash, getSourcePrefixFromHash, renderContentLoader, renderErrorMessage, renderInfoMessage } from "./sources/utils";
 import { PageIdentifier } from "./data";
@@ -101,7 +101,7 @@ export function renderHeader(hash: string, sortingOptions: SortingOption[], sort
             return;
          } else {
             tokens.pop();
-            location.hash = tokens.join("") + "/" + sort.value;
+            location.hash = tokens.join("/") + "/" + sort.value;
             location.reload();
             return;
          }
@@ -148,6 +148,7 @@ async function main() {
    switch (sourcePrefix) {
       case "r/":
          source = new RedditSource(hash);
+         renderPost = renderRedditPost;
          break;
       case "hn/":
          source = new HackerNewsSource(hash);
@@ -166,6 +167,8 @@ async function main() {
          break;
       default:
          source = new RedditSource(hash);
+         renderPost = renderRedditPost;
+         break;
    }
 
    const main = dom(html`<main class="flex flex-col"></main>`)[0];

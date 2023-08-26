@@ -300,7 +300,7 @@ export class RedditSource extends Source<RedditPost, RedditComment> {
             if (img.width > postsWidth) break;
          }
          if (!image) return { elements: [document.createElement("div")], toggles };
-         if (!post.data.preview.reddit_video_preview?.fallback_url) return { elements: dom(`<img src="${image.url}"></img>`), toggles };
+         if (!post.data.preview.reddit_video_preview?.fallback_url) return { elements: dom(`<img src="${htmlDecode(image.url)}"></img>`), toggles };
          return { elements: [renderVideo(post.data.preview.reddit_video_preview, post.data.preview.reddit_video_preview.is_gif)], toggles };
       }
 

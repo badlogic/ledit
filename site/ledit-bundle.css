@@ -714,6 +714,40 @@ code {
   }
 }
 
+.\!post.reddit-post {
+  padding-bottom: 0.5rem;
+}
+
+.post.reddit-post {
+  padding-bottom: 0.5rem;
+}
+
+.reddit-post .content {
+  width: 100%;
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+@media (min-width: 640px) {
+  .reddit-post .content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .reddit-post .content img {
+    border-radius: 0.25rem;
+  }
+}
+
+.reddit-post .content img {
+  align-self: start;
+  margin: 0 auto;
+  max-width: 100%;
+  max-height: 75vh;
+  -o-object-fit: contain;
+     object-fit: contain;
+}
+
 .header {
   position: sticky;
   top: 0px;
@@ -914,12 +948,16 @@ main > .post > * {
 
 .content * {
   max-width: 100%;
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-.content > p:last-child {
-  margin-bottom: 0;
+.content p:first-child {
+  margin-top: 0px;
+}
+
+.content p:last-child {
+  margin-bottom: 0.25rem;
+  padding-bottom: 0px;
 }
 
 .content a::after {
@@ -936,10 +974,6 @@ main > .post > * {
   -webkit-mask-size: cover;
   mask-size: cover;
   background-color: rgb(var(--primary));
-}
-
-.content p:first-child {
-  padding-top: 0.5rem;
 }
 
 .collapse {
@@ -1154,6 +1188,11 @@ main > .post > * {
 .bg-background {
   --tw-bg-opacity: 1;
   background-color: rgba(var(--background), var(--tw-bg-opacity));
+}
+
+.bg-black {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity));
 }
 
 .bg-surface {

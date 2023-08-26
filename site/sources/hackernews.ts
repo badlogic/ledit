@@ -1,6 +1,6 @@
 import { encodeHTML } from "entities";
 import { Page, SortingOption, Source, SourcePrefix } from "./data";
-import { dateToText, elements, htmlDecode, onAddedToDOM, setLinkTargetsToBlank } from "../utils";
+import { addCommasToNumber, dateToText, elements, htmlDecode, onAddedToDOM, setLinkTargetsToBlank } from "../utils";
 // @ts-ignore
 import { TemplateResult, html } from "lit-html";
 import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderInfoMessage, renderOverlay, safeHTML } from "./utils";
@@ -275,7 +275,7 @@ export function renderHnPost(post: HnPost, showActionButtons = true) {
                  <div class="flex items-flex-start gap-4">
                     <span class="flex items-center gap-1 cursor-pointer h-[2em]" x-id="comments">
                        <i class="icon">${unsafeHTML(commentIcon)}</i>
-                       <span class="text-primary">${post.numComments}</span>
+                       <span class="text-primary">${addCommasToNumber(post.numComments)}</span>
                     </span>
                     <a href="https://news.ycombinator.com/item?id=${post.id}" class="flex items-center gap-1 h-[2em]">
                        <i class="icon">${unsafeHTML(replyIcon)}</i> Reply
@@ -320,7 +320,7 @@ export async function renderHnComments(source: HackerNewsSource, postId: string)
       content.append(...renderHnPost(post, false));
       content.append(
          ...renderInfoMessage(html`<div class="flex flex-row items-center gap-4">
-            <span>${post.numComments} comments</span>
+            <span>${addCommasToNumber(post.numComments)} comments</span>
             <div class="flex items-flex-start gap-4">
                <a href="https://news.ycombinator.com/item?id=${post.id}" target="_blank" class="flex items-center h-[2em] text"
                   ><i class="icon mr-1">${unsafeHTML(replyIcon)}</i> Reply</a

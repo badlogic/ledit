@@ -1,9 +1,15 @@
 // @ts-ignore
 import { TemplateResult, html, render } from "lit-html";
-import { elements, firstTextChild, intersectsViewport, isLink, scrollToAndCenter, waitForMediaLoaded } from "../utils";
+import { elements, firstTextChild, htmlDecode, intersectsViewport, isLink, onAddedToDOM, onTapped, waitForMediaLoaded } from "../utils";
 import DOMPurify from "dompurify";
 import { escapeGuard, navigationGuard } from "./guards";
-import { Source, SourcePrefix } from "../data";
+// @ts-ignore
+import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
+// @ts-ignore
+import { map } from "lit-html/directives/map.js";
+// @ts-ignore
+import imageIcon from "remixicon/icons/Media/image-line.svg";
+import videojs from "video.js";
 
 export function dom(template: TemplateResult, container?: HTMLElement | DocumentFragment): HTMLElement[] {
    if (container) {
@@ -20,10 +26,11 @@ export function dom(template: TemplateResult, container?: HTMLElement | Document
    return children as HTMLElement[];
 }
 
-export function safeHTML(unsafeHtml: string) {
-   unsafeHtml = DOMPurify.sanitize(unsafeHtml, { ADD_ATTR: ["x-id"], ADD_TAGS: ["video-js", "iframe"] });
-   const stringArray: any = [unsafeHtml];
-   stringArray.raw = [unsafeHtml];
+export function safeHTML(uHtml: string | null): TemplateResult {
+   if (!uHtml) uHtml = "";
+   uHtml = DOMPurify.sanitize(uHtml, { ADD_ATTR: ["x-id"], ADD_TAGS: ["video-js", "iframe"] });
+   const stringArray: any = [uHtml];
+   stringArray.raw = [uHtml];
    return html(stringArray as TemplateStringsArray);
 }
 
@@ -99,6 +106,95 @@ export function renderOverlay(header: HTMLElement[], content: HTMLElement[], clo
    document.body.style.overflow = "hidden";
 
    return overlay;
+}
+
+export function renderGallery(imageUrls: string[]): { gallery: HTMLElement; toggle: HTMLElement } {
+   const galleryDom = dom(html`
+      <div>${imageUrls.map((img, index) => html`<img src="${htmlDecode(img)}" ${index > 0 ? 'class="hidden"' : ""})>`)}</div>
+   `)[0];
+   const imageDoms = galleryDom.querySelectorAll("img");
+   const imageClickListener = () => {
+      imageDoms.forEach((img, index) => {
+         if (index == 0) return;
+         img.classList.toggle("hidden");
+      });
+   };
+
+   for (let i = 0; i < imageDoms.length; i++) {
+      imageDoms[i].addEventListener("click", imageClickListener);
+   }
+
+   const toggle = dom(html`
+      <button>
+         <i class="">${unsafeHTML(imageIcon)}</span>
+         <span>${imageUrls.length}</span>
+   </button>
+   `)[0];
+   toggle.addEventListener("click", () => {
+      imageClickListener();
+   });
+   return { gallery: galleryDom, toggle: toggle };
+}
+
+export function renderVideo(
+   videoDesc: { width: number; height: number; urls: string[] },
+   loop: boolean
+): HTMLElement {
+   let videoDom = dom(html`
+      <div class="flex justify-center w-full cursor-pointer bg-black">
+         <video-js controls class="video-js" width=${videoDesc.width} ${loop ? "loop" : ""} data-setup="{}">
+            ${map(videoDesc.urls, (url) => html`<source src="${htmlDecode(url)}">`)}
+         </video-js>
+      </div>`)[0];
+   onAddedToDOM(videoDom, () => {
+      const videoDiv = videoDom.querySelector("video-js")! as HTMLElement;
+      let width = videoDesc.width;
+      let height = videoDesc.height;
+      let maxHeight = window.innerHeight * 0.7;
+      const computed = getComputedStyle(videoDom.parentElement!);
+      const containerWidth = Number.parseInt(computed.width) - Number.parseFloat(computed.paddingLeft) - Number.parseFloat(computed.paddingRight);
+      if (width > containerWidth || width < containerWidth) {
+         let aspect = height / width;
+         width = containerWidth;
+         height = aspect * width;
+      }
+      if (height > maxHeight) {
+         let scale = maxHeight / height;
+         height = maxHeight;
+         width = width * scale;
+      }
+      videoDiv.style.width = width + "px";
+      videoDiv.style.height = height + "px";
+
+      const video = videojs(videoDiv);
+      var videoElement = video.el().querySelector("video")!;
+
+      // Reset video element width/height so fullscreen works
+      videoElement.style.width = "";
+      videoElement.style.height = "";
+
+      // Toggle pause/play on click
+      const togglePlay = function () {
+         if (video.paused()) {
+            video.play();
+         } else {
+            video.pause();
+         }
+      };
+      videoElement.addEventListener("clicked", togglePlay);
+      onTapped(videoElement, togglePlay);
+
+      // Pause when out of view
+      document.addEventListener("scroll", () => {
+         if (videoElement && videoElement === document.pictureInPictureElement) {
+            return;
+         }
+         if (!video.paused() && !intersectsViewport(videoElement)) {
+            video.pause();
+         }
+      });
+   });
+   return videoDom;
 }
 
 export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
