@@ -45,7 +45,7 @@ function getChannelImage(rss: Document) {
 export type RssPost = { url: string; title: string; createdAt: number; feed: string; channelImage: string | null; previewImage: string | null, content: string | null};
 export type RssComment = { replies: [] };
 
-export class RssSource extends Source<RssPost, RssComment> {
+export class RssSource extends Source<RssPost> {
    public static async getRssPosts(url: string): Promise<RssPost[] | Error> {
       const options = {
          useISODateFormat: false,
@@ -133,10 +133,6 @@ export class RssSource extends Source<RssPost, RssComment> {
       }
       posts.sort((a, b) => b.createdAt - a.createdAt);
       return { items: posts, nextPage: "end" };
-   }
-
-   async getComments(post: RssPost): Promise<RssComment[]> {
-      throw new Error("Method not implemented.");
    }
 
    getSourcePrefix(): SourcePrefix {

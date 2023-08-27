@@ -1,6 +1,6 @@
 // @ts-ignore
 // import { CommentView } from "../comments";
-import { Page, PageIdentifier, SortingOption, Source, SourcePrefix, getSource } from "./data";
+import { Page, PageIdentifier, SortingOption, Source, SourcePrefix } from "./data";
 import { PostEditor } from "../post-editor";
 
 import { OverlayView, PagedListView, View } from "../view";

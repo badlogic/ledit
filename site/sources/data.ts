@@ -9,10 +9,9 @@ export type SortingOption = {
    label: string;
 }
 
-export abstract class Source<P, C> {
+export abstract class Source<P> {
    constructor(public readonly feed: string) {}
    abstract getPosts(nextPage: PageIdentifier): Promise<Page<P> | Error>;
-   abstract getComments(post: P): Promise<C[] | Error>;
    abstract getSourcePrefix(): SourcePrefix;
    abstract getSortingOptions(): SortingOption[];
    abstract getSorting(): string;
@@ -26,17 +25,6 @@ export abstract class Source<P, C> {
       if (slashIndex == -1) return "";
       return decodeURIComponent(feed.substring(slashIndex + 1));
    }
-}
-
-let source: Source<any, any> | null = null;
-
-export function setSource(src: Source<any, any>) {
-   source = src;
-}
-
-export function getSource(): Source<any, any> {
-   if (!source) throw new Error("No source given.");
-   return source;
 }
 
 export type SourcePrefix = "r/" | "hn/" | "rss/" | "yt/" | "m/";

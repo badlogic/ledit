@@ -93,7 +93,7 @@ function rawToHnComment(rawComment: HnRawComment) {
    } as HnComment;
 }
 
-export class HackerNewsSource extends Source<HnPost, HnComment> {
+export class HackerNewsSource extends Source<HnPost> {
    constructor(feed: string) {
       super(feed);
 
@@ -298,9 +298,9 @@ export function renderHnPost(post: HnPost, showActionButtons = true) {
 
 export async function renderHnComments(source: HackerNewsSource, postId: string) {
    const header = dom(html` <header class="header cursor-pointer">
-      <span class="font-bold text-primary text-ellipsis overflow-hidden">${location.hash.substring(1)}</span>
+      <span class="font-bold max-w-[90%] text-primary text-ellipsis overflow-hidden">${location.hash.substring(1)}</span>
       <i class="icon font-bold fixed right-0 w-6 h-6 mr-2">${unsafeHTML(closeIcon)}</i>
-</header>`);
+   </header>`);
    const content = dom(html`<div class="comments"></div>`)[0];
    const loader = renderContentLoader();
    content.append(loader);
@@ -330,7 +330,7 @@ export async function renderHnComments(source: HackerNewsSource, postId: string)
          content.append(...renderErrorMessage("Could not load comments"));
          return;
       }
-      const scrollWrapper = dom(html`<div class="pt-4 w-full overflow-auto"></div>`)[0];
+      const scrollWrapper = dom(html`<div class="pt-1 w-full overflow-auto"></div>`)[0];
       content.append(scrollWrapper);
       scrollWrapper.append(...renderComments(comments, renderHnComment, { op: post.author, isReply: false }));
    }

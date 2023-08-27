@@ -1,18 +1,18 @@
 import { Page, SortingOption, Source, SourcePrefix } from "./data";
-import { RssSource, YoutubePost, RssComment, RssPost } from "./rss";
+import { RssSource, RssPost } from "./rss";
 import { dateToText, elements, intersectsViewport, onVisibleOnce, proxyFetch, setLinkTargetsToBlank } from "../utils";
-import { dom, makeCollapsible, safeHTML } from "./utils";
+import { dom, safeHTML } from "./utils";
 // @ts-ignore
 import { html } from "lit-html";
 
 const channelIds = localStorage.getItem("youtubeCache") ? JSON.parse(localStorage.getItem("youtubeCache")!) : {};
 
-export interface YoutubePost extends YoutubePost {
+export interface YoutubePost extends RssPost {
    author: string,
    authorUrl: string
 }
 
-export class YoutubeSource extends Source<YoutubePost, RssComment> {
+export class YoutubeSource extends Source<YoutubePost> {
    async getYoutubeChannel(channel: string): Promise<RssPost[] | Error> {
       let channelId: string | null = channelIds[channel];
 
@@ -54,10 +54,6 @@ export class YoutubeSource extends Source<YoutubePost, RssComment> {
       }
       posts.sort((a, b) => b.createdAt - a.createdAt);
       return { items: posts, nextPage: "end" };
-   }
-
-   async getComments(post: YoutubePost): Promise<RssComment[]> {
-      return [];
    }
 
    getSourcePrefix(): SourcePrefix {

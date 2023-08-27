@@ -733,7 +733,14 @@ code {
     padding-left: 1rem;
     padding-right: 1rem;
   }
+}
 
+.reddit-post .content img {
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+@media (min-width: 640px) {
   .reddit-post .content img {
     border-radius: 0.25rem;
   }
@@ -746,6 +753,24 @@ code {
   max-height: 75vh;
   -o-object-fit: contain;
      object-fit: contain;
+}
+
+.comments .reddit-post {
+  padding-left: 0px;
+  padding-right: 0px;
+  padding-bottom: 0px;
+}
+
+@media (min-width: 640px) {
+  .comments .reddit-post {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+.comments .reddit-post .content {
+  padding-left: 0px;
+  padding-right: 0px;
 }
 
 .header {
@@ -1105,6 +1130,10 @@ main > .post > * {
   max-width: 300px;
 }
 
+.max-w-\[90\%\] {
+  max-width: 90%;
+}
+
 .flex-1 {
   flex: 1 1 0%;
 }
@@ -1238,6 +1267,14 @@ main > .post > * {
 .py-4 {
   padding-top: 1rem;
   padding-bottom: 1rem;
+}
+
+.pt-1 {
+  padding-top: 0.25rem;
+}
+
+.pt-2 {
+  padding-top: 0.5rem;
 }
 
 .pt-4 {

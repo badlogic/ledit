@@ -225,12 +225,20 @@ body {
    }
 
    .reddit-post .content img {
-      @apply sm:rounded;
+      @apply px-0 sm:rounded;
       align-self: start;
       margin: 0 auto;
       max-width: 100%;
       max-height: 75vh;
       object-fit: contain;
+   }
+
+   .comments .reddit-post {
+      @apply pb-0 px-0 sm:px-4;
+   }
+
+   .comments .reddit-post .content {
+      @apply px-0;
    }
 }
 
