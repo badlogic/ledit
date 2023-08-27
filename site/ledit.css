@@ -91,18 +91,6 @@ body {
       background-color: var(--primary);
    }
 
-   i.icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      @apply w-[1em] h-[1em] border-white fill-primary;
-      cursor: pointer;
-   }
-
-   i > svg {
-      @apply w-full h-full;
-   }
-
    pre {
       overflow: auto;
       white-space: pre-wrap;
@@ -156,6 +144,20 @@ body {
    }
    .nc-int-icon-slide-up.nc-int-icon-state-b .nc-int-icon-b {
       transform: translateY(0%);
+   }
+}
+
+@layer icon {
+   i.icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      @apply w-[1em] h-[1em] border-white fill-primary;
+      cursor: pointer;
+   }
+
+   i.icon > svg {
+      @apply w-full h-full;
    }
 }
 

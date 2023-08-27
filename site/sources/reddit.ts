@@ -146,7 +146,6 @@ export class RedditSource extends Source<RedditPost> {
 
       window.addEventListener("hashchange", async () => {
          const hash = window.location.hash;
-         // FIXME show error if the hash can't be parsed
          if (!hash.startsWith("#r/")) return;
          const tokens = hash.split("/");
          if (tokens.length < 4) return;

@@ -1,37 +1,46 @@
-import "./guards";
 import "./ledit-bundle.css";
-import { applySettings, bookmarkToHash, getSettings, saveSettings } from "./settings";
-import { Page, SortingOption, Source, SourcePrefix } from "./sources/data";
-import { RssSource, renderRssPost } from "./sources/rss";
+import { Settings, applySettings, bookmarkToHash, getSettings, resetSettings, saveSettings } from "./sources/settings";
+import { Page } from "./sources/data";
+import "./sources/guards";
 // @ts-ignore
-import sunAndMoonIcon from "./svg/sun-moon.svg";
-import { animateSvgIcon, elements, navigate, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
+import { elements, navigate, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
 // @ts-ignore
-import { html } from "lit-html";
+import { html, render } from "lit-html";
 // @ts-ignore
 import { map } from "lit-html/directives/map.js";
 // @ts-ignore
-import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
-// @ts-ignore
 import { when } from "lit-html/directives/when.js";
-import { HackerNewsSource, renderHnPost } from "./sources/hackernews";
 // import { MastodonSource } from "./sources/mastodon";
-import { PageIdentifier } from "./data";
-import { MastodonSource } from "./sources/mastodon";
-import { RedditSource, renderRedditPost } from "./sources/reddit";
+import { PageIdentifier, SortingOption, Source, SourcePrefix } from "./sources/data";
 import {
    dom,
    getFeedFromHash,
    getSourcePrefixFromHash,
+   numOverlays,
    renderContentLoader,
    renderErrorMessage,
    renderHeaderButton,
    renderInfoMessage,
-   renderOverlay,
+   renderOverlay
 } from "./sources/utils";
+// @ts-ignore
+import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
+import { HackerNewsSource, renderHnPost } from "./sources/hackernews";
+import { RedditSource, renderRedditPost } from "./sources/reddit";
+import { RssSource, renderRssPost } from "./sources/rss";
 import { YoutubeSource, renderYoutubePost } from "./sources/youtube";
 // @ts-ignore
 import settingsIcon from "remixicon/icons/System/settings-2-line.svg";
+// @ts-ignore
+import checkmarkIcon from "remixicon/icons/System/check-line.svg";
+// @ts-ignore
+import githubIcon from "remixicon/icons/Logos/github-line.svg";
+// @ts-ignore
+import heartIcon from "remixicon/icons/Health & Medical/heart-line.svg";
+// @ts-ignore
+import sunIcon from "remixicon/icons/Weather/sun-line.svg";
+// @ts-ignore
+import moonIcon from "remixicon/icons/Weather/moon-line.svg";
 
 export function renderPostPage<T>(
    container: HTMLElement,
@@ -69,7 +78,48 @@ export function renderPostPage<T>(
 }
 
 export function renderSettings() {
-   const settingsDom = renderOverlay("Settings", []);
+   const template = (settings: Settings) =>
+      html`
+      <div class="settings flex flex-col text-lg gap-4 mt-4 px-2 m-auto w-[300px]">
+         <div class="text-xl font-bold">View options</div>
+         <div x-id="theme" class="cursor-pointer flex items-center">
+            <span>Theme</span>
+            <i class="icon ml-auto">${settings.theme == "dark" ? unsafeHTML(moonIcon) : unsafeHTML(sunIcon)}</i>
+         </div>
+         <div x-id="collapseSeen" class="cursor-pointer flex items-center">
+            <span>Collapse seen posts</span>
+            <i class="icon ml-auto ${settings.collapseSeenPosts ? "fill-primary" : "fill-primary/50"}">${unsafeHTML(checkmarkIcon)}</i>
+         </div>
+         <div class="text-xl font-bold">About</div>
+         <a href="https://github.com/badlogic/ledit#usage">How does this work?</a>
+         <a href="https://github.com/badlogic/ledit" class="flex items-center gap-2"><i class="icon w-[2em] h-[2em]">${unsafeHTML(githubIcon)}</i> GitHub</a>
+         <a href="https://github.com/sponsors/badlogic" class="flex items-center gap-2"><i class="icon">${unsafeHTML(heartIcon)}</i> Buy me a coffee</a>
+         <div x-id="reset" class="cursor-pointer">Reset to defaults</div>
+      </div>
+      `;
+
+   const settings = getSettings();
+   const overlay = renderOverlay("Settings");
+   render(template(settings), overlay);
+
+   const { theme, collapseSeen, reset } = elements<{theme: HTMLElement, collapseSeen: HTMLElement, reset: HTMLElement }>(overlay);
+   theme.addEventListener("click", () => {
+      settings.theme = settings.theme == "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", settings.theme);
+      saveSettings();
+      render(template(settings), overlay);
+   })
+
+   collapseSeen.addEventListener("click", () => {
+      settings.collapseSeenPosts = !settings.collapseSeenPosts;
+      saveSettings();
+      render(template(settings), overlay);
+   })
+
+   reset.addEventListener("click", () => {
+      resetSettings();
+      render(template(settings), overlay);
+   })
 }
 
 export function renderBookmarks() {
@@ -122,11 +172,13 @@ export function renderHeader(hash: string, sortingOptions: SortingOption[], sort
          const tokens = location.hash.split("/");
          if (tokens.length == 0) return;
          if (tokens.length == 1 || !sortingOptions.some((option) => option.value == tokens[tokens.length - 1])) {
+            console.log("Reloading due to sort change.");
             location.hash = location.hash + (location.hash.endsWith("/") ? "" : "/") + sort.value;
             location.reload();
             return;
          } else {
             tokens.pop();
+            console.log("Reloading due to sort change.");
             location.hash = tokens.join("/") + "/" + sort.value;
             location.reload();
             return;
@@ -186,8 +238,8 @@ async function main() {
          renderPost = renderYoutubePost;
          break;
       case "m/":
-         source = new MastodonSource(hash);
-         break;
+         //source = new MastodonSource(hash);
+         //break;
       default:
          source = new RedditSource(hash);
          renderPost = renderRedditPost;
@@ -201,14 +253,17 @@ async function main() {
    document.body.append(main);
    main.append(loader);
 
-   window.addEventListener("hashchange", () => {
+   window.addEventListener("hashchange", (event) => {
+      if (appPages.some((page) => event.oldURL.length > 0 && page.hash == new URL(event.oldURL).hash)) return;
       const page = appPages.find((page) => page.hash == location.hash);
       if (page) {
          page.render();
          return;
       }
-      if (getSourcePrefixFromHash() != sourcePrefix) location.reload();
-      if (sourcePrefix != "hn/" && feed != getFeedFromHash()) location.reload();
+      if (numOverlays == 0 && feed != getFeedFromHash()) {
+         console.log("Reloading due to hash change: " + feed + " -> " + getFeedFromHash());
+         location.reload();
+      }
    });
    dispatchEvent(new HashChangeEvent("hashchange"));
 

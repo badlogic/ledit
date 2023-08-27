@@ -69,12 +69,13 @@ export function renderHeaderButton(icon: string, classes?: string, xId?: string,
    return html`<a href="${href ? href : ""}" class="flex items-center justify-center w-8 h-8 ${classes ? classes : ""}" x-id="${xId ? xId : ""}"><i class="icon">${unsafeHTML(icon)}</i></a>`;
 }
 
-let overlayZIndex = 10;
-export function renderOverlay(header: HTMLElement[] | string, content: HTMLElement[], closeCallback = () => {}) {
+export let numOverlays = 0;
+export function renderOverlay(header: HTMLElement[] | string, content: HTMLElement[] = [], closeCallback = () => {}) {
    const overlay = dom(html` <div class="fixed top-0 w-full h-full overflow-auto bg-background">
       <div class="overlay m-auto backdrop-blur-[8px] flex flex-col" x-id="container"></div>
    </div>`)[0];
-   overlay.style.zIndex = (++overlayZIndex).toString();
+   overlay.style.zIndex = 1000 + (++numOverlays).toString();
+   console.log("Opening overlay " + numOverlays);
 
    const { container } = elements<{ container: HTMLElement }>(overlay);
    if (typeof header === "string") {
@@ -86,17 +87,8 @@ export function renderOverlay(header: HTMLElement[] | string, content: HTMLEleme
    container.append(...header);
    container.append(...content);
 
-   const navCallback = navigationGuard.register({
-      hash: null,
-      callback: () => {
-         close();
-         return true;
-      },
-   });
-
-   const escapeCallback = escapeGuard.register(() => {
-      close();
-   });
+   const navCallback = navigationGuard.register(() => close());
+   const escapeCallback = escapeGuard.register(() => close());
 
    container.addEventListener("click", (event) => {
       if (document.activeElement && (document.activeElement.tagName == "INPUT" || document.activeElement.tagName == "TEXTAREA")) {
@@ -122,6 +114,8 @@ export function renderOverlay(header: HTMLElement[] | string, content: HTMLEleme
    const close = () => {
       if (closed) return;
       closed = true;
+      --numOverlays;
+      console.log("Closing overlay " + numOverlays);
       overlay.remove();
       document.body.style.overflow = "";
       navigationGuard.remove(navCallback);
@@ -140,7 +134,7 @@ export function renderOverlay(header: HTMLElement[] | string, content: HTMLEleme
    document.body.append(overlay);
    document.body.style.overflow = "hidden";
 
-   return overlay;
+   return container;
 }
 
 export function renderGallery(imageUrls: string[]): HTMLElement {
@@ -305,17 +299,17 @@ export function getSourcePrefixFromHash(): string | null {
    return decodeURIComponent(hash.substring(1, slashIndex + 1));
 }
 
-export function getFeedFromHash(): string | null {
+export function getFeedFromHash(): string {
    const hash = location.hash;
    if (hash.length == 0) {
-      return null;
+      return "";
    }
    const prefix = getSourcePrefixFromHash();
-   if (!prefix) return null;
-   const afterPrefix = hash.substring(prefix.length + 2);
+   if (!prefix) return "";
+   const afterPrefix = hash.substring(prefix.length + 1);
    if (afterPrefix.includes("+")) return afterPrefix;
 
    const tokens = afterPrefix.split("/");
-   if (tokens.length == 0) return null;
+   if (tokens.length == 0) return "";
    return tokens[0];
 }

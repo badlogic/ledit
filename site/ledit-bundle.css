@@ -491,23 +491,6 @@ button:hover {
   background-color: var(--primary);
 }
 
-i.icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 1em;
-  width: 1em;
-  --tw-border-opacity: 1;
-  border-color: rgb(255 255 255 / var(--tw-border-opacity));
-  fill: rgba(var(--primary), 1);
-  cursor: pointer;
-}
-
-i > svg {
-  height: 100%;
-  width: 100%;
-}
-
 pre {
   overflow: auto;
   white-space: pre-wrap;
@@ -1064,6 +1047,10 @@ main > .post > * {
   margin-top: 0.5rem;
 }
 
+.mt-4 {
+  margin-top: 1rem;
+}
+
 .block {
   display: block;
 }
@@ -1114,6 +1101,14 @@ main > .post > * {
 
 .w-8 {
   width: 2rem;
+}
+
+.w-\[2em\] {
+  width: 2em;
+}
+
+.w-\[300px\] {
+  width: 300px;
 }
 
 .w-\[80\%\] {
@@ -1248,6 +1243,14 @@ main > .post > * {
   fill: rgba(var(--color), 1);
 }
 
+.fill-primary {
+  fill: rgba(var(--primary), 1);
+}
+
+.fill-primary\/50 {
+  fill: rgba(var(--primary), 0.5);
+}
+
 .p-4 {
   padding: 1rem;
 }
@@ -1255,6 +1258,11 @@ main > .post > * {
 .px-0 {
   padding-left: 0px;
   padding-right: 0px;
+}
+
+.px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 .py-1 {
@@ -1287,6 +1295,11 @@ main > .post > * {
 .text-sm {
   font-size: 0.875rem;
   line-height: 1.25rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
 }
 
 .text-xs {
@@ -1417,5 +1430,24 @@ body {
 
   .nc-int-icon-slide-up.nc-int-icon-state-b .nc-int-icon-b {
     transform: translateY(0%);
+  }
+}
+
+@layer icon {
+  i.icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 1em;
+    width: 1em;
+    --tw-border-opacity: 1;
+    border-color: rgb(255 255 255 / var(--tw-border-opacity));
+    fill: rgba(var(--primary), 1);
+    cursor: pointer;
+  }
+
+  i.icon > svg {
+    height: 100%;
+    width: 100%;
   }
 }
