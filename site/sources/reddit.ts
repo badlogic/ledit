@@ -23,9 +23,8 @@ import commentIcon from "remixicon/icons/Communication/chat-4-line.svg";
 import replyIcon from "remixicon/icons/Business/reply-line.svg";
 // @ts-ignore
 import imageIcon from "remixicon/icons/Media/image-line.svg";
-// @ts-ignore
-import closeIcon from "remixicon/icons/System/close-circle-line.svg";
 import { renderComments } from "./comments";
+// @ts-ignore
 import { map } from "lit-html/directives/map.js";
 
 interface RedditPosts {
@@ -122,7 +121,7 @@ export interface RedditComment {
       permalink: string;
       replies: RedditComments | "" | undefined;
    };
-   kind: "t1";
+   kind: "t1" | "more";
 }
 
 export interface RedditComments {
@@ -433,14 +432,10 @@ export function renderRedditPost(post: RedditPost, showActionButtons = true): HT
 }
 
 export async function renderRedditComments(source: RedditSource, permalink: string) {
-   const header = dom(html` <header class="header cursor-pointer">
-      <span class="font-bold max-w-[90%] text-primary text-ellipsis overflow-hidden">${location.hash.substring(1)}</span>
-      <i class="icon font-bold fixed right-0 w-6 h-6 mr-2">${unsafeHTML(closeIcon)}</i>
-   </header>`);
    const content = dom(html`<div class="comments"></div>`)[0];
    const loader = renderContentLoader();
    content.append(loader);
-   renderOverlay(header, [content]);
+   renderOverlay(location.hash.substring(1), [content]);
 
    const result = await source.getComments(permalink);
    if (result instanceof Error) {
@@ -460,15 +455,19 @@ export async function renderRedditComments(source: RedditSource, permalink: stri
          </div>
       </div> `)
    );
-   console.log(comments);
 
    const scrollWrapper = dom(html`<div class="pt-2 w-full overflow-auto"></div>`)[0];
    content.append(scrollWrapper);
-   scrollWrapper.append(...renderComments(comments, renderRedditComment, { op: post.data.author, isReply: false }));
+   scrollWrapper.append(...renderComments(comments, renderRedditComment, { op: post.data.author, isReply: false, parentLink: post.data.permalink, postLink: post.data.permalink }));
    setLinkTargetsToBlank(content);
 }
 
-export function renderRedditComment(comment: RedditComment, state: { op: string; isReply: boolean }): TemplateResult {
+export function renderRedditComment(comment: RedditComment, state: { op: string; isReply: boolean, parentLink: string, postLink: string }): TemplateResult {
+   if (comment.kind == "more") {
+      return html`<a href="https://www.reddit.com${state?.parentLink}" class="flex items-center gap-1 h-[2em]">
+               More replies on Reddit
+            </a>`
+   }
    const date = dateToText(comment.data.created_utc * 1000);
    const authorUrl = "https://www.reddit.com/u/" + comment.data.author;
    return html`
@@ -488,7 +487,7 @@ export function renderRedditComment(comment: RedditComment, state: { op: string;
             comment.data.replies && comment.data.replies.data.children.length > 0
                ? html`
                     <div class="replies">
-                       ${map(comment.data.replies.data.children, (reply) => renderRedditComment(reply, { op: state?.op, isReply: true }))}
+                       ${map(comment.data.replies.data.children, (reply) => renderRedditComment(reply, { op: state?.op, isReply: true, parentLink: comment.data.permalink, postLink: state?.postLink}))}
                     </div>
                  `
                : ""
@@ -497,67 +496,3 @@ export function renderRedditComment(comment: RedditComment, state: { op: string;
       </div>
    `;
 }
-
-/*export async function renderHnComments(source: HackerNewsSource, postId: string) {
-const header = dom(html` <header class="header cursor-pointer">
-   <span class="font-bold text-primary text-ellipsis overflow-hidden">${location.hash.substring(1)}</span>
-   <i class="icon font-bold fixed right-0 w-6 h-6 mr-2">${unsafeHTML(closeIcon)}</i>
-</header>`);
-const content = dom(html`<div class="comments"></div>`)[0];
-const loader = renderContentLoader();
-content.append(loader);
-renderOverlay(header, [content]);
-
-const post = rawToHnPost((await getHnItem(postId)) as HnRawPost);
-if (post instanceof Error) {
-   content.append(...renderErrorMessage("Could not load comments"));
-} else {
-   loader.remove();
-   content.append(...renderHnPost(post, false));
-   content.append(
-      ...renderInfoMessage(html`<div class="flex flex-row items-center gap-4">
-         <span>${addCommasToNumber(post.numComments)} comments</span>
-         <div class="flex items-flex-start gap-4">
-            <a href="https://news.ycombinator.com/item?id=${post.id}" target="_blank" class="flex items-center h-[2em] text"
-               ><i class="icon mr-1">${unsafeHTML(replyIcon)}</i> Reply</a
-            >
-         </div>
-      </div> `)
-   );
-   content.append(loader);
-   const comments = await source.getComments(post);
-   loader.remove();
-
-   if (comments instanceof Error) {
-      content.append(...renderErrorMessage("Could not load comments"));
-      return;
-   }
-   const scrollWrapper = dom(html`<div class="pt-4 w-full overflow-auto"></div>`)[0];
-   content.append(scrollWrapper);
-   scrollWrapper.append(...renderComments(comments, renderHnComment, { op: post.author, isReply: false }));
-}
-}
-
-export function renderHnComment(comment: HnComment, state: { op: string; isReply: boolean }): TemplateResult {
-const date = dateToText(comment.createdAt * 1000);
-return html`
-   <div class="comment ${state.isReply ? "reply" : ""}">
-      <div class="flex gap-1 text-sm items-center text-color/50">
-         <a href="${comment.authorUrl}" class="${state?.op == comment.author ? "" : "text-color"} font-bold">${comment.author}</a>
-         <span class="flex items-center text-color/50">•</span>
-         <span class="flex items-center text-color/50">${date}</span>
-      </div>
-      <div class="content">${safeHTML(comment.content)}</div>
-      <div class="comment-buttons">
-         <a href="https://news.ycombinator.com/item?id=${comment.raw.objectID}" class="flex items-center h-[2em] text"
-            ><i class="icon mr-1">${unsafeHTML(replyIcon)}</i> Reply</a
-         >
-      </div>
-      ${comment.replies.length > 0
-         ? html` <div class="replies">${map(comment.replies, (reply) => renderHnComment(reply, { op: state?.op, isReply: true }))}</div> `
-         : ""}
-      </div>
-   </div>
-`;
-}
-*/

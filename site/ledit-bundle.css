@@ -1066,6 +1066,10 @@ main > .post > * {
   margin-top: 0.5rem;
 }
 
+.ml-auto {
+  margin-left: auto;
+}
+
 .block {
   display: block;
 }
@@ -1106,6 +1110,18 @@ main > .post > * {
   height: 100%;
 }
 
+.h-12 {
+  height: 3rem;
+}
+
+.h-8 {
+  height: 2rem;
+}
+
+.h-20 {
+  height: 5rem;
+}
+
 .max-h-4 {
   max-height: 1rem;
 }
@@ -1126,6 +1142,18 @@ main > .post > * {
   width: 100%;
 }
 
+.w-12 {
+  width: 3rem;
+}
+
+.w-8 {
+  width: 2rem;
+}
+
+.w-20 {
+  width: 5rem;
+}
+
 .max-w-\[300px\] {
   max-width: 300px;
 }
@@ -1136,6 +1164,10 @@ main > .post > * {
 
 .flex-1 {
   flex: 1 1 0%;
+}
+
+.flex-shrink-0 {
+  flex-shrink: 0;
 }
 
 @keyframes pulse {

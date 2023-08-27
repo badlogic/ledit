@@ -3,13 +3,11 @@ import { Page, SortingOption, Source, SourcePrefix } from "./data";
 import { addCommasToNumber, dateToText, elements, htmlDecode, onAddedToDOM, setLinkTargetsToBlank } from "../utils";
 // @ts-ignore
 import { TemplateResult, html } from "lit-html";
-import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderInfoMessage, renderOverlay, safeHTML } from "./utils";
+import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderHeaderButton, renderInfoMessage, renderOverlay, safeHTML } from "./utils";
 // @ts-ignore
 import commentIcon from "remixicon/icons/Communication/chat-4-line.svg";
 // @ts-ignore
 import replyIcon from "remixicon/icons/Business/reply-line.svg";
-// @ts-ignore
-import closeIcon from "remixicon/icons/System/close-circle-line.svg";
 // @ts-ignore
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import { renderComments } from "./comments";
@@ -297,14 +295,10 @@ export function renderHnPost(post: HnPost, showActionButtons = true) {
 }
 
 export async function renderHnComments(source: HackerNewsSource, postId: string) {
-   const header = dom(html` <header class="header cursor-pointer">
-      <span class="font-bold max-w-[90%] text-primary text-ellipsis overflow-hidden">${location.hash.substring(1)}</span>
-      <i class="icon font-bold fixed right-0 w-6 h-6 mr-2">${unsafeHTML(closeIcon)}</i>
-   </header>`);
    const content = dom(html`<div class="comments"></div>`)[0];
    const loader = renderContentLoader();
    content.append(loader);
-   renderOverlay(header, [content]);
+   renderOverlay(location.hash.substring(1), [content]);
 
    const post = rawToHnPost((await getHnItem(postId)) as HnRawPost);
    if (post instanceof Error) {

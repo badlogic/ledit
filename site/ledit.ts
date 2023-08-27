@@ -1,10 +1,10 @@
-import { Page, SortingOption, Source, SourcePrefix } from "./sources/data";
 import "./guards";
 import "./ledit-bundle.css";
 import { applySettings, bookmarkToHash, getSettings, saveSettings } from "./settings";
+import { Page, SortingOption, Source, SourcePrefix } from "./sources/data";
 import { RssSource, renderRssPost } from "./sources/rss";
 // @ts-ignore
-import sunAndMoonSvg from "./svg/sun-moon.svg";
+import sunAndMoonIcon from "./svg/sun-moon.svg";
 import { animateSvgIcon, elements, navigate, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
 // @ts-ignore
 import { html } from "lit-html";
@@ -16,13 +16,20 @@ import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import { when } from "lit-html/directives/when.js";
 import { HackerNewsSource, renderHnPost } from "./sources/hackernews";
 // import { MastodonSource } from "./sources/mastodon";
-import { RedditSource, renderRedditPost } from "./sources/reddit";
-import { YoutubeSource, renderYoutubePost } from "./sources/youtube";
-import { dom, getFeedFromHash, getSourcePrefixFromHash, renderContentLoader, renderErrorMessage, renderInfoMessage } from "./sources/utils";
 import { PageIdentifier } from "./data";
 import { MastodonSource } from "./sources/mastodon";
+import { RedditSource, renderRedditPost } from "./sources/reddit";
+import { dom, getFeedFromHash, getSourcePrefixFromHash, renderContentLoader, renderErrorMessage, renderHeaderButton, renderInfoMessage, renderOverlay } from "./sources/utils";
+import { YoutubeSource, renderYoutubePost } from "./sources/youtube";
+// @ts-ignore
+import settingsIcon from "remixicon/icons/System/settings-2-line.svg";
 
-export function renderPostPage<T>(container: HTMLElement, page: Page<T> | Error, renderPost: (post: T) => HTMLElement[], getNextPage: (nextPage: PageIdentifier) => Promise<Page<T> | Error>) {
+export function renderPostPage<T>(
+   container: HTMLElement,
+   page: Page<T> | Error,
+   renderPost: (post: T) => HTMLElement[],
+   getNextPage: (nextPage: PageIdentifier) => Promise<Page<T> | Error>
+) {
    if (page instanceof Error) {
       container.append(...renderErrorMessage(`Could not load feed`, page));
       return;
@@ -52,28 +59,32 @@ export function renderPostPage<T>(container: HTMLElement, page: Page<T> | Error,
    }
 }
 
-export function list<T>(strings: string[]) {}
+export function renderSettings() {
+   const settingsDom = renderOverlay("Settings", []);
+}
 
 export function renderHeader(hash: string, sortingOptions: SortingOption[], sorting: string) {
    const header = dom(html`
       <header class="header">
-         <input x-id="feed" enterkeyhint="enter" class="outline-none font-bold text-primary text-ellipsis overflow-hidden bg-transparent flex-1" value="${hash}" />
+         <input
+            x-id="feed"
+            enterkeyhint="enter"
+            class="outline-none font-bold text-primary text-ellipsis overflow-hidden bg-transparent flex-1"
+            value="${hash}"
+         />
          ${when(
             sortingOptions.length > 0,
             () =>
                html`<select x-id="sort" class="mx-2">
-                  ${map(
-                     sortingOptions,
-                     (item) => html`<option value=${item.value}>${item.label}</option>`
-                  )}
+                  ${map(sortingOptions, (item) => html`<option value=${item.value}>${item.label}</option>`)}
                </select>`,
             () => html``
          )}
-         <i x-id="themeToggle" class="w-6 h-6 icon">${unsafeHTML(sunAndMoonSvg)}</i>
+         ${renderHeaderButton(settingsIcon, "")}
       </header>
    `)[0];
 
-   const { feed, themeToggle, sort } = elements<{ feed: HTMLInputElement; themeToggle: HTMLElement; sort?: HTMLSelectElement }>(header);
+   const { feed, settingsToggle, sort } = elements<{ feed: HTMLInputElement; settingsToggle: HTMLElement; sort?: HTMLSelectElement }>(header);
 
    feed.addEventListener("focus", () => {
       requestAnimationFrame(() => {
@@ -110,13 +121,9 @@ export function renderHeader(hash: string, sortingOptions: SortingOption[], sort
       });
    }
 
-   animateSvgIcon(themeToggle);
-   themeToggle.addEventListener("click", () => {
-      const theme = document.documentElement.getAttribute("data-theme") == "dark" ? "light" : "dark";
-      getSettings().theme = theme;
-      saveSettings();
-      document.documentElement.setAttribute("data-theme", theme);
-   });
+   settingsToggle.addEventListener("click", () => {
+      renderSettings();
+   })
 
    return header;
 }
@@ -143,7 +150,7 @@ async function main() {
 
    const sourcePrefix = (tokens[0] + "/") as SourcePrefix;
    const feed = getFeedFromHash();
-   let source: Source<any, any> | null = null;
+   let source: Source<any> | null = null;
    let renderPost: (post: any) => HTMLElement[] = (post) => {
       return [];
    };
@@ -189,7 +196,9 @@ async function main() {
    try {
       const postsPage = await source.getPosts(null);
       loader.remove();
-      renderPostPage(main, postsPage, renderPost, (after: PageIdentifier) => { return source!.getPosts(after)});
+      renderPostPage(main, postsPage, renderPost, (after: PageIdentifier) => {
+         return source!.getPosts(after);
+      });
    } catch (e) {
       loader.remove();
       main.append(...renderErrorMessage(`Could not load '${hash}'`, e instanceof Error ? e : undefined));

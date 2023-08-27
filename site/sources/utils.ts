@@ -8,7 +8,7 @@ import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 // @ts-ignore
 import { map } from "lit-html/directives/map.js";
 // @ts-ignore
-import imageIcon from "remixicon/icons/Media/image-line.svg";
+import closeIcon from "remixicon/icons/System/close-circle-line.svg";
 import videojs from "video.js";
 
 export function dom(template: TemplateResult, container?: HTMLElement | DocumentFragment): HTMLElement[] {
@@ -65,14 +65,24 @@ export function renderContentLoader() {
    </div>`)[0];
 }
 
+export function renderHeaderButton(icon: string, classes: string): TemplateResult {
+   return html`<div class="flex items-center justify-center w-8 h-8 ${classes}" x-id="settingsToggle"><i class="icon">${unsafeHTML(icon)}</i></div>`;
+}
+
 let overlayZIndex = 10;
-export function renderOverlay(header: HTMLElement[], content: HTMLElement[], closeCallback = () => {}) {
+export function renderOverlay(header: HTMLElement[] | string, content: HTMLElement[], closeCallback = () => {}) {
    const overlay = dom(html` <div class="fixed top-0 w-full h-full overflow-auto bg-background">
       <div class="overlay m-auto backdrop-blur-[8px] flex flex-col" x-id="container"></div>
    </div>`)[0];
    overlay.style.zIndex = (++overlayZIndex).toString();
 
    const { container } = elements<{ container: HTMLElement }>(overlay);
+   if (typeof header === "string") {
+      header = dom(html` <header class="header cursor-pointer">
+         <span class="font-bold max-w-[90%] text-primary text-ellipsis overflow-hidden">${location.hash.substring(1)}</span>
+         ${renderHeaderButton(closeIcon, "ml-auto")}
+      </header>`);
+   }
    container.append(...header);
    container.append(...content);
 
@@ -88,6 +98,26 @@ export function renderOverlay(header: HTMLElement[], content: HTMLElement[], clo
       close();
    });
 
+   container.addEventListener("click", (event) => {
+      if (document.activeElement && (document.activeElement.tagName == "INPUT" || document.activeElement.tagName == "TEXTAREA")) {
+         return;
+      }
+      if (event.target != container) return;
+      event.preventDefault();
+      event.stopPropagation();
+      close();
+   });
+
+   overlay.addEventListener("click", (event) => {
+      if (document.activeElement && (document.activeElement.tagName == "INPUT" || document.activeElement.tagName == "TEXTAREA")) {
+         return;
+      }
+      if (event.target != overlay) return;
+      event.preventDefault();
+      event.stopPropagation();
+      close();
+   });
+
    const close = () => {
       overlay.remove();
       document.body.style.overflow = "";
@@ -97,7 +127,9 @@ export function renderOverlay(header: HTMLElement[], content: HTMLElement[], clo
    };
 
    header.forEach((el) =>
-      el.addEventListener("click", () => {
+      el.addEventListener("click", (event) => {
+         event.preventDefault();
+         event.stopPropagation();
          close();
       })
    );
@@ -110,7 +142,9 @@ export function renderOverlay(header: HTMLElement[], content: HTMLElement[], clo
 
 export function renderGallery(imageUrls: string[]): HTMLElement {
    const galleryDom = dom(html`
-      <div class="flex flex-col gap-2">${imageUrls.map((img, index) => html`<img src="${htmlDecode(img)}" ${index > 0 ? 'class="hidden"' : ""})>`)}</div>
+      <div class="flex flex-col gap-2">
+         ${imageUrls.map((img, index) => html`<img src="${htmlDecode(img)}" ${index > 0 ? 'class="hidden"' : ""}) />`)}
+      </div>
    `)[0];
    const imageDoms = galleryDom.querySelectorAll("img");
    imageDoms.forEach((img, index) => {
@@ -125,8 +159,8 @@ export function renderGallery(imageUrls: string[]): HTMLElement {
       if (imageDoms[1].classList.contains("hidden")) {
          imageDoms[0].scrollIntoView({
             behavior: "auto",
-            block: "nearest"
-         })
+            block: "nearest",
+         });
       }
    };
 
@@ -136,16 +170,12 @@ export function renderGallery(imageUrls: string[]): HTMLElement {
    return galleryDom;
 }
 
-export function renderVideo(
-   videoDesc: { width: number; height: number; urls: string[] },
-   loop: boolean
-): HTMLElement {
-   let videoDom = dom(html`
-      <div class="flex justify-center w-full cursor-pointer bg-black">
-         <video-js controls class="video-js" width=${videoDesc.width} ${loop ? "loop" : ""} data-setup="{}">
-            ${map(videoDesc.urls, (url) => html`<source src="${htmlDecode(url)}">`)}
-         </video-js>
-      </div>`)[0];
+export function renderVideo(videoDesc: { width: number; height: number; urls: string[] }, loop: boolean): HTMLElement {
+   let videoDom = dom(html` <div class="flex justify-center w-full cursor-pointer bg-black">
+      <video-js controls class="video-js" width=${videoDesc.width} ${loop ? "loop" : ""} data-setup="{}">
+         ${map(videoDesc.urls, (url) => html`<source src="${htmlDecode(url)}" />`)}
+      </video-js>
+   </div>`)[0];
    onAddedToDOM(videoDom, () => {
       const videoDiv = videoDom.querySelector("video-js")! as HTMLElement;
       let width = videoDesc.width;

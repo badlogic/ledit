@@ -464,9 +464,9 @@ export type MastodonUserInfo = { username: string; instance: string; bearer: str
 export type MastodonPostData = { mastodonPost: MastodonPost; userInfo: MastodonUserInfo; id: string; inReplyToPost: MastodonPost | null };
 export type MastodonCommentData = { mastodonComment: MastodonPost; userInfo: MastodonUserInfo };
 
-export class MastodonSource extends Source<MastodonPostData, MastodonCommentData> {
-   constructor(hash: string, readonly hideActionButtons = false) {
-      super(hash);
+export class MastodonSource extends Source<MastodonPostData> {
+   constructor(feed: string, readonly hideActionButtons = false) {
+      super(feed);
    }
 
    static async mastodonPostToPost(
