@@ -290,7 +290,7 @@ function renderRedditMedia(canonicalPost: RedditPost, container: HTMLElement): H
                .replace(`height="${embed.height}"`, `height="${embedHeight}"`)
                .replace("position:absolute;", "")
          );
-         let embedDom = dom(html`<div width="${embedWidth}" height="${embedHeight}">${safeHTML(embedUrl)}</div>`)[0];
+         let embedDom = dom(html`<div width="${embedWidth}" height="${embedHeight}">${htmlDecode(embedUrl!)}</div>`)[0];
          // Make YouTube videos stop if they scroll out of frame.
          if (embed.content.includes("youtube")) {
             // Pause when out of view
@@ -353,7 +353,7 @@ export function renderRedditPost(post: RedditPost, showActionButtons = true): HT
 
    const postDom = dom(html`
       <article class="post reddit-post gap-1">
-         <a href="${url}" class="font-bold text-lg text-color">${post.data.title}</a>
+         <a href="${url}" class="font-bold text-lg text-color">${htmlDecode(post.data.title)}</a>
          <div class="flex gap-1 text-xs">
             ${subReddit
                ? html`

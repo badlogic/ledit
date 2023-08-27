@@ -57,7 +57,7 @@ export function list<T>(strings: string[]) {}
 export function renderHeader(hash: string, sortingOptions: SortingOption[], sorting: string) {
    const header = dom(html`
       <header class="header">
-         <input x-id="feed" class="outline-none font-bold text-primary text-ellipsis overflow-hidden bg-transparent flex-1" value="${hash}" />
+         <input x-id="feed" enterkeyhint="enter" class="outline-none font-bold text-primary text-ellipsis overflow-hidden bg-transparent flex-1" value="${hash}" />
          ${when(
             sortingOptions.length > 0,
             () =>
@@ -76,8 +76,10 @@ export function renderHeader(hash: string, sortingOptions: SortingOption[], sort
    const { feed, themeToggle, sort } = elements<{ feed: HTMLInputElement; themeToggle: HTMLElement; sort?: HTMLSelectElement }>(header);
 
    feed.addEventListener("focus", () => {
-      feed.selectionStart = hash.indexOf("/") == -1 ? 0 : hash.indexOf("/") + 1;
-      feed.selectionEnd = hash.length;
+      requestAnimationFrame(() => {
+         feed.selectionStart = hash.indexOf("/") == -1 ? 0 : hash.indexOf("/") + 1;
+         feed.selectionEnd = hash.length;
+      });
    });
 
    feed.addEventListener("keydown", (event) => {
