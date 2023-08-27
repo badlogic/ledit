@@ -771,7 +771,8 @@ code {
   border-color: rgba(var(--border), 0.5);
   --tw-bg-opacity: 1;
   background-color: rgba(var(--background), var(--tw-bg-opacity));
-  padding: 0.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
   font-size: 1.125rem;
   line-height: 1.75rem;
   --tw-backdrop-blur: blur(8px);
@@ -1051,6 +1052,18 @@ main > .post > * {
   margin-top: 1rem;
 }
 
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
+.ml-3 {
+  margin-left: 0.75rem;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
 .block {
   display: block;
 }
@@ -1087,8 +1100,28 @@ main > .post > * {
   height: 2em;
 }
 
+.h-\[3em\] {
+  height: 3em;
+}
+
 .h-full {
   height: 100%;
+}
+
+.h-\[1\.2em\] {
+  height: 1.2em;
+}
+
+.h-\[1\.2\] {
+  height: 1.2;
+}
+
+.h-\[1\.5\] {
+  height: 1.5;
+}
+
+.h-\[1\.5em\] {
+  height: 1.5em;
 }
 
 .max-h-4 {
@@ -1117,6 +1150,18 @@ main > .post > * {
 
 .w-full {
   width: 100%;
+}
+
+.w-\[1\.2em\] {
+  width: 1.2em;
+}
+
+.w-\[1\.5em\] {
+  width: 1.5em;
+}
+
+.w-\[25em\] {
+  width: 25em;
 }
 
 .max-w-\[300px\] {
@@ -1215,6 +1260,15 @@ main > .post > * {
   border-radius: 9999px;
 }
 
+.border-b {
+  border-bottom-width: 1px;
+}
+
+.border-border {
+  --tw-border-opacity: 1;
+  border-color: rgba(var(--border), var(--tw-border-opacity));
+}
+
 .bg-background {
   --tw-bg-opacity: 1;
   background-color: rgba(var(--background), var(--tw-bg-opacity));
@@ -1265,6 +1319,11 @@ main > .post > * {
   padding-right: 0.5rem;
 }
 
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
 .py-1 {
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
@@ -1281,6 +1340,10 @@ main > .post > * {
 
 .pt-2 {
   padding-top: 0.5rem;
+}
+
+.pl-2 {
+  padding-left: 0.5rem;
 }
 
 .text-right {

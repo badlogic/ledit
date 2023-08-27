@@ -3,7 +3,7 @@ import { Page, SortingOption, Source, SourcePrefix } from "./data";
 import { addCommasToNumber, dateToText, elements, htmlDecode, onAddedToDOM, setLinkTargetsToBlank } from "../utils";
 // @ts-ignore
 import { TemplateResult, html } from "lit-html";
-import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderHeaderButton, renderInfoMessage, renderOverlay, safeHTML } from "./utils";
+import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderInfoMessage, renderOverlay, safeHTML } from "./utils";
 // @ts-ignore
 import commentIcon from "remixicon/icons/Communication/chat-4-line.svg";
 // @ts-ignore

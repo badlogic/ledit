@@ -65,12 +65,12 @@ export function renderContentLoader() {
    </div>`)[0];
 }
 
-export function renderHeaderButton(icon: string, classes?: string, xId?: string, href?: string): TemplateResult {
-   return html`<a href="${href ? href : ""}" class="flex items-center justify-center w-8 h-8 ${classes ? classes : ""}" x-id="${xId ? xId : ""}"><i class="icon">${unsafeHTML(icon)}</i></a>`;
+export function renderHeaderButton(icon: string, classes?: string, href?: string): TemplateResult {
+   return html`<a href="${href ? href : ""}" class="flex items-center justify-center w-8 h-8 ${classes ? classes : ""}"><i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(icon)}</i></a>`;
 }
 
 export let numOverlays = 0;
-export function renderOverlay(header: HTMLElement[] | string, content: HTMLElement[] = [], closeCallback = () => {}) {
+export function renderOverlay(header: HTMLElement[] | string, content: HTMLElement[] = [], closeCallback = () => {}): { dom: HTMLElement, close: () => void} {
    const overlay = dom(html` <div class="fixed top-0 w-full h-full overflow-auto bg-background">
       <div class="overlay m-auto backdrop-blur-[8px] flex flex-col" x-id="container"></div>
    </div>`)[0];
@@ -80,7 +80,7 @@ export function renderOverlay(header: HTMLElement[] | string, content: HTMLEleme
    const { container } = elements<{ container: HTMLElement }>(overlay);
    if (typeof header === "string") {
       header = dom(html` <header class="header cursor-pointer">
-         <span class="font-bold max-w-[90%] text-primary text-ellipsis overflow-hidden">${header}</span>
+         <span class="font-bold max-w-[90%] ml-2 text-primary text-ellipsis overflow-hidden">${header}</span>
          ${renderHeaderButton(closeIcon, "ml-auto")}
       </header>`);
    }
@@ -134,7 +134,7 @@ export function renderOverlay(header: HTMLElement[] | string, content: HTMLEleme
    document.body.append(overlay);
    document.body.style.overflow = "hidden";
 
-   return container;
+   return { dom: container, close };
 }
 
 export function renderGallery(imageUrls: string[]): HTMLElement {

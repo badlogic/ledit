@@ -257,7 +257,7 @@ body {
 
 @layer components {
    .header {
-      @apply w-full sm:max-w-[640px] mx-auto sticky top-0 text-lg flex items-center p-2 bg-background backdrop-blur-[8px] border-b border-border/50 z-[1];
+      @apply w-full sm:max-w-[640px] mx-auto sticky top-0 text-lg flex items-center py-2 bg-background backdrop-blur-[8px] border-b border-border/50 z-[1];
    }
 
    .header select {

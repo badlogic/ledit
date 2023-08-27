@@ -1,9 +1,9 @@
 import "./ledit-bundle.css";
-import { Settings, applySettings, bookmarkToHash, getSettings, resetSettings, saveSettings } from "./sources/settings";
+import { Bookmark, Settings, applySettings, bookmarkToHash, getSettings, resetSettings, saveSettings } from "./sources/settings";
 import { Page } from "./sources/data";
 import "./sources/guards";
 // @ts-ignore
-import { elements, navigate, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
+import { assertNever, elements, navigate, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
 // @ts-ignore
 import { html, render } from "lit-html";
 // @ts-ignore
@@ -41,6 +41,18 @@ import heartIcon from "remixicon/icons/Health & Medical/heart-line.svg";
 import sunIcon from "remixicon/icons/Weather/sun-line.svg";
 // @ts-ignore
 import moonIcon from "remixicon/icons/Weather/moon-line.svg";
+// @ts-ignore
+import rssIcon from "remixicon/icons/Device/rss-line.svg";
+// @ts-ignore
+import youtubeIcon from "remixicon/icons/Logos/youtube-line.svg";
+// @ts-ignore
+import redditIcon from "remixicon/icons/Logos/reddit-line.svg";
+// @ts-ignore
+import mastodonIcon from "remixicon/icons/Logos/mastodon-fill.svg";
+// @ts-ignore
+import bookmarkIcon from "remixicon/icons/Business/bookmark-line.svg";
+// @ts-ignore
+import hackernewsIcon from "./svg/hackernews.svg";
 
 export function renderPostPage<T>(
    container: HTMLElement,
@@ -80,55 +92,88 @@ export function renderPostPage<T>(
 export function renderSettings() {
    const template = (settings: Settings) =>
       html`
-      <div class="settings flex flex-col text-lg gap-4 mt-4 px-2 m-auto w-[300px]">
-         <div class="text-xl font-bold">View options</div>
+      <div class="settings flex flex-col text-lg gap-4 mt-4 px-2">
+         <div class="text-xl font-bold border-b border-border">View options</div>
          <div x-id="theme" class="cursor-pointer flex items-center">
             <span>Theme</span>
-            <i class="icon ml-auto">${settings.theme == "dark" ? unsafeHTML(moonIcon) : unsafeHTML(sunIcon)}</i>
+            <i class="icon ml-auto w-[1.2em] h-[1.2em]">${settings.theme == "dark" ? unsafeHTML(moonIcon) : unsafeHTML(sunIcon)}</i>
          </div>
          <div x-id="collapseSeen" class="cursor-pointer flex items-center">
             <span>Collapse seen posts</span>
-            <i class="icon ml-auto ${settings.collapseSeenPosts ? "fill-primary" : "fill-primary/50"}">${unsafeHTML(checkmarkIcon)}</i>
+            <i class="icon ml-auto w-[1.2em] h-[1.2em] ${settings.collapseSeenPosts ? "fill-primary" : "fill-primary/50"}">${unsafeHTML(checkmarkIcon)}</i>
          </div>
-         <div class="text-xl font-bold">About</div>
+         <div class="text-xl font-bold border-b border-border">About</div>
          <a href="https://github.com/badlogic/ledit#usage">How does this work?</a>
-         <a href="https://github.com/badlogic/ledit" class="flex items-center gap-2"><i class="icon w-[2em] h-[2em]">${unsafeHTML(githubIcon)}</i> GitHub</a>
-         <a href="https://github.com/sponsors/badlogic" class="flex items-center gap-2"><i class="icon">${unsafeHTML(heartIcon)}</i> Buy me a coffee</a>
+         <a href="https://github.com/badlogic/ledit" class="flex items-center gap-2"><i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(githubIcon)}</i> GitHub</a>
+         <a href="https://github.com/sponsors/badlogic" class="flex items-center gap-2"><i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(heartIcon)}</i> Buy me a coffee</a>
          <div x-id="reset" class="cursor-pointer">Reset to defaults</div>
       </div>
       `;
 
    const settings = getSettings();
    const overlay = renderOverlay("Settings");
-   render(template(settings), overlay);
+   render(template(settings), overlay.dom);
 
-   const { theme, collapseSeen, reset } = elements<{theme: HTMLElement, collapseSeen: HTMLElement, reset: HTMLElement }>(overlay);
+   const { theme, collapseSeen, reset } = elements<{theme: HTMLElement, collapseSeen: HTMLElement, reset: HTMLElement }>(overlay.dom);
    theme.addEventListener("click", () => {
       settings.theme = settings.theme == "dark" ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", settings.theme);
       saveSettings();
-      render(template(settings), overlay);
+      render(template(settings), overlay.dom);
    })
 
    collapseSeen.addEventListener("click", () => {
       settings.collapseSeenPosts = !settings.collapseSeenPosts;
       saveSettings();
-      render(template(settings), overlay);
+      render(template(settings), overlay.dom);
    })
 
    reset.addEventListener("click", () => {
       resetSettings();
-      render(template(settings), overlay);
+      render(template(settings), overlay.dom);
    })
 }
 
+function getIconForSource(source: SourcePrefix) {
+   switch(source) {
+      case "r/": return redditIcon;
+      case "hn/": return hackernewsIcon;
+      case "rss/": return rssIcon;
+      case "yt/": return youtubeIcon;
+      case "m/": return mastodonIcon;
+      default:
+         assertNever(source);
+   }
+}
+
 export function renderBookmarks() {
-   alert("Would render bookmarks");
+   const template = (bookmarks: Bookmark[]) => html `
+      <div class="bookmarks">
+         ${map(bookmarks, (bookmark) => html `
+            <a href="#${bookmarkToHash(bookmark)}" class="flex items-center gap-4 px-4 h-[3em] border-b border-border">
+               <i class="icon w-[1.5em] h-[1.5em]">${unsafeHTML(getIconForSource(bookmark.source))}</i>
+               <span>${bookmark.label}</span>
+            </a>
+         `)}
+      </div>
+   `;
+
+   const bookmarks = getSettings().bookmarks;
+   const overlay = renderOverlay("Bookmarks");
+   render(template(bookmarks), overlay.dom);
+
+   for  (const link of Array.from(overlay.dom.querySelectorAll("a"))) {
+      link.addEventListener("click", () => {
+         location.href = link.href;
+         location.reload();
+      });
+   }
 }
 
 export function renderHeader(hash: string, sortingOptions: SortingOption[], sorting: string) {
    const header = dom(html`
       <header class="header">
+         ${renderHeaderButton(settingsIcon, "mr-2", "#settings")}
          <input
             x-id="feed"
             enterkeyhint="enter"
@@ -143,7 +188,7 @@ export function renderHeader(hash: string, sortingOptions: SortingOption[], sort
                </select>`,
             () => html``
          )}
-         ${renderHeaderButton(settingsIcon, "", "", "#settings")}
+         ${renderHeaderButton(bookmarkIcon, "", "#bookmarks")}
       </header>
    `)[0];
 
@@ -266,6 +311,17 @@ async function main() {
       }
    });
    dispatchEvent(new HashChangeEvent("hashchange"));
+
+   document.addEventListener("keydown", (event) => {
+      if (event.key == "b"  && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement)) {
+         const bookmarksView = document.body.querySelector(".bookmarks");
+         if (bookmarksView) {
+            bookmarksView.parentElement!.click();
+         } else {
+            location.href = "#bookmarks";
+         }
+      }
+   });
 
    try {
       const postsPage = await source.getPosts(null);
