@@ -19,7 +19,16 @@ import { HackerNewsSource, renderHnPost } from "./sources/hackernews";
 import { PageIdentifier } from "./data";
 import { MastodonSource } from "./sources/mastodon";
 import { RedditSource, renderRedditPost } from "./sources/reddit";
-import { dom, getFeedFromHash, getSourcePrefixFromHash, renderContentLoader, renderErrorMessage, renderHeaderButton, renderInfoMessage, renderOverlay } from "./sources/utils";
+import {
+   dom,
+   getFeedFromHash,
+   getSourcePrefixFromHash,
+   renderContentLoader,
+   renderErrorMessage,
+   renderHeaderButton,
+   renderInfoMessage,
+   renderOverlay,
+} from "./sources/utils";
 import { YoutubeSource, renderYoutubePost } from "./sources/youtube";
 // @ts-ignore
 import settingsIcon from "remixicon/icons/System/settings-2-line.svg";
@@ -63,6 +72,10 @@ export function renderSettings() {
    const settingsDom = renderOverlay("Settings", []);
 }
 
+export function renderBookmarks() {
+   alert("Would render bookmarks");
+}
+
 export function renderHeader(hash: string, sortingOptions: SortingOption[], sorting: string) {
    const header = dom(html`
       <header class="header">
@@ -75,16 +88,16 @@ export function renderHeader(hash: string, sortingOptions: SortingOption[], sort
          ${when(
             sortingOptions.length > 0,
             () =>
-               html`<select x-id="sort" class="mx-2">
+               html`<select x-id="sort" class="mx-2 text-right">
                   ${map(sortingOptions, (item) => html`<option value=${item.value}>${item.label}</option>`)}
                </select>`,
             () => html``
          )}
-         ${renderHeaderButton(settingsIcon, "")}
+         ${renderHeaderButton(settingsIcon, "", "", "#settings")}
       </header>
    `)[0];
 
-   const { feed, settingsToggle, sort } = elements<{ feed: HTMLInputElement; settingsToggle: HTMLElement; sort?: HTMLSelectElement }>(header);
+   const { feed, sort } = elements<{ feed: HTMLInputElement; sort?: HTMLSelectElement }>(header);
 
    feed.addEventListener("focus", () => {
       requestAnimationFrame(() => {
@@ -121,10 +134,6 @@ export function renderHeader(hash: string, sortingOptions: SortingOption[], sort
       });
    }
 
-   settingsToggle.addEventListener("click", () => {
-      renderSettings();
-   })
-
    return header;
 }
 
@@ -133,11 +142,16 @@ function loadDefaultBookmark() {
    navigate(defaultBookmark ? bookmarkToHash(defaultBookmark) : "r/all");
 }
 
+const appPages = [
+   { hash: "#settings", render: renderSettings },
+   { hash: "#bookmarks", render: renderBookmarks }
+];
+
 async function main() {
    applySettings();
    const hash = location.hash.substring(1);
 
-   if (location.hash.length == 0) {
+   if (location.hash.length == 0 || appPages.some((page) => page.hash == location.hash)) {
       loadDefaultBookmark();
       return;
    }
@@ -188,6 +202,11 @@ async function main() {
    main.append(loader);
 
    window.addEventListener("hashchange", () => {
+      const page = appPages.find((page) => page.hash == location.hash);
+      if (page) {
+         page.render();
+         return;
+      }
       if (getSourcePrefixFromHash() != sourcePrefix) location.reload();
       if (sourcePrefix != "hn/" && feed != getFeedFromHash()) location.reload();
    });

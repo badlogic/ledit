@@ -58,7 +58,6 @@ class NavigationGuard extends BaseGuard<{ hash: string | null; callback: Navigat
          navStackIndex: this.navStack.length,
       };
       this.navStack.push(navState);
-      if (callback.hash) history.pushState(navState, "", hashToUrl(callback.hash));
 
       return super.register(callback);
    }
@@ -71,12 +70,6 @@ class NavigationGuard extends BaseGuard<{ hash: string | null; callback: Navigat
          history.back();
       }
    }
-}
-
-function hashToUrl(hash: string) {
-   const currentUrl = new URL(window.location.href);
-   currentUrl.hash = hash;
-   return currentUrl.toString();
 }
 
 export const navigationGuard = new NavigationGuard();

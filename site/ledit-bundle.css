@@ -683,19 +683,12 @@ code {
   height: 1em;
 }
 
-.rss-content h1 {
-  font-size: 1em;
-}
-
-.rss-content h2 {
-  font-size: 1em;
-}
-
-.rss-content h3 {
-  font-size: 1em;
-}
-
-.rss-content h4 {
+.rss-content h1,
+   .rss-content h2,
+   .rss-content h3,
+   .rss-content h4,
+   .rss-content h5,
+   .rss-content h6 {
   font-size: 1em;
 }
 
@@ -733,6 +726,15 @@ code {
     padding-left: 1rem;
     padding-right: 1rem;
   }
+}
+
+.reddit-post h1,
+   .reddit-post h2,
+   .reddit-post h3,
+   .reddit-post h4,
+   .reddit-post h5,
+   .reddit-post h6 {
+  font-size: 1em;
 }
 
 .reddit-post .content img {
@@ -808,7 +810,7 @@ code {
      -moz-appearance: none;
           appearance: none;
   padding: 0;
-  text-align: center;
+  text-align: right;
   cursor: pointer;
   outline-style: none;
 }
@@ -1029,10 +1031,6 @@ main > .post > * {
   left: 0px;
 }
 
-.right-0 {
-  right: 0px;
-}
-
 .top-0 {
   top: 0px;
 }
@@ -1054,20 +1052,16 @@ main > .post > * {
   margin-right: 0.5rem;
 }
 
+.ml-auto {
+  margin-left: auto;
+}
+
 .mr-1 {
   margin-right: 0.25rem;
 }
 
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
 .mt-2 {
   margin-top: 0.5rem;
-}
-
-.ml-auto {
-  margin-left: auto;
 }
 
 .block {
@@ -1098,8 +1092,8 @@ main > .post > * {
   height: 0.5rem;
 }
 
-.h-6 {
-  height: 1.5rem;
+.h-8 {
+  height: 2rem;
 }
 
 .h-\[2em\] {
@@ -1110,18 +1104,6 @@ main > .post > * {
   height: 100%;
 }
 
-.h-12 {
-  height: 3rem;
-}
-
-.h-8 {
-  height: 2rem;
-}
-
-.h-20 {
-  height: 5rem;
-}
-
 .max-h-4 {
   max-height: 1rem;
 }
@@ -1130,8 +1112,8 @@ main > .post > * {
   width: 2.5rem;
 }
 
-.w-6 {
-  width: 1.5rem;
+.w-8 {
+  width: 2rem;
 }
 
 .w-\[80\%\] {
@@ -1140,18 +1122,6 @@ main > .post > * {
 
 .w-full {
   width: 100%;
-}
-
-.w-12 {
-  width: 3rem;
-}
-
-.w-8 {
-  width: 2rem;
-}
-
-.w-20 {
-  width: 5rem;
 }
 
 .max-w-\[300px\] {
@@ -1164,10 +1134,6 @@ main > .post > * {
 
 .flex-1 {
   flex: 1 1 0%;
-}
-
-.flex-shrink-0 {
-  flex-shrink: 0;
 }
 
 @keyframes pulse {
@@ -1309,8 +1275,8 @@ main > .post > * {
   padding-top: 0.5rem;
 }
 
-.pt-4 {
-  padding-top: 1rem;
+.text-right {
+  text-align: right;
 }
 
 .text-lg {

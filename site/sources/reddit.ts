@@ -183,7 +183,7 @@ export class RedditSource extends Source<RedditPost> {
    }
    async getComments(permalink: string): Promise<{ post: RedditPost; comments: RedditComment[] } | Error> {
       try {
-         const commentsUrl = "https://www.reddit.com/" + permalink + ".json";
+         const commentsUrl = "https://www.reddit.com/" + permalink + ".json?limit=15000";
          const response = await fetch(commentsUrl);
          const data = await response.json();
          if (data.length < 2) return new Error("Could not load comments for " + permalink);

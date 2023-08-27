@@ -188,19 +188,12 @@ body {
       height: 1em;
    }
 
-   .rss-content h1 {
-      font-size: 1em;
-   }
-
-   .rss-content h2 {
-      font-size: 1em;
-   }
-
-   .rss-content h3 {
-      font-size: 1em;
-   }
-
-   .rss-content h4 {
+   .rss-content h1,
+   .rss-content h2,
+   .rss-content h3,
+   .rss-content h4,
+   .rss-content h5,
+   .rss-content h6 {
       font-size: 1em;
    }
 
@@ -222,6 +215,24 @@ body {
 
    .reddit-post .content {
       @apply w-full px-0 sm:px-4;
+   }
+
+   .reddit-post h1,
+   .reddit-post h2,
+   .reddit-post h3,
+   .reddit-post h4,
+   .reddit-post h5,
+   .reddit-post h6 {
+      font-size: 1em;
+   }
+
+   .reddit-comment h1,
+   .reddit-comment h2,
+   .reddit-comment h3,
+   .reddit-comment h4,
+   .reddit-comment h5,
+   .reddit-comment h6 {
+      font-size: 1em;
    }
 
    .reddit-post .content img {
@@ -253,7 +264,7 @@ body {
       border: none;
       appearance: none;
       padding: 0;
-      text-align: center;
+      text-align: right;
       cursor: pointer;
       outline-style: none;
    }

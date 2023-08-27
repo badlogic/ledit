@@ -65,8 +65,8 @@ export function renderContentLoader() {
    </div>`)[0];
 }
 
-export function renderHeaderButton(icon: string, classes: string): TemplateResult {
-   return html`<div class="flex items-center justify-center w-8 h-8 ${classes}" x-id="settingsToggle"><i class="icon">${unsafeHTML(icon)}</i></div>`;
+export function renderHeaderButton(icon: string, classes?: string, xId?: string, href?: string): TemplateResult {
+   return html`<a href="${href ? href : ""}" class="flex items-center justify-center w-8 h-8 ${classes ? classes : ""}" x-id="${xId ? xId : ""}"><i class="icon">${unsafeHTML(icon)}</i></a>`;
 }
 
 let overlayZIndex = 10;
@@ -79,7 +79,7 @@ export function renderOverlay(header: HTMLElement[] | string, content: HTMLEleme
    const { container } = elements<{ container: HTMLElement }>(overlay);
    if (typeof header === "string") {
       header = dom(html` <header class="header cursor-pointer">
-         <span class="font-bold max-w-[90%] text-primary text-ellipsis overflow-hidden">${location.hash.substring(1)}</span>
+         <span class="font-bold max-w-[90%] text-primary text-ellipsis overflow-hidden">${header}</span>
          ${renderHeaderButton(closeIcon, "ml-auto")}
       </header>`);
    }
@@ -118,7 +118,10 @@ export function renderOverlay(header: HTMLElement[] | string, content: HTMLEleme
       close();
    });
 
+   let closed = false;
    const close = () => {
+      if (closed) return;
+      closed = true;
       overlay.remove();
       document.body.style.overflow = "";
       navigationGuard.remove(navCallback);
