@@ -273,7 +273,7 @@ export function renderHnPost(post: HnPost, showActionButtons = true) {
          ${showActionButtons
             ? html`
                  <div class="flex items-flex-start gap-4">
-                    <span class="flex items-center gap-1 cursor-pointer h-[2em]" x-id="comments">
+                    <a href="#hn/comments/${post.id}" class="self-link flex items-center gap-1 h-[2em]">
                        <i class="icon">${unsafeHTML(commentIcon)}</i>
                        <span class="text-primary">${addCommasToNumber(post.numComments)}</span>
                     </span>
@@ -290,12 +290,6 @@ export function renderHnPost(post: HnPost, showActionButtons = true) {
    if (post.content) {
       onAddedToDOM(postDom[0], () => {
          makeCollapsible(contentDom, 10);
-      });
-   }
-
-   if (showActionButtons) {
-      comments.addEventListener("click", () => {
-         window.location.hash = `#hn/comments/${post.id}`;
       });
    }
 

@@ -385,6 +385,7 @@ export function setLinkTargetsToBlank(element: HTMLElement) {
    let links = element.querySelectorAll("a")!;
    for (let i = 0; i < links.length; i++) {
       let link = links[i];
+      if (link.classList.contains("self-link")) continue;
       link.setAttribute("target", "_blank");
    }
 }
