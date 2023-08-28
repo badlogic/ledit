@@ -20,9 +20,11 @@ export function renderComments<T, S>(comments: T[], renderComment: (comment: T, 
       const replies = commentDom.querySelector(".replies");
       if (!replies) continue;
       if  (replies.children.length == 0) continue;
+      const commentButtons = commentDom.querySelector(".comment-buttons");
+      if (!commentButtons) continue;
 
       const toggle = dom(html`<div class="hidden text-sm text-color/50">${replies.children.length} ${replies.children.length == 1 ? "reply" : "replies"}</div>`)[0];
-      commentDom.insertBefore(toggle, replies);
+      commentButtons.append(toggle);
       commentDom.addEventListener("click", (event) => {
          const target = event.target as HTMLElement;
          if (!target) return;

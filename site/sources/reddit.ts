@@ -445,7 +445,7 @@ export async function renderRedditComments(source: RedditSource, permalink: stri
    loader.remove();
    content.append(...renderRedditPost(post, false));
    content.append(
-      ...renderInfoMessage(html`<div class="flex flex-row items-center gap-4">
+      ...renderInfoMessage(html`<div class="flex flex-row items-center gap-4 px-4">
          <span>${addCommasToNumber(post.data.num_comments)} comments</span>
          <div class="flex items-flex-start gap-4">
             <a href="${`https://www.reddit.com${post.data.permalink}`}" class="flex items-center gap-1 h-[2em]">
@@ -455,7 +455,7 @@ export async function renderRedditComments(source: RedditSource, permalink: stri
       </div> `)
    );
 
-   const scrollWrapper = dom(html`<div class="pt-2 w-full overflow-auto"></div>`)[0];
+   const scrollWrapper = dom(html`<div class="w-full overflow-auto"></div>`)[0];
    content.append(scrollWrapper);
    scrollWrapper.append(...renderComments(comments, renderRedditComment, { op: post.data.author, isReply: false, parentLink: post.data.permalink, postLink: post.data.permalink }));
    setLinkTargetsToBlank(content);
@@ -463,7 +463,7 @@ export async function renderRedditComments(source: RedditSource, permalink: stri
 
 export function renderRedditComment(comment: RedditComment, state: { op: string; isReply: boolean, parentLink: string, postLink: string }): TemplateResult {
    if (comment.kind == "more") {
-      return html`<a href="https://www.reddit.com${state?.parentLink}" class="flex items-center gap-1 h-[2em]">
+      return html`<a href="https://www.reddit.com${state?.parentLink}" class="flex items-center gap-1">
                More replies on Reddit
             </a>`
    }
@@ -478,7 +478,7 @@ export function renderRedditComment(comment: RedditComment, state: { op: string;
          </div>
          <div class="content">${safeHTML(htmlDecode(comment.data.body_html))}</div>
          <div class="comment-buttons">
-            <a href="${`https://www.reddit.com${comment.data.permalink}`}" class="flex items-center gap-1 h-[2em]">
+            <a href="${`https://www.reddit.com${comment.data.permalink}`}" class="flex items-center gap-1 text-sm text-color">
                <i class="icon">${unsafeHTML(replyIcon)}</i> Reply
             </a>
          </div>

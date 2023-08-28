@@ -284,7 +284,7 @@ export function renderHnPost(post: HnPost, showActionButtons = true) {
       </article>
    `);
    setLinkTargetsToBlank(postDom[0]);
-   const { contentDom, comments } = elements<{ contentDom: HTMLElement; comments: HTMLElement }>(postDom[0]);
+   const { contentDom } = elements<{ contentDom: HTMLElement }>(postDom[0]);
    if (post.content) {
       onAddedToDOM(postDom[0], () => {
          makeCollapsible(contentDom, 10);
@@ -307,7 +307,7 @@ export async function renderHnComments(source: HackerNewsSource, postId: string)
       loader.remove();
       content.append(...renderHnPost(post, false));
       content.append(
-         ...renderInfoMessage(html`<div class="flex flex-row items-center gap-4">
+         ...renderInfoMessage(html`<div class="flex flex-row items-center gap-4 px-4">
             <span>${addCommasToNumber(post.numComments)} comments</span>
             <div class="flex items-flex-start gap-4">
                <a href="https://news.ycombinator.com/item?id=${post.id}" target="_blank" class="flex items-center h-[2em] text"
@@ -324,7 +324,7 @@ export async function renderHnComments(source: HackerNewsSource, postId: string)
          content.append(...renderErrorMessage("Could not load comments"));
          return;
       }
-      const scrollWrapper = dom(html`<div class="pt-1 w-full overflow-auto"></div>`)[0];
+      const scrollWrapper = dom(html`<div class="w-full overflow-auto"></div>`)[0];
       content.append(scrollWrapper);
       scrollWrapper.append(...renderComments(comments, renderHnComment, { op: post.author, isReply: false }));
    }
@@ -341,7 +341,7 @@ export function renderHnComment(comment: HnComment, state: { op: string; isReply
          </div>
          <div class="content">${safeHTML(comment.content)}</div>
          <div class="comment-buttons">
-            <a href="https://news.ycombinator.com/item?id=${comment.raw.objectID}" class="flex items-center h-[2em] text"
+            <a href="https://news.ycombinator.com/item?id=${comment.raw.objectID}" class="flex items-center text-sm text-color"
                ><i class="icon mr-1">${unsafeHTML(replyIcon)}</i> Reply</a
             >
          </div>

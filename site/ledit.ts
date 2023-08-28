@@ -173,7 +173,7 @@ export function renderBookmarks() {
 export function renderHeader(hash: string, sortingOptions: SortingOption[], sorting: string) {
    const header = dom(html`
       <header class="header">
-         ${renderHeaderButton(settingsIcon, "mr-2", "#settings")}
+         ${renderHeaderButton(settingsIcon, "", "#settings")}
          <input
             x-id="feed"
             enterkeyhint="enter"

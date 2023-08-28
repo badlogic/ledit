@@ -66,7 +66,7 @@ export function renderContentLoader() {
 }
 
 export function renderHeaderButton(icon: string, classes?: string, href?: string): TemplateResult {
-   return html`<a href="${href ? href : ""}" class="flex items-center justify-center w-8 h-8 ${classes ? classes : ""}"><i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(icon)}</i></a>`;
+   return html`<a href="${href ? href : ""}" class="flex items-center justify-center min-w-8 max-w-8 w-8 min-h-8 max-h-8 h-8 ${classes ? classes : ""}"><i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(icon)}</i></a>`;
 }
 
 export let numOverlays = 0;
@@ -80,7 +80,7 @@ export function renderOverlay(header: HTMLElement[] | string, content: HTMLEleme
    const { container } = elements<{ container: HTMLElement }>(overlay);
    if (typeof header === "string") {
       header = dom(html` <header class="header cursor-pointer">
-         <span class="font-bold max-w-[90%] ml-2 text-primary text-ellipsis overflow-hidden">${header}</span>
+         <span class="font-bold max-w-[90%] text-primary text-ellipsis overflow-hidden">${header}</span>
          ${renderHeaderButton(closeIcon, "ml-auto")}
       </header>`);
    }

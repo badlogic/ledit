@@ -215,10 +215,6 @@ body {
       @apply pb-3;
    }
 
-   .reddit-post .content {
-      @apply w-full px-0 sm:px-4;
-   }
-
    .reddit-post h1,
    .reddit-post h2,
    .reddit-post h3,
@@ -237,6 +233,10 @@ body {
       font-size: 1em;
    }
 
+   .reddit-post .content {
+      @apply w-full px-0 sm:px-4;
+   }
+
    .reddit-post .content img {
       @apply px-0 sm:rounded;
       align-self: start;
@@ -245,19 +245,11 @@ body {
       max-height: 75vh;
       object-fit: contain;
    }
-
-   .comments .reddit-post {
-      @apply pb-0 px-0 sm:px-4;
-   }
-
-   .comments .reddit-post .content {
-      @apply px-0;
-   }
 }
 
 @layer components {
    .header {
-      @apply w-full sm:max-w-[640px] mx-auto sticky top-0 text-lg flex items-center py-2 bg-background backdrop-blur-[8px] border-b border-border/50 z-[1];
+      @apply w-full sm:max-w-[640px] mx-auto sticky top-0 text-lg flex items-center gap-2 p-2 bg-background backdrop-blur-[8px] border-b border-border/50 z-[1];
    }
 
    .header select {
@@ -291,20 +283,16 @@ body {
       @apply mb-0;
    }
 
+   .post > * {
+      @apply px-4;
+   }
+
    main > .post {
       @apply py-4 bg-surface border-b border-border/30;
    }
 
-   main > .post > * {
-      @apply px-4;
-   }
-
-   .comments > * {
-      @apply px-4;
-   }
-
    .comments > .post {
-      @apply mt-4;
+      @apply mt-4 pb-0 px-0;
    }
 
    .comments > .info {
@@ -312,7 +300,7 @@ body {
    }
 
    .comments > div > .comment {
-      @apply py-4 border-b border-border/50;
+      @apply p-4 border-b border-border/50;
    }
 
    .comment {
@@ -325,13 +313,13 @@ body {
       padding-top: 0 !important;
    }
 
-   .comment .content > p:last-child {
+   .comment .content p:last-child {
       margin-bottom: 0 !important;
       padding-bottom: 0 !important;
    }
 
    .comment-buttons {
-      @apply flex items-start gap-4;
+      @apply flex items-center gap-2;
    }
 
    .replies {
