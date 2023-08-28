@@ -39,7 +39,7 @@ function matchHashPattern(urlHash: string, pattern: string): Record<string, stri
 
       if (patternPart.startsWith(':')) {
          const paramName = patternPart.slice(1);
-         params[paramName] = hashPart;
+         params[paramName] = decodeURIComponent(hashPart);
       } else if (patternPart !== hashPart) {
          return null; // Path element doesn't match
       }
