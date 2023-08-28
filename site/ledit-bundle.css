@@ -947,6 +947,7 @@ main > .post {
 }
 
 .reply {
+  margin-top: 0.5rem;
   border-left-width: 1px;
   border-style: dotted;
   --tw-border-opacity: 1;
@@ -1296,6 +1297,10 @@ main > .post {
 
 .fill-color {
   fill: rgba(var(--color), 1);
+}
+
+.fill-color\/50 {
+  fill: rgba(var(--color), 0.5);
 }
 
 .fill-primary {

@@ -457,15 +457,23 @@ export async function renderRedditComments(source: RedditSource, permalink: stri
 
    const scrollWrapper = dom(html`<div class="w-full overflow-auto"></div>`)[0];
    content.append(scrollWrapper);
-   scrollWrapper.append(...renderComments(comments, renderRedditComment, { op: post.data.author, isReply: false, parentLink: post.data.permalink, postLink: post.data.permalink }));
+   scrollWrapper.append(
+      ...renderComments(comments, renderRedditComment, {
+         op: post.data.author,
+         isReply: false,
+         parentLink: post.data.permalink,
+         postLink: post.data.permalink,
+      })
+   );
    setLinkTargetsToBlank(content);
 }
 
-export function renderRedditComment(comment: RedditComment, state: { op: string; isReply: boolean, parentLink: string, postLink: string }): TemplateResult {
+export function renderRedditComment(
+   comment: RedditComment,
+   state: { op: string; isReply: boolean; parentLink: string; postLink: string }
+): TemplateResult {
    if (comment.kind == "more") {
-      return html`<a href="https://www.reddit.com${state?.parentLink}" class="flex items-center gap-1">
-               More replies on Reddit
-            </a>`
+      return html`<a href="https://www.reddit.com${state?.parentLink}" class="flex items-center gap-1"> More replies on Reddit </a>`;
    }
    const date = dateToText(comment.data.created_utc * 1000);
    const authorUrl = "https://www.reddit.com/u/" + comment.data.author;
@@ -473,20 +481,23 @@ export function renderRedditComment(comment: RedditComment, state: { op: string;
       <div class="comment ${state.isReply ? "reply" : ""}">
          <div class="flex gap-1 text-sm items-center text-color/50">
             <a href="${authorUrl}" class="${state?.op == comment.data.author ? "" : "text-color"} font-bold">${comment.data.author}</a>
-            <span class="flex items-center text-color/50">•</span>
-            <span class="flex items-center text-color/50">${date}</span>
+            <span class="flex items-center">•</span>
+            <span class="flex items-center">${date}</span>
+            <span class="flex items-center">•</span>
+            <div class="comment-buttons">
+               <a href="${`https://www.reddit.com${comment.data.permalink}`}" class="flex items-center gap-1 text-color/50">
+                  <i class="icon fill-color/50">${unsafeHTML(replyIcon)}</i> Reply
+               </a>
+            </div>
          </div>
          <div class="content">${safeHTML(htmlDecode(comment.data.body_html))}</div>
-         <div class="comment-buttons">
-            <a href="${`https://www.reddit.com${comment.data.permalink}`}" class="flex items-center gap-1 text-sm text-color">
-               <i class="icon">${unsafeHTML(replyIcon)}</i> Reply
-            </a>
-         </div>
          ${
             comment.data.replies && comment.data.replies.data.children.length > 0
                ? html`
                     <div class="replies">
-                       ${map(comment.data.replies.data.children, (reply) => renderRedditComment(reply, { op: state?.op, isReply: true, parentLink: comment.data.permalink, postLink: state?.postLink}))}
+                       ${map(comment.data.replies.data.children, (reply) =>
+                          renderRedditComment(reply, { op: state?.op, isReply: true, parentLink: comment.data.permalink, postLink: state?.postLink })
+                       )}
                     </div>
                  `
                : ""

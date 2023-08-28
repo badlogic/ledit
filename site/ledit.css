@@ -323,7 +323,7 @@ body {
    }
 
    .reply {
-      @apply pl-4 py-2 border-dotted border-l border-border;
+      @apply pl-4 py-2 mt-2 border-dotted border-l border-border;
    }
 
    .reply:last-child {

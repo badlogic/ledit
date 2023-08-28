@@ -336,15 +336,16 @@ export function renderHnComment(comment: HnComment, state: { op: string; isReply
       <div class="comment ${state.isReply ? "reply" : ""}">
          <div class="flex gap-1 text-sm items-center text-color/50">
             <a href="${comment.authorUrl}" class="${state?.op == comment.author ? "" : "text-color"} font-bold">${comment.author}</a>
-            <span class="flex items-center text-color/50">•</span>
-            <span class="flex items-center text-color/50">${date}</span>
+            <span class="flex items-center">•</span>
+            <span class="flex items-center">${date}</span>
+            <span class="flex items-center">•</span>
+            <div class="comment-buttons">
+               <a href="https://news.ycombinator.com/item?id=${comment.raw.objectID}" class="flex items-center gap-1 text-sm text-color/50"
+                  ><i class="icon fill-color/50">${unsafeHTML(replyIcon)}</i> Reply</a
+               >
+            </div>
          </div>
          <div class="content">${safeHTML(comment.content)}</div>
-         <div class="comment-buttons">
-            <a href="https://news.ycombinator.com/item?id=${comment.raw.objectID}" class="flex items-center text-sm text-color"
-               ><i class="icon mr-1">${unsafeHTML(replyIcon)}</i> Reply</a
-            >
-         </div>
          ${comment.replies.length > 0
             ? html` <div class="replies">${map(comment.replies, (reply) => renderHnComment(reply, { op: state?.op, isReply: true }))}</div> `
             : ""}
