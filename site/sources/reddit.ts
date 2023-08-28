@@ -448,7 +448,7 @@ export async function renderRedditComments(source: RedditSource, permalink: stri
       ...renderInfoMessage(html`<div class="flex flex-row items-center gap-4 px-4">
          <span>${addCommasToNumber(post.data.num_comments)} comments</span>
          <div class="flex items-flex-start gap-4">
-            <a href="${`https://www.reddit.com${post.data.permalink}`}" class="flex items-center gap-1 h-[2em]">
+            <a href="${`https://www.reddit.com${post.data.permalink}`}" class="flex items-center gap-1">
                <i class="icon">${unsafeHTML(replyIcon)}</i> Reply
             </a>
          </div>

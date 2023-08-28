@@ -34,7 +34,7 @@ export function getSettings(): Settings {
          { source: "r/", label: "worldnews", ids: ["worldnews"], isDefault: false },
          { source: "r/", label: "science", ids: ["science"], isDefault: false },
          { source: "r/", label: "todayilearned", ids: ["todayilearned"], isDefault: false },
-         { source: "hn/", label: "hackernews", ids: [""], isDefault: false },
+         { source: "hn/", label: "news", ids: [""], isDefault: false },
          {
             source: "rss/",
             label: "Tech News",

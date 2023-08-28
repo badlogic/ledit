@@ -23,7 +23,7 @@ html[data-theme="dark"] {
 html[data-theme="light"] {
    --background: 255, 255, 255;
    --color: 75, 85, 99;
-   --border: 200, 200, 200;
+   --border: 180, 180, 180;
    --primary: 204, 125, 36;
    --surface: 255, 255, 255;
    --surface-dim: 230, 230, 230;
@@ -79,16 +79,12 @@ body {
       @apply text-base;
    }
 
-   button {
-      cursor: pointer;
-      border-radius: 0.25em;
-      border: 1px solid var(--border);
-      padding: 0.5rem 1rem;
-      text-align: center;
+   input, textarea {
+      @apply bg-transparent outline-primary border border-solid border-color focus:border-primary focus:outline p-2 rounded;
    }
 
-   button:hover {
-      background-color: var(--primary);
+   button {
+      @apply border px-4 py-2 border-solid border-primary text-center text-primary rounded hover:bg-primary hover:text-color;
    }
 
    pre {
@@ -350,7 +346,7 @@ body {
    }
 
    .content p:last-child {
-      @apply pb-0 mb-1;
+      @apply pb-0 mb-0;
    }
 
    .content a::after {

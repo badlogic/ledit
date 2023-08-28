@@ -1,6 +1,6 @@
 // @ts-ignore
 import { TemplateResult, html, render } from "lit-html";
-import { elements, firstTextChild, htmlDecode, intersectsViewport, isLink, onAddedToDOM, onTapped, waitForMediaLoaded } from "../utils";
+import { assertNever, elements, firstTextChild, htmlDecode, intersectsViewport, isLink, onAddedToDOM, onTapped, waitForMediaLoaded } from "../utils";
 import DOMPurify from "dompurify";
 import { escapeGuard, navigationGuard } from "./guards";
 // @ts-ignore
@@ -10,6 +10,43 @@ import { map } from "lit-html/directives/map.js";
 // @ts-ignore
 import closeIcon from "remixicon/icons/System/close-circle-line.svg";
 import videojs from "video.js";
+import { SourcePrefix } from "./data";
+// @ts-ignore
+import { ifDefined } from "lit-html/directives/if-defined.js";
+
+export type Route = { test: (hash: string) => Record<string, string> | null, render: (params: Record<string, string>) => void };
+
+export function route(pattern: string, render: (params: Record<string, string>) => void): Route {
+   return {
+      test: (hash: string) => matchHashPattern(hash, pattern),
+      render
+   }
+}
+
+function matchHashPattern(urlHash: string, pattern: string): Record<string, string> | null {
+   const patternParts = pattern.split('/');
+   const urlHashParts = urlHash.split('/');
+
+   if (patternParts.length !== urlHashParts.length) {
+      return null; // Number of path elements doesn't match
+   }
+
+   const params: Record<string, string> = {};
+
+   for (let i = 0; i < patternParts.length; i++) {
+      const patternPart = patternParts[i];
+      const hashPart = urlHashParts[i];
+
+      if (patternPart.startsWith(':')) {
+         const paramName = patternPart.slice(1);
+         params[paramName] = hashPart;
+      } else if (patternPart !== hashPart) {
+         return null; // Path element doesn't match
+      }
+   }
+
+   return params;
+}
 
 export function dom(template: TemplateResult, container?: HTMLElement | DocumentFragment): HTMLElement[] {
    if (container) {
@@ -65,12 +102,16 @@ export function renderContentLoader() {
    </div>`)[0];
 }
 
-export function renderHeaderButton(icon: string, classes?: string, href?: string): TemplateResult {
-   return html`<a href="${href ? href : ""}" class="flex items-center justify-center min-w-8 max-w-8 w-8 min-h-8 max-h-8 h-8 ${classes ? classes : ""}"><i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(icon)}</i></a>`;
+export function renderHeaderButton(icon: string, classes?: string, href?: string, xId?: string): TemplateResult {
+   if (href) {
+      return html`<a x-id="${ifDefined(xId)}" href="${ifDefined(href)}" class="flex items-center justify-center min-w-8 max-w-8 w-8 min-h-8 max-h-8 h-8 ${classes ? classes : ""}"><i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(icon)}</i></a>`;
+   } else {
+      return html`<div  x-id="${ifDefined(xId)}" class="flex items-center justify-center min-w-8 max-w-8 w-8 min-h-8 max-h-8 h-8 ${classes ? classes : ""}"><i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(icon)}</i></div>`;
+   }
 }
 
 export let numOverlays = 0;
-export function renderOverlay(header: HTMLElement[] | string, content: HTMLElement[] = [], closeCallback = () => {}): { dom: HTMLElement, close: () => void} {
+export function  renderOverlay(header: HTMLElement[] | string, content: HTMLElement[] = [], closeCallback = () => {}): { dom: HTMLElement, close: () => void} {
    const overlay = dom(html` <div class="fixed top-0 w-full h-full overflow-auto bg-background">
       <div class="overlay m-auto backdrop-blur-[8px] flex flex-col" x-id="container"></div>
    </div>`)[0];
@@ -135,6 +176,25 @@ export function renderOverlay(header: HTMLElement[] | string, content: HTMLEleme
    document.body.style.overflow = "hidden";
 
    return { dom: container, close };
+}
+
+export function makeOverlayModal(appPages: Route[], overlay: {dom: HTMLElement, close: () => void }) {
+   for  (const link of Array.from(overlay.dom.querySelectorAll("a"))) {
+      link.addEventListener("click", (event) => {
+         event.preventDefault();
+         event.stopPropagation();
+         const callback = () => {
+            window.removeEventListener("hashchange", callback);
+            location.href = link.href;
+            if (!appPages.some((page) => page.test(link.hash))) {
+               console.log("Reloading due to modal.");
+               location.reload();
+            }
+         };
+         window.addEventListener("hashchange", callback);
+         overlay.close();
+      });
+   }
 }
 
 export function renderGallery(imageUrls: string[]): HTMLElement {
@@ -312,4 +372,42 @@ export function getFeedFromHash(): string {
    const tokens = afterPrefix.split("/");
    if (tokens.length == 0) return "";
    return tokens[0];
+}
+
+export function sourcePrefixToLabel(source: SourcePrefix | string) {
+   if (typeof source == "string" && !source.endsWith("/")) source = source + "/";
+   const src: SourcePrefix = source as SourcePrefix;
+   switch (src) {
+      case "r/":
+         return "Reddit";
+      case "hn/":
+         return "Hackernews";
+      case "rss/":
+         return "RSS";
+      case "yt/":
+         return "YouTube";
+      case "m/":
+         return "Mastodon";
+      default:
+         assertNever(src);
+   }
+}
+
+export function sourcePrefixToFeedLabel(source: SourcePrefix | string) {
+   if (typeof source == "string" && !source.endsWith("/")) source = source + "/";
+   const src: SourcePrefix = source as SourcePrefix;
+   switch (src) {
+      case "r/":
+         return "Subreddits";
+      case "hn/":
+         return "Hackernews";
+      case "rss/":
+         return "RSS feeds";
+      case "yt/":
+         return "YouTube channels";
+      case "m/":
+         return "Mastodon accounts";
+      default:
+         assertNever(src);
+   }
 }

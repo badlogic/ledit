@@ -5,8 +5,10 @@ import { svgBookmark, svgCheck, svgHackernews, svgMastodon, svgMinus, svgPencil,
 import { assertNever, dom, makeChildrenDraggable, navigate } from "./utils";
 import { OverlayView, View } from "./view";
 
-function sourcePrefixToFeedLabel(source: SourcePrefix) {
-   switch (source) {
+function sourcePrefixToFeedLabel(source: SourcePrefix | string) {
+   if (typeof source == "string" && !source.endsWith("/")) source = source + "/";
+   const src: SourcePrefix = source as SourcePrefix;
+   switch (src) {
       case "r/":
          return "Subreddits";
       case "hn/":
@@ -18,7 +20,7 @@ function sourcePrefixToFeedLabel(source: SourcePrefix) {
       case "m/":
          return "Mastodon accounts";
       default:
-         assertNever(source);
+         assertNever(src);
    }
 }
 
