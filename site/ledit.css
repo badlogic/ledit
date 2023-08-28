@@ -141,6 +141,10 @@ body {
    .nc-int-icon-slide-up.nc-int-icon-state-b .nc-int-icon-b {
       transform: translateY(0%);
    }
+
+   .text-ellipsis {
+      white-space: pre;
+   }
 }
 
 @layer icon {

@@ -1162,10 +1162,6 @@ main > .post {
   max-width: 300px;
 }
 
-.max-w-\[90\%\] {
-  max-width: 90%;
-}
-
 .flex-1 {
   flex: 1 1 0%;
 }
@@ -1495,6 +1491,10 @@ body {
 
   .nc-int-icon-slide-up.nc-int-icon-state-b .nc-int-icon-b {
     transform: translateY(0%);
+  }
+
+  .text-ellipsis {
+    white-space: pre;
   }
 }
 
