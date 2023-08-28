@@ -134,7 +134,7 @@ export function renderPosts<T>(
 export function renderSettings() {
    const template = (settings: Settings) =>
       html`
-         <div class="settings flex flex-col text-lg gap-4 mt-4 px-2">
+         <div class="settings flex flex-col text-lg gap-4 mt-4 px-4">
             <div class="text-xl font-bold border-b border-border">View options</div>
             <div x-id="theme" class="cursor-pointer flex items-center">
                <span>Theme</span>

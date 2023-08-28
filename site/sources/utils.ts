@@ -121,7 +121,7 @@ export function  renderOverlay(header: HTMLElement[] | string, content: HTMLElem
    const { container } = elements<{ container: HTMLElement }>(overlay);
    if (typeof header === "string") {
       header = dom(html` <header class="header cursor-pointer">
-         <span class="font-bold max-w-[90%] text-primary text-ellipsis overflow-hidden">${header}</span>
+         <span class="font-bold max-w-[90%] text-primary text-ellipsis overflow-hidden ml-2">${header}</span>
          ${renderHeaderButton(closeIcon, "ml-auto")}
       </header>`);
    }
