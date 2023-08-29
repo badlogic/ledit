@@ -1,12 +1,21 @@
 import { html, render } from "lit-html";
-import { Page, PageIdentifier, SortingOption, Source, SourcePrefix } from "./data";
+import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
+import { Page, PageIdentifier, SortingOption, Source } from "./data";
 import { Bookmark, bookmarkToHash, getSettings, saveSettings } from "./settings";
-import { dom, makeOverlayModal, renderContentLoader, renderOverlay, renderPosts } from "./utils";
-import { elements, navigate } from "../utils";
+import { dom, makeOverlayModal, renderContentLoader, renderGallery, renderOverlay, renderPosts, renderVideo, safeHTML } from "./utils";
+import { addCommasToNumber, dateToText, elements, navigate, onVisibleOnce, setLinkTargetsToBlank } from "../utils";
 // @ts-ignore
 import loaderIcon from "../svg/loader.svg";
-import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
-
+// @ts-ignore
+import commentIcon from "remixicon/icons/Communication/chat-4-line.svg";
+// @ts-ignore
+import replyIcon from "remixicon/icons/Business/reply-line.svg";
+// @ts-ignore
+import starIcon from "remixicon/icons/System/star-line.svg";
+// @ts-ignore
+import reblogIcon from "remixicon/icons/Media/repeat-line.svg";
+// @ts-ignore
+import imageIcon from "remixicon/icons/Media/image-line.svg";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
 
@@ -416,22 +425,22 @@ function replaceEmojis(text: string, emojis: MastodonEmoji[]) {
 
    for (const emoji of emojis) {
       const shortcodeRegExp = new RegExp(`:${emoji.shortcode}:`, "g");
-      replacedText = replacedText.replace(shortcodeRegExp, `<img class="mastodon-emoji" src="${emoji.url}" alt="${emoji.shortcode}">`);
+      replacedText = replacedText.replace(shortcodeRegExp, `<div class="inline-flex items-center align-middle h-[1.5em]"><img class="w-[1em] h-[1em]" src="${emoji.url}" alt="${emoji.shortcode}"></div>`);
    }
 
-   return replacedText;
+   return html`${safeHTML(replacedText)}`;
 }
 
 function getAccountName(account: MastodonAccount, shouldReplaceEmojis = false) {
    let name = account.display_name && account.display_name.length > 0 ? account.display_name : account.username;
    if (shouldReplaceEmojis) {
-      return `<span class="mastodon-emoji-container">${replaceEmojis(name, account.emojis)}</span>`;
+      return html`<span>${replaceEmojis(name, account.emojis)}</span>`;
    } else {
       return name;
    }
 }
 
-function getUserInfo(input: string, requireToken = false): MastodonUserInfo | null {
+function getUserInfo(input: string, requireToken = false): MastodonUserInfo | undefined {
    let username = "";
    let instance = "";
    let bearer: string | null = null;
@@ -439,7 +448,7 @@ function getUserInfo(input: string, requireToken = false): MastodonUserInfo | nu
    if (input.startsWith("@")) input = input.substring(1);
    const tokens = input.split("@");
    if (tokens.length != 2) {
-      return null;
+      return undefined;
    }
    username = tokens[0];
    instance = tokens[1];
@@ -454,7 +463,7 @@ function getUserInfo(input: string, requireToken = false): MastodonUserInfo | nu
          bearer = bookmark.supplemental.bearer;
       }
    }
-   if (requireToken && !bearer) return null;
+   if (requireToken && !bearer) return undefined;
    return { username, instance, bearer };
 }
 
@@ -666,9 +675,15 @@ export class MastodonSource extends Source<MastodonPost> {
       main.append(loader);
       const page = await this.getPosts(null);
       loader.remove();
-      renderPosts(main, page, renderMastodonPost, (nextPage: PageIdentifier) => {
-         return this.getPosts(nextPage);
-      })
+      renderPosts(
+         main,
+         page,
+         renderMastodonPost,
+         (nextPage: PageIdentifier) => {
+            return this.getPosts(nextPage);
+         },
+         this.user
+      );
    }
 
    getSortingOptions(): SortingOption[] {
@@ -676,8 +691,132 @@ export class MastodonSource extends Source<MastodonPost> {
    }
 }
 
-export function renderMastodonPost(post: MastodonPost) {
-   return dom(html`<article class="post mastodon-post">Mastodon post</article>`);
+export function renderMastodonMedia(post: MastodonPost, contentDom: HTMLElement) {
+   const mediaDom = dom(html`<div class="media flex flex-col items-center gap-2 mt-2"></div>`)[0];
+   if (post.media_attachments.length > 0) {
+      const images: string[] = [];
+      const videos: MastodonMedia[] = [];
+
+      for (const media of post.media_attachments) {
+         if (media.type == "image") {
+            images.push(media.url);
+         } else if (media.type == "gifv") {
+            videos.push(media);
+         } else if (media.type == "video") {
+            videos.push(media);
+         }
+      }
+
+      if (images.length >= 1) {
+         const gallery = renderGallery(images);
+         mediaDom.append(gallery);
+      }
+      if (videos.length >= 1) {
+         for (const video of videos) {
+            mediaDom.append(
+               renderVideo(
+                  {
+                     width: video.meta?.original?.width ?? 0,
+                     height: video.meta?.original?.height ?? 0,
+                     urls: [video.url],
+                  },
+                  false
+               )
+            );
+         }
+      }
+   }
+
+   // FIXME render cards
+   if (post.card) {
+   }
+
+   // FIXME render poll
+   if (post.poll) {
+   }
+   contentDom.append(mediaDom);
+}
+
+export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) {
+   const postToView = post.reblog ?? post;
+   const postDom = dom(html` <article class="post mastodon-post gap-2">
+      ${
+         post.reblog
+            ? html`<div class="flex items-center gap-2 text-sm text-color/60 overflow-hidden">
+                 <span>Boosted by</span>
+                 <img class="w-[1.5em] h-[1.5em] rounded-full" src="${post.account.avatar_static}" />
+                 <span class="overflow-hidden text-ellipsis">${getAccountName(post.account)}</span>
+              </div>`
+            : ""
+      }
+      <div class="flex items-center gap-2">
+         <img class="w-[2.5em] h-[2.5em] rounded-full" src="${postToView.account.avatar_static}" />
+         <a href="${postToView.account.url}" class="flex inline-block flex-col text-sm text-color overflow-hidden">
+            <span class="font-bold overflow-hidden text-ellipsis">${getAccountName(postToView.account)}</span>
+            <span class="text-color/60 overflow-hidden text-ellipsis"
+               >${
+                  postToView.account.username +
+                  (user && user.instance == new URL(postToView.account.url).host ? "" : "@" + new URL(postToView.account.url).host)
+               }</span
+            >
+         </a>
+         <a href="${postToView.url}" class="ml-auto text-xs self-start">${dateToText(new Date(postToView.created_at).getTime())}</a>
+      </div>
+      ${
+         postToView.in_reply_to_post
+            ? html` <div class="flex items-center gap-1 text-sm text-color/60 overflow-hidden">
+                 <span>In reply to</span>
+                 <img class="w-[1.5em] h-[1.5em] rounded-full" src="${postToView.in_reply_to_post.account.avatar_static}" />
+                 <span class="overflow-hidden text-ellipsis">${getAccountName(postToView.in_reply_to_post.account)}</span>
+              </div>`
+            : ""
+      }
+      <div x-id="contentDom" class="content">
+         <div class="content-text">${replaceEmojis(postToView.content, postToView.emojis)}</div>
+      </div>
+      <div class="flex items-flex-start gap-4">
+         <a href="" class="self-link flex items-center gap-1 h-[2em]">
+            <i class="icon fill-color">${unsafeHTML(commentIcon)}</i>
+            <span class="text-color">${addCommasToNumber(postToView.replies_count)}</span>
+         </span>
+         <a href="" class="flex items-center gap-1 h-[2em]">
+            <i class="icon fill-color">${unsafeHTML(replyIcon)}</i>
+            <span class="text-color">Reply</span>
+         </a>
+         <a href="" class="flex items-center gap-1 h-[2em]">
+            <i class="icon ${postToView.reblogged ? "fill-primary" : "fill-color"}">${unsafeHTML(reblogIcon)}</i>
+            <span class="text-color">${addCommasToNumber(postToView.reblogs_count)}</span>
+         </a>
+         <a href="" class="flex items-center gap-1 h-[2em]">
+            <i class="icon ${postToView.favourited ? "fill-primary" : "fill-color"}">${unsafeHTML(starIcon)}</i>
+            <span class="text-color">${addCommasToNumber(postToView.favourites_count)}</span>
+         </a>
+         ${
+            postToView.media_attachments.length > 1
+               ? html` <span class="flex items-center gap-1 cursor-pointer h-[2em]" x-id="gallery">
+                     <i class="icon fill-color">${unsafeHTML(imageIcon)}</i>
+                     <span class="text-color">${postToView.media_attachments.length}</span>
+                  </span>`
+               : ""
+         }
+      </div>
+   </article>`);
+
+   const { contentDom, gallery } = elements<{contentDom: HTMLElement, gallery?: HTMLElement }>(postDom[0]);
+
+   onVisibleOnce(postDom[0], () => {
+      renderMastodonMedia(postToView, contentDom);
+      setLinkTargetsToBlank(contentDom);
+
+      if (gallery) {
+         const img = contentDom.querySelector(".media img");
+         if (img) {
+            gallery.addEventListener("click", () => (img as HTMLElement).click());
+         }
+      }
+   });
+
+   return postDom;
 }
 
 export function renderMastodonAccountEditor(params: Record<string, string>) {
@@ -688,14 +827,18 @@ export function renderMastodonAccountEditor(params: Record<string, string>) {
          label: "",
          ids: [],
          isDefault: false,
-         supplemental: {username: "", instance: "", bearer: null} as MastodonUserInfo,
+         supplemental: { username: "", instance: "", bearer: null } as MastodonUserInfo,
       } as Bookmark);
    const isNew = accountBookmark.label.length == 0;
 
    const accountEditorTemplate = (user: MastodonUserInfo, errorId: string, errorToken: string, errorConnect: string) => html`
       <div class="w-full flex flex-col gap-4 px-4 pt-4">
          <label class="font-bold">Account</label>
-         <input x-id="id" placeholder="E.g. 'mario@mastodon.social'" .value="${user.username.length > 0 ? user.username + "@" + user.instance : ""}" />
+         <input
+            x-id="id"
+            placeholder="E.g. 'mario@mastodon.social'"
+            .value="${user.username.length > 0 ? user.username + "@" + user.instance : ""}"
+         />
          ${errorId.length > 0 ? html`<div class="text-xs text-red-600">${errorId}</div>` : ""}
          <label class="font-bold">Access token <a href="" class="text-primary text-sm">(What is this?)</a></label>
          <input x-id="token" placeholder="E.g. 'mario@mastodon.social'" .value="${user.bearer}" />
@@ -724,11 +867,19 @@ export function renderMastodonAccountEditor(params: Record<string, string>) {
       }
       const tokens = idValue.split("@");
       if (tokens.length != 2) {
-         render(accountEditorTemplate(accountBookmark.supplemental, "Invalid Mastodon account format. Should be 'user@instance'.", "", ""), overlay.dom);
+         render(
+            accountEditorTemplate(accountBookmark.supplemental, "Invalid Mastodon account format. Should be 'user@instance'.", "", ""),
+            overlay.dom
+         );
          id.focus();
          return;
       }
-      if (isNew && settings.bookmarks.find((bookmark) => bookmark.supplemental && bookmark.supplemental.username == tokens[0] && bookmark.supplemental.instance == tokens[1])) {
+      if (
+         isNew &&
+         settings.bookmarks.find(
+            (bookmark) => bookmark.supplemental && bookmark.supplemental.username == tokens[0] && bookmark.supplemental.instance == tokens[1]
+         )
+      ) {
          render(accountEditorTemplate(accountBookmark.supplemental, `Account '${idValue}' already exists.`, "", ""), overlay.dom);
          id.focus();
          return;
@@ -755,9 +906,9 @@ export function renderMastodonAccountEditor(params: Record<string, string>) {
       // All good, save the bookmark and close.
       accountBookmark.label = idValue;
       accountBookmark.ids = [idValue + "/home"];
-      accountBookmark.supplemental = {username: idValue.split("@")[0], instance: idValue.split("@")[1], bearer: tokenValue } as MastodonUserInfo;
+      accountBookmark.supplemental = { username: idValue.split("@")[0], instance: idValue.split("@")[1], bearer: tokenValue } as MastodonUserInfo;
 
-      if (!settings.bookmarks.find((other) =>JSON.stringify(other.supplemental) == JSON.stringify(accountBookmark.supplemental))) {
+      if (!settings.bookmarks.find((other) => JSON.stringify(other.supplemental) == JSON.stringify(accountBookmark.supplemental))) {
          settings.bookmarks.push(accountBookmark);
       }
 

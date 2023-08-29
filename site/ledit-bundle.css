@@ -785,6 +785,57 @@ code {
      object-fit: contain;
 }
 
+.mastodon-emoji {
+  height: 1em;
+  width: 1em;
+  vertical-align: text-top;
+}
+
+.mastodon-post .content {
+  width: 100%;
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+@media (min-width: 640px) {
+  .mastodon-post .content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+.mastodon-post .content-text {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .mastodon-post .content-text {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+}
+
+.mastodon-post .content .media img {
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+@media (min-width: 640px) {
+  .mastodon-post .content .media img {
+    border-radius: 0.25rem;
+  }
+}
+
+.mastodon-post .content .media img {
+  align-self: start;
+  margin: 0 auto;
+  max-width: 100%;
+  max-height: 75vh;
+  -o-object-fit: contain;
+     object-fit: contain;
+}
+
 .header {
   position: sticky;
   top: 0px;
@@ -999,22 +1050,6 @@ main > .post {
   padding-bottom: 0px;
 }
 
-.content a::after {
-  margin-left: 0.25rem;
-  height: 1rem;
-  width: 1rem;
-  fill: rgba(var(--primary), 1);
-  display: inline-block;
-  content: "";
-  -webkit-mask: url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19L18.9999 6.413L11.2071 14.2071L9.79289 12.7929L17.5849 5H13V3H21Z'></path></svg>")
-         no-repeat 50% 50%;
-  mask: url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19L18.9999 6.413L11.2071 14.2071L9.79289 12.7929L17.5849 5H13V3H21Z'></path></svg>")
-         no-repeat 50% 50%;
-  -webkit-mask-size: cover;
-  mask-size: cover;
-  background-color: rgb(var(--primary));
-}
-
 .collapse {
   visibility: collapse;
 }
@@ -1096,6 +1131,10 @@ main > .post {
   display: flex;
 }
 
+.inline-flex {
+  display: inline-flex;
+}
+
 .grid {
   display: grid;
 }
@@ -1124,8 +1163,16 @@ main > .post {
   height: 1.2em;
 }
 
+.h-\[1\.5em\] {
+  height: 1.5em;
+}
+
 .h-\[10em\] {
   height: 10em;
+}
+
+.h-\[2\.5em\] {
+  height: 2.5em;
 }
 
 .h-\[2em\] {
@@ -1138,6 +1185,10 @@ main > .post {
 
 .h-full {
   height: 100%;
+}
+
+.h-\[1em\] {
+  height: 1em;
 }
 
 .max-h-4 {
@@ -1164,12 +1215,24 @@ main > .post {
   width: 1.2em;
 }
 
+.w-\[1\.5em\] {
+  width: 1.5em;
+}
+
+.w-\[2\.5em\] {
+  width: 2.5em;
+}
+
 .w-\[80\%\] {
   width: 80%;
 }
 
 .w-full {
   width: 100%;
+}
+
+.w-\[1em\] {
+  width: 1em;
 }
 
 .min-w-\[1\.5em\] {
@@ -1246,6 +1309,10 @@ main > .post {
   --tw-space-y-reverse: 0;
   margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
   margin-bottom: calc(1.5rem * var(--tw-space-y-reverse));
+}
+
+.self-start {
+  align-self: flex-start;
 }
 
 .self-end {
@@ -1365,6 +1432,10 @@ main > .post {
   text-align: right;
 }
 
+.align-middle {
+  vertical-align: middle;
+}
+
 .text-lg {
   font-size: 1.125rem;
   line-height: 1.75rem;
@@ -1396,6 +1467,10 @@ main > .post {
 
 .text-color\/50 {
   color: rgba(var(--color), 0.5);
+}
+
+.text-color\/60 {
+  color: rgba(var(--color), 0.6);
 }
 
 .text-primary {

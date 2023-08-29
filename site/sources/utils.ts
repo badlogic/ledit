@@ -282,11 +282,12 @@ export function renderVideo(videoDesc: { width: number; height: number; urls: st
    return videoDom;
 }
 
-export function renderPosts<T>(
+export function renderPosts<T, D>(
    container: HTMLElement,
    page: Page<T> | Error,
-   renderPost: (post: T) => HTMLElement[],
-   getNextPage: (nextPage: PageIdentifier) => Promise<Page<T> | Error>
+   renderPost: (post: T, data?: D) => HTMLElement[],
+   getNextPage: (nextPage: PageIdentifier) => Promise<Page<T> | Error>,
+   data?: D
 ) {
    if (page instanceof Error) {
       container.append(...renderErrorMessage(`Could not load feed`, page));
@@ -295,7 +296,7 @@ export function renderPosts<T>(
 
    const posts: HTMLElement[] = [];
    for (const post of page.items) {
-      posts.push(...renderPost(post));
+      posts.push(...renderPost(post, data));
    }
    container.append(...posts);
    setLinkTargetsToBlank(container);
