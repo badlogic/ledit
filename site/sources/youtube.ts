@@ -1,8 +1,7 @@
-import { Page, SortingOption, Source, SourcePrefix } from "./data";
+import { Page, PageIdentifier, SortingOption, Source, SourcePrefix } from "./data";
 import { RssSource, RssPost } from "./rss";
 import { dateToText, elements, intersectsViewport, onVisibleOnce, proxyFetch, setLinkTargetsToBlank } from "../utils";
-import { dom, safeHTML } from "./utils";
-// @ts-ignore
+import { dom, renderContentLoader, renderPosts, safeHTML } from "./utils";
 import { html } from "lit-html";
 
 const channelIds = localStorage.getItem("youtubeCache") ? JSON.parse(localStorage.getItem("youtubeCache")!) : {};
@@ -56,16 +55,18 @@ export class YoutubeSource extends Source<YoutubePost> {
       return { items: posts, nextPage: "end" };
    }
 
-   getSourcePrefix(): SourcePrefix {
-      return "yt/";
+   async renderMain(main: HTMLElement) {
+      const loader = renderContentLoader();
+      main.append(loader);
+      const page = await this.getPosts(null);
+      loader.remove();
+      renderPosts(main, page, renderYoutubePost, (nextPage: PageIdentifier) => {
+         return this.getPosts(nextPage);
+      })
    }
 
    getSortingOptions(): SortingOption[] {
       return [];
-   }
-
-   getSorting(): string {
-      return "";
    }
 }
 

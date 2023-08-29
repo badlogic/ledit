@@ -479,7 +479,8 @@ h5,
   line-height: 1.5rem;
 }
 
-input, textarea {
+input,
+   textarea {
   border-radius: 0.25rem;
   border-width: 1px;
   border-style: solid;
@@ -490,7 +491,8 @@ input, textarea {
   outline-color: rgba(var(--primary), 1);
 }
 
-input:focus, textarea:focus {
+input:focus,
+   textarea:focus {
   --tw-border-opacity: 1;
   border-color: rgba(var(--primary), var(--tw-border-opacity));
   outline-style: solid;
@@ -515,7 +517,7 @@ button:hover {
   --tw-bg-opacity: 1;
   background-color: rgba(var(--primary), var(--tw-bg-opacity));
   --tw-text-opacity: 1;
-  color: rgba(var(--color), var(--tw-text-opacity));
+  color: rgba(var(--on-primary), var(--tw-text-opacity));
 }
 
 pre {
@@ -528,6 +530,10 @@ code {
   font-family: var(--font-family-code);
   font-size: 0.8em;
   line-height: 1em;
+}
+
+.text-ellipsis {
+  white-space: pre;
 }
 
 *, ::before, ::after {
@@ -744,6 +750,18 @@ code {
   .reddit-post .content {
     padding-left: 1rem;
     padding-right: 1rem;
+  }
+}
+
+.reddit-post .content-text {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .reddit-post .content-text {
+    padding-left: 0px;
+    padding-right: 0px;
   }
 }
 
@@ -1303,6 +1321,10 @@ main > .post {
   fill: rgba(var(--primary), 1);
 }
 
+.fill-primary\/30 {
+  fill: rgba(var(--primary), 0.3);
+}
+
 .fill-primary\/50 {
   fill: rgba(var(--primary), 0.5);
 }
@@ -1425,6 +1447,7 @@ html[data-theme="dark"] {
   --color: 250, 250, 250;
   --border: 55, 55, 55;
   --primary: 204, 125, 36;
+  --on-primary: 250, 250, 250;
   --surface: 17, 17, 17;
   --surface-dim: 39, 39, 39;
 }
@@ -1434,6 +1457,7 @@ html[data-theme="light"] {
   --color: 75, 85, 99;
   --border: 180, 180, 180;
   --primary: 204, 125, 36;
+  --on-primary: 250, 250, 250;
   --surface: 255, 255, 255;
   --surface-dim: 230, 230, 230;
 }
@@ -1493,8 +1517,29 @@ body {
     transform: translateY(0%);
   }
 
-  .text-ellipsis {
-    white-space: pre;
+  /* Needed for loader svg **/
+
+  .spinner_b2T7 {
+    animation: spinner_xe7Q 0.8s linear infinite;
+  }
+
+  .spinner_YRVV {
+    animation-delay: -0.65s;
+  }
+
+  .spinner_c9oY {
+    animation-delay: -0.5s;
+  }
+
+  @keyframes spinner_xe7Q {
+    93.75%,
+      100% {
+      r: 3px;
+    }
+
+    46.875% {
+      r: 0.2px;
+    }
   }
 }
 

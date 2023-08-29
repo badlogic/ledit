@@ -1,18 +1,16 @@
-// @ts-ignore
+
 import { TemplateResult, html, render } from "lit-html";
-import { assertNever, elements, firstTextChild, htmlDecode, intersectsViewport, isLink, onAddedToDOM, onTapped, waitForMediaLoaded } from "../utils";
+import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
+import { map } from "lit-html/directives/map.js";
+import { ifDefined } from "lit-html/directives/if-defined.js";
+import { assertNever, elements, firstTextChild, htmlDecode, intersectsViewport, isLink, onAddedToDOM, onTapped, onVisibleOnce, setLinkTargetsToBlank, waitForMediaLoaded } from "../utils";
 import DOMPurify from "dompurify";
+import videojs from "video.js";
+import { Page, PageIdentifier, SourcePrefix } from "./data";
 import { escapeGuard, navigationGuard } from "./guards";
 // @ts-ignore
-import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
-// @ts-ignore
-import { map } from "lit-html/directives/map.js";
-// @ts-ignore
 import closeIcon from "remixicon/icons/System/close-circle-line.svg";
-import videojs from "video.js";
-import { SourcePrefix } from "./data";
-// @ts-ignore
-import { ifDefined } from "lit-html/directives/if-defined.js";
+import { appPages } from "../ledit";
 
 export type Route = { test: (hash: string) => Record<string, string> | null, render: (params: Record<string, string>) => void };
 
@@ -178,7 +176,7 @@ export function  renderOverlay(header: HTMLElement[] | string, content: HTMLElem
    return { dom: container, close };
 }
 
-export function makeOverlayModal(appPages: Route[], overlay: {dom: HTMLElement, close: () => void }) {
+export function makeOverlayModal(overlay: {dom: HTMLElement, close: () => void }) {
    for  (const link of Array.from(overlay.dom.querySelectorAll("a"))) {
       link.addEventListener("click", (event) => {
          event.preventDefault();
@@ -282,6 +280,41 @@ export function renderVideo(videoDesc: { width: number; height: number; urls: st
       });
    });
    return videoDom;
+}
+
+export function renderPosts<T>(
+   container: HTMLElement,
+   page: Page<T> | Error,
+   renderPost: (post: T) => HTMLElement[],
+   getNextPage: (nextPage: PageIdentifier) => Promise<Page<T> | Error>
+) {
+   if (page instanceof Error) {
+      container.append(...renderErrorMessage(`Could not load feed`, page));
+      return;
+   }
+
+   const posts: HTMLElement[] = [];
+   for (const post of page.items) {
+      posts.push(...renderPost(post));
+   }
+   container.append(...posts);
+   setLinkTargetsToBlank(container);
+
+   if (page.nextPage != "end") {
+      const loader = renderContentLoader();
+      container.append(loader);
+      onVisibleOnce(loader, async () => {
+         const newPage = await getNextPage(page.nextPage);
+         loader.remove();
+         if (newPage instanceof Error) {
+            container.append(...renderErrorMessage("Could not load next page", newPage));
+         } else {
+            renderPosts(container, newPage, renderPost, getNextPage);
+         }
+      });
+   } else {
+      container.append(...renderInfoMessage("No more posts"));
+   }
 }
 
 export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {

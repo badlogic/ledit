@@ -11,10 +11,8 @@ export type SortingOption = {
 
 export abstract class Source<P> {
    constructor(public readonly feed: string) {}
-   abstract getPosts(nextPage: PageIdentifier): Promise<Page<P> | Error>;
-   abstract getSourcePrefix(): SourcePrefix;
+   abstract renderMain(main: HTMLElement): void;
    abstract getSortingOptions(): SortingOption[];
-   abstract getSorting(): string;
 
    getFeed(): string {
       const feed = this.feed;

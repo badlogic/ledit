@@ -1,6 +1,4 @@
-// @ts-ignore
 import { TemplateResult, html } from "lit-html";
-// @ts-ignore
 import { map } from "lit-html/directives/map.js";
 import { dom } from "./utils";
 import { setLinkTargetsToBlank } from "../utils";

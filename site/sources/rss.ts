@@ -1,11 +1,10 @@
-// @ts-ignore
 import { extractFromXml } from "@extractus/feed-extractor";
 import { Page, SortingOption, Source, SourcePrefix } from "./data";
 import { parse, isValid } from "date-fns";
 import { dateToText, elements, onVisibleOnce, proxyFetch, removeTrailingEmptyParagraphs, setLinkTargetsToBlank } from "../utils";
-// @ts-ignore
 import { html } from "lit-html";
-import { dom, makeCollapsible, safeHTML } from "./utils";
+import { dom, makeCollapsible, renderContentLoader, renderPosts, safeHTML } from "./utils";
+import { PageIdentifier } from "../data";
 
 function parseFeedDate(dateString: string): Date {
    // Common RSS and Atom date formats (RFC 822 and RFC 3339)
@@ -135,16 +134,18 @@ export class RssSource extends Source<RssPost> {
       return { items: posts, nextPage: "end" };
    }
 
-   getSourcePrefix(): SourcePrefix {
-      return "rss/";
+   async renderMain(main: HTMLElement) {
+      const loader = renderContentLoader();
+      main.append(loader);
+      const page = await this.getPosts(null);
+      loader.remove();
+      renderPosts(main, page, renderRssPost, (nextPage: PageIdentifier) => {
+         return this.getPosts(nextPage);
+      })
    }
 
    getSortingOptions(): SortingOption[] {
       return [];
-   }
-
-   getSorting(): string {
-      return "";
    }
 }
 

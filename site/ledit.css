@@ -16,6 +16,7 @@ html[data-theme="dark"] {
    --color: 250, 250, 250;
    --border: 55, 55, 55;
    --primary: 204, 125, 36;
+   --on-primary: 250, 250, 250;
    --surface: 17, 17, 17;
    --surface-dim: 39, 39, 39;
 }
@@ -25,6 +26,7 @@ html[data-theme="light"] {
    --color: 75, 85, 99;
    --border: 180, 180, 180;
    --primary: 204, 125, 36;
+   --on-primary: 250, 250, 250;
    --surface: 255, 255, 255;
    --surface-dim: 230, 230, 230;
 }
@@ -79,12 +81,13 @@ body {
       @apply text-base;
    }
 
-   input, textarea {
+   input,
+   textarea {
       @apply bg-transparent outline-primary border border-solid border-color focus:border-primary focus:outline p-2 rounded;
    }
 
    button {
-      @apply border px-4 py-2 border-solid border-primary text-center text-primary rounded hover:bg-primary hover:text-color;
+      @apply border px-4 py-2 border-solid border-primary text-center text-primary rounded hover:bg-primary hover:text-on-primary;
    }
 
    pre {
@@ -97,6 +100,10 @@ body {
       font-family: var(--font-family-code);
       font-size: 0.8em;
       line-height: 1em;
+   }
+
+   .text-ellipsis {
+      white-space: pre;
    }
 }
 
@@ -142,8 +149,28 @@ body {
       transform: translateY(0%);
    }
 
-   .text-ellipsis {
-      white-space: pre;
+   /* Needed for loader svg **/
+   .spinner_b2T7 {
+      animation: spinner_xe7Q 0.8s linear infinite;
+   }
+
+   .spinner_YRVV {
+      animation-delay: -0.65s;
+   }
+
+   .spinner_c9oY {
+      animation-delay: -0.5s;
+   }
+
+   @keyframes spinner_xe7Q {
+      93.75%,
+      100% {
+         r: 3px;
+      }
+
+      46.875% {
+         r: 0.2px;
+      }
    }
 }
 
@@ -235,6 +262,10 @@ body {
 
    .reddit-post .content {
       @apply w-full px-0 sm:px-4;
+   }
+
+   .reddit-post .content-text {
+      @apply px-4 sm:px-0;
    }
 
    .reddit-post .content img {

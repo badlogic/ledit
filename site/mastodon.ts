@@ -514,7 +514,6 @@ export class MastodonSource extends Source<MastodonPostData, MastodonCommentData
          author: getAccountName(reply.account),
          authorUrl: reply.account.url,
          createdAt: new Date(reply.created_at).getTime() / 1000,
-         score: null,
          content,
          replies: [],
          highlight,

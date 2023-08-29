@@ -12,11 +12,11 @@ import {
    renderOverlay,
    renderErrorMessage,
    renderInfoMessage,
+   renderPosts,
 } from "./utils";
-// @ts-ignore
-import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
-// @ts-ignore
 import { TemplateResult, html } from "lit-html";
+import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
+import { map } from "lit-html/directives/map.js";
 // @ts-ignore
 import commentIcon from "remixicon/icons/Communication/chat-4-line.svg";
 // @ts-ignore
@@ -24,8 +24,6 @@ import replyIcon from "remixicon/icons/Business/reply-line.svg";
 // @ts-ignore
 import imageIcon from "remixicon/icons/Media/image-line.svg";
 import { renderComments } from "./comments";
-// @ts-ignore
-import { map } from "lit-html/directives/map.js";
 
 interface RedditPosts {
    kind: "listing";
@@ -154,6 +152,16 @@ export class RedditSource extends Source<RedditPost> {
       });
    }
 
+   async renderMain(main: HTMLElement) {
+      const loader = renderContentLoader();
+      main.append(loader);
+      const page = await this.getPosts(null);
+      loader.remove();
+      renderPosts(main, page, renderRedditPost, (nextPage: PageIdentifier) => {
+         return this.getPosts(nextPage);
+      })
+   }
+
    async getPosts(nextPage: PageIdentifier): Promise<Page<RedditPost> | Error> {
       try {
          const sortFrag = this.getSortingFragment();
@@ -180,6 +188,7 @@ export class RedditSource extends Source<RedditPost> {
          return new Error(`Could not load subreddit 'r/${this.getSubreddit()}'. It may not exist.`);
       }
    }
+
    async getComments(permalink: string): Promise<{ post: RedditPost; comments: RedditComment[] } | Error> {
       try {
          const commentsUrl = "https://www.reddit.com/" + permalink + ".json?limit=15000";
@@ -209,14 +218,6 @@ export class RedditSource extends Source<RedditPost> {
 
    getSubreddit() {
       return getSubreddit(this.feed);
-   }
-
-   getFeed() {
-      return this.getSubreddit();
-   }
-
-   getSourcePrefix(): SourcePrefix {
-      return "r/";
    }
 
    getSortingOptions(): SortingOption[] {

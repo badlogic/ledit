@@ -1,18 +1,15 @@
 import { encodeHTML } from "entities";
-import { Page, SortingOption, Source, SourcePrefix } from "./data";
+import { Page, PageIdentifier, SortingOption, Source, SourcePrefix } from "./data";
 import { addCommasToNumber, dateToText, elements, htmlDecode, onAddedToDOM, setLinkTargetsToBlank } from "../utils";
-// @ts-ignore
 import { TemplateResult, html } from "lit-html";
-import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderInfoMessage, renderOverlay, safeHTML } from "./utils";
+import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
+import { map } from "lit-html/directives/map.js";
+import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderInfoMessage, renderOverlay, renderPosts, safeHTML } from "./utils";
 // @ts-ignore
 import commentIcon from "remixicon/icons/Communication/chat-4-line.svg";
 // @ts-ignore
 import replyIcon from "remixicon/icons/Business/reply-line.svg";
-// @ts-ignore
-import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import { renderComments } from "./comments";
-// @ts-ignore
-import { map } from "lit-html/directives/map.js";
 
 interface HnRawPost {
    by: string;
@@ -219,12 +216,14 @@ export class HackerNewsSource extends Source<HnPost> {
       }
    }
 
-   getFeed(): string {
-      return "";
-   }
-
-   getSourcePrefix(): SourcePrefix {
-      return "hn/";
+   async renderMain(main: HTMLElement) {
+      const loader = renderContentLoader();
+      main.append(loader);
+      const page = await this.getPosts(null);
+      loader.remove();
+      renderPosts(main, page, renderHnPost, (nextPage: PageIdentifier) => {
+         return this.getPosts(nextPage);
+      })
    }
 
    getSortingOptions(): SortingOption[] {
