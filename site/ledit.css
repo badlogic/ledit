@@ -4,8 +4,8 @@
 
 :root {
    --font-size: 15px;
-   --font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-      Segoe UI Symbol, Noto Color Emoji;
+   --font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol,
+      Noto Color Emoji;
    --font-family-code: Menlo, monospace;
    --line-height: 1.5rem;
 }
@@ -87,7 +87,7 @@ body {
    }
 
    button {
-      @apply border px-4 py-2 border-solid border-primary text-center text-primary rounded hover:bg-primary hover:text-on-primary;
+      @apply border px-4 py-2 border-solid border-primary text-center text-primary rounded hover:bg-primary hover:text-on-primary disabled:border-color disabled:text-color disabled:bg-transparent;
    }
 
    pre {
@@ -114,41 +114,6 @@ body {
 }
 
 @layer animation {
-   .nc-int-icon-slide-up {
-      --animation-duration: 0.3s;
-   }
-   .nc-int-icon {
-      position: relative;
-   }
-   .nc-int-icon-b {
-      position: absolute;
-      top: calc(50% - 0.5em);
-      left: calc(50% - 0.5em);
-      opacity: 0;
-   }
-   .nc-int-icon-slide-up {
-      overflow: hidden;
-   }
-   .nc-int-icon-slide-up .nc-int-icon-a,
-   .nc-int-icon-slide-up .nc-int-icon-b {
-      transition: opacity var(--animation-duration), transform var(--animation-duration);
-   }
-   .nc-int-icon-slide-up .nc-int-icon-b {
-      transform: translateY(100%);
-   }
-   .nc-int-icon-state-b .nc-int-icon-a {
-      opacity: 0;
-   }
-   .nc-int-icon-state-b .nc-int-icon-b {
-      opacity: 1;
-   }
-   .nc-int-icon-slide-up.nc-int-icon-state-b .nc-int-icon-a {
-      transform: translateY(-100%);
-   }
-   .nc-int-icon-slide-up.nc-int-icon-state-b .nc-int-icon-b {
-      transform: translateY(0%);
-   }
-
    /* Needed for loader svg **/
    .spinner_b2T7 {
       animation: spinner_xe7Q 0.8s linear infinite;
@@ -304,26 +269,7 @@ body {
 }
 
 @layer components {
-   .header {
-      @apply w-full sm:max-w-[640px] mx-auto sticky top-0 text-lg flex items-center gap-2 p-2 bg-background backdrop-blur-[8px] border-b border-border/50 z-[1];
-   }
-
-   .header select {
-      background: none;
-      color: rgb(var(--primary));
-      border: none;
-      appearance: none;
-      padding: 0;
-      text-align: right;
-      cursor: pointer;
-      outline-style: none;
-   }
-
    main {
-      @apply w-full sm:max-w-[640px] mx-auto;
-   }
-
-   .overlay {
       @apply w-full sm:max-w-[640px] mx-auto;
    }
 
@@ -355,7 +301,7 @@ body {
       @apply border-b border-border/50;
    }
 
-   .comments > div > .comment {
+   .comments > .comment {
       @apply p-4 border-b border-border/50;
    }
 

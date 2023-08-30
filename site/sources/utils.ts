@@ -1,9 +1,20 @@
-
 import { TemplateResult, html, render } from "lit-html";
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import { map } from "lit-html/directives/map.js";
 import { ifDefined } from "lit-html/directives/if-defined.js";
-import { assertNever, elements, firstTextChild, htmlDecode, intersectsViewport, isLink, onAddedToDOM, onTapped, onVisibleOnce, setLinkTargetsToBlank, waitForMediaLoaded } from "../utils";
+import {
+   assertNever,
+   elements,
+   firstTextChild,
+   htmlDecode,
+   intersectsViewport,
+   isLink,
+   onAddedToDOM,
+   onTapped,
+   onVisibleOnce,
+   setLinkTargetsToBlank,
+   waitForMediaLoaded,
+} from "../utils";
 import DOMPurify from "dompurify";
 import videojs from "video.js";
 import { Page, PageIdentifier, SourcePrefix } from "./data";
@@ -12,18 +23,18 @@ import { escapeGuard, navigationGuard } from "./guards";
 import closeIcon from "remixicon/icons/System/close-circle-line.svg";
 import { appPages } from "../ledit";
 
-export type Route = { test: (hash: string) => Record<string, string> | null, render: (params: Record<string, string>) => void };
+export type Route = { test: (hash: string) => Record<string, string> | null; render: (params: Record<string, string>) => void };
 
 export function route(pattern: string, render: (params: Record<string, string>) => void): Route {
    return {
       test: (hash: string) => matchHashPattern(hash, pattern),
-      render
-   }
+      render,
+   };
 }
 
 function matchHashPattern(urlHash: string, pattern: string): Record<string, string> | null {
-   const patternParts = pattern.split('/');
-   const urlHashParts = urlHash.split('/');
+   const patternParts = pattern.split("/");
+   const urlHashParts = urlHash.split("/");
 
    if (patternParts.length !== urlHashParts.length) {
       return null; // Number of path elements doesn't match
@@ -35,7 +46,7 @@ function matchHashPattern(urlHash: string, pattern: string): Record<string, stri
       const patternPart = patternParts[i];
       const hashPart = urlHashParts[i];
 
-      if (patternPart.startsWith(':')) {
+      if (patternPart.startsWith(":")) {
          const paramName = patternPart.slice(1);
          params[paramName] = decodeURIComponent(hashPart);
       } else if (patternPart !== hashPart) {
@@ -73,9 +84,7 @@ export function renderErrorMessage(message: string | TemplateResult, error?: Err
    let stack = error ? error.message + "\n" + error.stack : "";
    return dom(
       html`<div class="error m-auto p-4 w-full flex flex-col gap-4">
-         <span class="m-auto">${message}</span>${error
-            ? safeHTML(`<pre class="w-full overflow-auto rounded bg-surface-dim p-4"><code>${stack}</code></pre>`)
-            : ""}
+         <span class="m-auto">${message}</span>${error ? safeHTML(`<pre class="w-full overflow-auto rounded bg-surface-dim p-4"><code>${stack}</code></pre>`) : ""}
       </div>`
    );
 }
@@ -102,14 +111,18 @@ export function renderContentLoader() {
 
 export function renderHeaderButton(icon: string, classes?: string, href?: string, xId?: string): TemplateResult {
    if (href) {
-      return html`<a x-id="${ifDefined(xId)}" href="${ifDefined(href)}" class="flex items-center justify-center min-w-8 max-w-8 w-8 min-h-8 max-h-8 h-8 ${classes ? classes : ""}"><i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(icon)}</i></a>`;
+      return html`<a x-id="${ifDefined(xId)}" href="${ifDefined(href)}" class="flex items-center justify-center min-w-8 max-w-8 w-8 min-h-8 max-h-8 h-8 ${classes ? classes : ""}"
+         ><i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(icon)}</i></a
+      >`;
    } else {
-      return html`<div  x-id="${ifDefined(xId)}" class="flex items-center justify-center min-w-8 max-w-8 w-8 min-h-8 max-h-8 h-8 ${classes ? classes : ""}"><i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(icon)}</i></div>`;
+      return html`<div x-id="${ifDefined(xId)}" class="flex items-center justify-center min-w-8 max-w-8 w-8 min-h-8 max-h-8 h-8 ${classes ? classes : ""}">
+         <i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(icon)}</i>
+      </div>`;
    }
 }
 
 export let numOverlays = 0;
-export function  renderOverlay(header: HTMLElement[] | string, content: HTMLElement[] = [], closeCallback = () => {}): { dom: HTMLElement, close: () => void} {
+export function renderOverlay(header: HTMLElement[] | string, content: HTMLElement[] = [], closeCallback = () => {}): { dom: HTMLElement; close: () => void } {
    const overlay = dom(html` <div class="fixed top-0 w-full h-full overflow-auto bg-background">
       <div class="overlay m-auto backdrop-blur-[8px] flex flex-col" x-id="container"></div>
    </div>`)[0];
@@ -176,8 +189,8 @@ export function  renderOverlay(header: HTMLElement[] | string, content: HTMLElem
    return { dom: container, close };
 }
 
-export function makeOverlayModal(overlay: {dom: HTMLElement, close: () => void }) {
-   for  (const link of Array.from(overlay.dom.querySelectorAll("a"))) {
+export function makeOverlayModal(overlay: { dom: HTMLElement; close: () => void }) {
+   for (const link of Array.from(overlay.dom.querySelectorAll("a"))) {
       link.addEventListener("click", (event) => {
          event.preventDefault();
          event.stopPropagation();
@@ -197,9 +210,7 @@ export function makeOverlayModal(overlay: {dom: HTMLElement, close: () => void }
 
 export function renderGallery(imageUrls: string[]): HTMLElement {
    const galleryDom = dom(html`
-      <div class="flex flex-col gap-2">
-         ${imageUrls.map((img, index) => html`<img src="${htmlDecode(img)}" ${index > 0 ? 'class="hidden"' : ""}) />`)}
-      </div>
+      <div class="flex flex-col gap-2">${imageUrls.map((img, index) => html`<img src="${htmlDecode(img)}" ${index > 0 ? 'class="hidden"' : ""}) />`)}</div>
    `)[0];
    const imageDoms = galleryDom.querySelectorAll("img");
    imageDoms.forEach((img, index) => {
@@ -405,7 +416,7 @@ export function getFeedFromHash(): string {
 
    const tokens = afterPrefix.split("/");
    if (tokens.length == 0) return "";
-   return tokens[0];
+   return decodeURIComponent(tokens[0]);
 }
 
 export function sourcePrefixToLabel(source: SourcePrefix | string) {

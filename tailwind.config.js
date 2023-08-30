@@ -11,8 +11,9 @@ module.exports = {
         "on-primary": "rgba(var(--on-primary), <alpha-value>)",
         surface: "rgba(var(--surface), <alpha-value>)",
         "surface-dim": "rgba(var(--surface-dim), <alpha-value>)",
-      }
+      },
     },
   },
+  darkMode: ['class', 'dark-theme'],
   plugins: [],
 }

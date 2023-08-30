@@ -2,28 +2,15 @@ import "video.js/dist/video-js.min.css";
 
 import { Page, PageIdentifier, SortingOption, Source, SourcePrefix } from "./data";
 import { addCommasToNumber, dateToText, elements, htmlDecode, intersectsViewport, onVisibleOnce, setLinkTargetsToBlank } from "../utils";
-import {
-   dom,
-   renderGallery,
-   renderVideo,
-   makeCollapsible,
-   safeHTML,
-   renderContentLoader,
-   renderOverlay,
-   renderErrorMessage,
-   renderInfoMessage,
-   renderPosts,
-} from "./utils";
-import { TemplateResult, html } from "lit-html";
+import { dom, renderGallery, renderVideo, makeCollapsible, safeHTML, renderContentLoader, renderOverlay, renderErrorMessage, renderInfoMessage, renderPosts } from "./utils";
+import { TemplateResult, html, nothing } from "lit-html";
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import { map } from "lit-html/directives/map.js";
-// @ts-ignore
-import commentIcon from "remixicon/icons/Communication/chat-4-line.svg";
-// @ts-ignore
-import replyIcon from "remixicon/icons/Business/reply-line.svg";
-// @ts-ignore
-import imageIcon from "remixicon/icons/Media/image-line.svg";
 import { renderComments } from "./comments";
+import { LitElement } from "lit";
+import { customElement, property } from "lit/decorators.js";
+import { Overlay } from "./overlay";
+import { commentIcon, imageIcon, replyIcon } from "./icons";
 
 interface RedditPosts {
    kind: "listing";
@@ -159,7 +146,7 @@ export class RedditSource extends Source<RedditPost> {
       loader.remove();
       renderPosts(main, page, renderRedditPost, (nextPage: PageIdentifier) => {
          return this.getPosts(nextPage);
-      })
+      });
    }
 
    async getPosts(nextPage: PageIdentifier): Promise<Page<RedditPost> | Error> {
@@ -195,8 +182,7 @@ export class RedditSource extends Source<RedditPost> {
          const response = await fetch(commentsUrl);
          const data = await response.json();
          if (data.length < 2) return new Error("Could not load comments for " + permalink);
-         if (!data[0] || !data[0].data || !data[0].data.children || !data[0].data.children[0])
-            return new Error("Could not load comments for " + permalink);
+         if (!data[0] || !data[0].data || !data[0].data.children || !data[0].data.children[0]) return new Error("Could not load comments for " + permalink);
          const post = data[0].data.children[0] as RedditPost;
          const redditComments = data[1] as RedditComments;
          if (!redditComments || !redditComments.data || !redditComments.data.children) {
@@ -373,7 +359,6 @@ export function renderRedditPost(post: RedditPost, showActionButtons = true): HT
          ? html`<a href="https://www.reddit.com/${post.data.subreddit}" class="text-color/50">r/${post.data.subreddit}</a>`
          : null;
 
-   // FIXME Show points
    const postDom = dom(html`
       <article class="post reddit-post gap-1">
          <a href="${url}" class="font-bold text-lg text-color">${htmlDecode(post.data.title)}</a>
@@ -395,16 +380,16 @@ export function renderRedditPost(post: RedditPost, showActionButtons = true): HT
             ? html`
                  <div class="flex items-flex-start gap-4">
                     <a href="${`#${post.data.permalink.substring(1)}`}" class="self-link flex items-center gap-1 h-[2em]">
-                       <i class="icon">${unsafeHTML(commentIcon)}</i>
+                       <i class="icon">${commentIcon}</i>
                        <span class="text-primary">${addCommasToNumber(post.data.num_comments)}</span>
                     </span>
                     <a href="${`https://www.reddit.com${post.data.permalink}`}" class="flex items-center gap-1 h-[2em]">
-                       <i class="icon">${unsafeHTML(replyIcon)}</i> Reply
+                       <i class="icon">${replyIcon}</i> Reply
                     </a>
                     ${
                        post.data.is_gallery
                           ? html` <span class="flex items-center gap-1 cursor-pointer h-[2em]" x-id="gallery">
-                               <i class="icon">${unsafeHTML(imageIcon)}</i>
+                               <i class="icon">${imageIcon}</i>
                                <span class="text-primary">${addCommasToNumber(Object.keys(post.data.gallery_data.items ?? []).length)}</span>
                             </span>`
                           : ""
@@ -431,48 +416,64 @@ export function renderRedditPost(post: RedditPost, showActionButtons = true): HT
    return postDom;
 }
 
-export async function renderRedditComments(source: RedditSource, permalink: string) {
-   const content = dom(html`<div class="comments"></div>`)[0];
-   const loader = renderContentLoader();
-   content.append(loader);
-   renderOverlay(location.hash.substring(1), [content]);
+@customElement("ledit-reddit-comments")
+export class RedditCommentsView extends LitElement {
+   static styles = Overlay.styles;
 
-   const result = await source.getComments(permalink);
-   if (result instanceof Error) {
-      content.append(...renderErrorMessage("Could not load comments"));
-      return;
+   @property()
+   data?: { post: RedditPost; comments: RedditComment[] };
+
+   @property()
+   error?: Error;
+
+   render() {
+      return html`
+         <ledit-overlay headerTitle="${location.hash.substring(1)}" .sticky=${true} .closeCallback=${() => this.remove()}>
+            <div slot="content" class="w-full overflow-auto">
+               <div class="comments">
+                  ${this.error ? renderErrorMessage("Could not load comments", this.error) : nothing}
+                  ${this.data ? renderRedditPost(this.data.post, false) : this.error ? nothing : renderContentLoader()}
+                  ${this.data
+                     ? renderInfoMessage(
+                          html` <div class="flex flex-row items-center gap-4 px-2">
+                             <div class="flex items-center gap-1">
+                                <i class="icon fill-color">${commentIcon}</i><span>${addCommasToNumber(this.data.post.data.num_comments)}</span>
+                             </div>
+                             <div class="flex items-flex-start gap-4">
+                                <a href="${`https://www.reddit.com${this.data.post.data.permalink}`}" class="flex items-center gap-1 text-color">
+                                   <i class="icon fill-color">${replyIcon}</i> Reply
+                                </a>
+                             </div>
+                          </div>`
+                       )
+                     : nothing}
+                  ${this.data
+                     ? renderComments(this.data.comments, renderRedditComment, {
+                          op: this.data.post.data.author,
+                          isReply: false,
+                          parentLink: this.data.post.data.permalink,
+                          postLink: this.data.post.data.permalink,
+                       })
+                     : nothing}
+               </div>
+            </div>
+         </ledit-overlay>
+      `;
    }
-   const { post, comments } = result;
-   loader.remove();
-   content.append(...renderRedditPost(post, false));
-   content.append(
-      ...renderInfoMessage(html`<div class="flex flex-row items-center gap-4 px-4">
-         <span>${addCommasToNumber(post.data.num_comments)} comments</span>
-         <div class="flex items-flex-start gap-4">
-            <a href="${`https://www.reddit.com${post.data.permalink}`}" class="flex items-center gap-1">
-               <i class="icon">${unsafeHTML(replyIcon)}</i> Reply
-            </a>
-         </div>
-      </div> `)
-   );
-
-   const scrollWrapper = dom(html`<div class="w-full overflow-auto"></div>`)[0];
-   content.append(scrollWrapper);
-   scrollWrapper.append(
-      ...renderComments(comments, renderRedditComment, {
-         op: post.data.author,
-         isReply: false,
-         parentLink: post.data.permalink,
-         postLink: post.data.permalink,
-      })
-   );
-   setLinkTargetsToBlank(content);
 }
 
-export function renderRedditComment(
-   comment: RedditComment,
-   state: { op: string; isReply: boolean; parentLink: string; postLink: string }
-): TemplateResult {
+export async function renderRedditComments(source: RedditSource, permalink: string) {
+   const commentsView = new RedditCommentsView();
+   document.body.append(commentsView);
+   const result = await source.getComments(permalink);
+   if (result instanceof Error) {
+      commentsView.error = result;
+      return;
+   }
+   commentsView.data = result;
+}
+
+export function renderRedditComment(comment: RedditComment, state: { op: string; isReply: boolean; parentLink: string; postLink: string }): TemplateResult {
    if (comment.kind == "more") {
       return html`<a href="https://www.reddit.com${state?.parentLink}" class="flex items-center gap-1"> More replies on Reddit </a>`;
    }
@@ -487,7 +488,7 @@ export function renderRedditComment(
             <span class="flex items-center">•</span>
             <div class="comment-buttons">
                <a href="${`https://www.reddit.com${comment.data.permalink}`}" class="flex items-center gap-1 text-color/50">
-                  <i class="icon fill-color/50">${unsafeHTML(replyIcon)}</i> Reply
+                  <i class="icon fill-color/50">${replyIcon}</i> Reply
                </a>
             </div>
          </div>

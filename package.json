@@ -8,8 +8,9 @@
     "clean": "rimraf site/build",
     "build": "npm run clean && npm run build:css && npm run build:site",
     "build:css": "npx tailwindcss -i site/ledit.css -o site/ledit-bundle.css",
+    "build:css-txt": "npx tailwindcss -i site/ledit.css -o site/ledit-bundle.css.txt",
     "build:site": "node ./esbuild.mjs",
-    "dev": "concurrently \"npm run clean\" \"npx live-server site --cors --watch ./site --no-browser\" \"npm run proxy\" \"npm run build:site -- --watch\" \"npm run build:css -- --watch\"",
+    "dev": "concurrently \"npm run clean\" \"npx live-server site --cors --watch ./site --no-browser\" \"npm run proxy\" \"npm run build:site -- --watch\" \"npm run build:css -- --watch\" \"npm run build:css-txt -- --watch\"",
     "proxy": "node proxy/index.js",
     "format": "npx prettier --write ."
   },
@@ -52,6 +53,7 @@
   "dependencies": {
     "@arrow-js/core": "^1.0.0-alpha.9",
     "@types/video.js": "^7.3.52",
+    "lit": "^2.8.0",
     "lit-html": "^2.8.0",
     "remixicon": "^3.5.0"
   }

@@ -1,11 +1,9 @@
-import { html, render } from "lit-html";
+import { html, nothing, render } from "lit-html";
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
-import { Page, PageIdentifier, SortingOption, Source } from "./data";
+import { Page, PageIdentifier, SortingOption, Source, SourcePrefix } from "./data";
 import { Bookmark, bookmarkToHash, getSettings, saveSettings } from "./settings";
 import { dom, makeOverlayModal, renderContentLoader, renderGallery, renderOverlay, renderPosts, renderVideo, safeHTML } from "./utils";
 import { addCommasToNumber, dateToText, elements, navigate, onVisibleOnce, setLinkTargetsToBlank } from "../utils";
-// @ts-ignore
-import loaderIcon from "../svg/loader.svg";
 // @ts-ignore
 import commentIcon from "remixicon/icons/Communication/chat-4-line.svg";
 // @ts-ignore
@@ -16,6 +14,10 @@ import starIcon from "remixicon/icons/System/star-line.svg";
 import reblogIcon from "remixicon/icons/Media/repeat-line.svg";
 // @ts-ignore
 import imageIcon from "remixicon/icons/Media/image-line.svg";
+import { LitElement } from "lit";
+import { customElement, query, state } from "lit/decorators.js";
+import { Overlay } from "./overlay";
+import { loaderIcon } from "./icons";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
 
@@ -224,18 +226,12 @@ export class MastodonApi {
       }
    }
 
-   static async getFollowing(
-      account: MastodonAccount,
-      instance: string,
-      nextPage: PageIdentifier,
-      userInfo: MastodonUserInfo
-   ): Promise<Page<MastodonAccount> | Error> {
+   static async getFollowing(account: MastodonAccount, instance: string, nextPage: PageIdentifier, userInfo: MastodonUserInfo): Promise<Page<MastodonAccount> | Error> {
       try {
          const following: MastodonAccount[] = [];
          if (!nextPage) nextPage = `https://${instance}/api/v1/accounts/${account.id}/following`;
          const response = await fetch(nextPage, instance == userInfo.instance ? this.getAuthHeader(userInfo) : undefined);
-         if (response.status != 200)
-            return new Error(`Could not get following list for account. Server responded with status code ${response.status}`);
+         if (response.status != 200) return new Error(`Could not get following list for account. Server responded with status code ${response.status}`);
          const result = (await response.json()) as MastodonAccount[];
          if (result.length == 0) return { items: [], nextPage: "end" };
          following.push(...result);
@@ -246,18 +242,12 @@ export class MastodonApi {
       }
    }
 
-   static async getFollowers(
-      account: MastodonAccount,
-      instance: string,
-      nextPage: string | null,
-      userInfo: MastodonUserInfo
-   ): Promise<Page<MastodonAccount> | Error> {
+   static async getFollowers(account: MastodonAccount, instance: string, nextPage: string | null, userInfo: MastodonUserInfo): Promise<Page<MastodonAccount> | Error> {
       try {
          const following: MastodonAccount[] = [];
          if (!nextPage) nextPage = `https://${instance}/api/v1/accounts/${account.id}/followers`;
          const response = await fetch(nextPage, instance == userInfo.instance ? this.getAuthHeader(userInfo) : undefined);
-         if (response.status != 200)
-            return new Error(`Could not get following list for account. Server responded with status code ${response.status}`);
+         if (response.status != 200) return new Error(`Could not get following list for account. Server responded with status code ${response.status}`);
          const result = (await response.json()) as MastodonAccount[];
          if (result.length == 0) return { items: [], nextPage: "end" };
          following.push(...result);
@@ -268,18 +258,13 @@ export class MastodonApi {
       }
    }
 
-   static async getNotifications(
-      nextPage: PageIdentifier,
-      userInfo: MastodonUserInfo,
-      sinceId: string | null = null
-   ): Promise<Page<MastodonNotification> | Error> {
+   static async getNotifications(nextPage: PageIdentifier, userInfo: MastodonUserInfo, sinceId: string | null = null): Promise<Page<MastodonNotification> | Error> {
       if (!userInfo.bearer) return new Error(`No access token given for ${userInfo.username}@${userInfo.instance}`);
       try {
          const options = this.getAuthHeader(userInfo);
          if (!nextPage) nextPage = `https://${userInfo.instance}/api/v1/notifications?limit=20${sinceId ? "&sinceId=" + sinceId : ""}}`;
          const response = await fetch(nextPage, options);
-         if (response.status != 200)
-            return new Error(`Could not get notifications for account. Server responded with status code ${response.status}`);
+         if (response.status != 200) return new Error(`Could not get notifications for account. Server responded with status code ${response.status}`);
          const result = (await response.json()) as MastodonNotification[];
          if (result.length == 0) return { items: [], nextPage: "end" };
          const notifications: MastodonNotification[] = [];
@@ -425,7 +410,10 @@ function replaceEmojis(text: string, emojis: MastodonEmoji[]) {
 
    for (const emoji of emojis) {
       const shortcodeRegExp = new RegExp(`:${emoji.shortcode}:`, "g");
-      replacedText = replacedText.replace(shortcodeRegExp, `<div class="inline-flex items-center align-middle h-[1.5em]"><img class="w-[1em] h-[1em]" src="${emoji.url}" alt="${emoji.shortcode}"></div>`);
+      replacedText = replacedText.replace(
+         shortcodeRegExp,
+         `<div class="inline-flex items-center align-middle h-[1.5em]"><img class="w-[1em] h-[1em]" src="${emoji.url}" alt="${emoji.shortcode}"></div>`
+      );
    }
 
    return html`${safeHTML(replacedText)}`;
@@ -454,12 +442,7 @@ function getUserInfo(input: string, requireToken = false): MastodonUserInfo | un
    instance = tokens[1];
 
    for (const bookmark of getSettings().bookmarks) {
-      if (
-         bookmark.source == "m/" &&
-         bookmark.supplemental &&
-         bookmark.supplemental.username == username &&
-         bookmark.supplemental.instance == instance
-      ) {
+      if (bookmark.source == "m/" && bookmark.supplemental && bookmark.supplemental.username == username && bookmark.supplemental.instance == instance) {
          bearer = bookmark.supplemental.bearer;
       }
    }
@@ -492,18 +475,19 @@ export type MastodonPostData = { mastodonPost: MastodonPost; userInfo: MastodonU
 export type MastodonCommentData = { mastodonComment: MastodonPost; userInfo: MastodonUserInfo };
 
 export class MastodonSource extends Source<MastodonPost> {
-   public readonly user;
-
    constructor(feed: string) {
       super(feed);
-      this.user = getUserInfo(feed, true);
    }
 
    async getPosts(nextPage: PageIdentifier): Promise<Error | Page<MastodonPost>> {
-      const user = this.user;
+      const feedTokens = this.getFeed().split("/");
+      if (feedTokens.length == 0)
+         return new Error(`Invalid Mastodon feed ${this.getFeed()}. Must be a user name, e.g. @badlogic@mastodon.gamedev.place, or an instance name, e.g. mastodon.gamedev.place.`);
+
+      const user = getUserInfo(feedTokens[0].trim(), true);
 
       // Read-only urls
-      if (this.user == null) {
+      if (user == null) {
          const feedTokens = this.getFeed().split("@");
          let mastodonPosts: MastodonPost[] | null = null;
          if (feedTokens.length == 1 || feedTokens[1].trim().length == 0) {
@@ -667,10 +651,15 @@ export class MastodonSource extends Source<MastodonPost> {
          return { items: posts, nextPage: maxId };
       }*/
 
-      return new Error(`invaInvalid Mastodon feed ${this.getFeed()}`);
+      return new Error(`Invalid Mastodon feed ${this.getFeed()}`);
    }
 
    async renderMain(main: HTMLElement) {
+      const feedTokens = this.getFeed().split("/");
+      if (feedTokens.length == 0)
+         throw new Error(`Invalid Mastodon feed ${this.getFeed()}. Must be a user name, e.g. @badlogic@mastodon.gamedev.place, or an instance name, e.g. mastodon.gamedev.place.`);
+
+      const user = getUserInfo(feedTokens[0].trim());
       const loader = renderContentLoader();
       main.append(loader);
       const page = await this.getPosts(null);
@@ -682,7 +671,7 @@ export class MastodonSource extends Source<MastodonPost> {
          (nextPage: PageIdentifier) => {
             return this.getPosts(nextPage);
          },
-         this.user
+         user
       );
    }
 
@@ -754,10 +743,7 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
          <a href="${postToView.account.url}" class="flex inline-block flex-col text-sm text-color overflow-hidden">
             <span class="font-bold overflow-hidden text-ellipsis">${getAccountName(postToView.account)}</span>
             <span class="text-color/60 overflow-hidden text-ellipsis"
-               >${
-                  postToView.account.username +
-                  (user && user.instance == new URL(postToView.account.url).host ? "" : "@" + new URL(postToView.account.url).host)
-               }</span
+               >${postToView.account.username + (user && user.instance == new URL(postToView.account.url).host ? "" : "@" + new URL(postToView.account.url).host)}</span
             >
          </a>
          <a href="${postToView.url}" class="ml-auto text-xs self-start">${dateToText(new Date(postToView.created_at).getTime())}</a>
@@ -774,35 +760,35 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
       <div x-id="contentDom" class="content">
          <div class="content-text">${replaceEmojis(postToView.content, postToView.emojis)}</div>
       </div>
-      <div class="flex items-flex-start gap-4">
+      <div class="flex justify-between min-w-[320px] max-w-[320px] mx-auto">
          <a href="" class="self-link flex items-center gap-1 h-[2em]">
-            <i class="icon fill-color">${unsafeHTML(commentIcon)}</i>
-            <span class="text-color">${addCommasToNumber(postToView.replies_count)}</span>
+            <i class="icon fill-color/60">${unsafeHTML(commentIcon)}</i>
+            <span class="text-color/60">${addCommasToNumber(postToView.replies_count)}</span>
          </span>
          <a href="" class="flex items-center gap-1 h-[2em]">
-            <i class="icon fill-color">${unsafeHTML(replyIcon)}</i>
-            <span class="text-color">Reply</span>
+            <i class="icon fill-color/70">${unsafeHTML(replyIcon)}</i>
+            <span class="text-color/60">Reply</span>
          </a>
          <a href="" class="flex items-center gap-1 h-[2em]">
-            <i class="icon ${postToView.reblogged ? "fill-primary" : "fill-color"}">${unsafeHTML(reblogIcon)}</i>
-            <span class="text-color">${addCommasToNumber(postToView.reblogs_count)}</span>
+            <i class="icon ${postToView.reblogged ? "fill-primary" : "fill-color/60"}">${unsafeHTML(reblogIcon)}</i>
+            <span class="text-color/60">${addCommasToNumber(postToView.reblogs_count)}</span>
          </a>
          <a href="" class="flex items-center gap-1 h-[2em]">
-            <i class="icon ${postToView.favourited ? "fill-primary" : "fill-color"}">${unsafeHTML(starIcon)}</i>
-            <span class="text-color">${addCommasToNumber(postToView.favourites_count)}</span>
+            <i class="icon ${postToView.favourited ? "fill-primary" : "fill-color/60"}">${unsafeHTML(starIcon)}</i>
+            <span class="text-color/60">${addCommasToNumber(postToView.favourites_count)}</span>
          </a>
          ${
             postToView.media_attachments.length > 1
                ? html` <span class="flex items-center gap-1 cursor-pointer h-[2em]" x-id="gallery">
-                     <i class="icon fill-color">${unsafeHTML(imageIcon)}</i>
-                     <span class="text-color">${postToView.media_attachments.length}</span>
-                  </span>`
+                    <i class="icon fill-color/70">${unsafeHTML(imageIcon)}</i>
+                    <span class="text-color/70">${postToView.media_attachments.length}</span>
+                 </span>`
                : ""
          }
       </div>
    </article>`);
 
-   const { contentDom, gallery } = elements<{contentDom: HTMLElement, gallery?: HTMLElement }>(postDom[0]);
+   const { contentDom, gallery } = elements<{ contentDom: HTMLElement; gallery?: HTMLElement }>(postDom[0]);
 
    onVisibleOnce(postDom[0], () => {
       renderMastodonMedia(postToView, contentDom);
@@ -819,6 +805,137 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
    return postDom;
 }
 
+@customElement("ledit-mastodon-account-editor")
+export class MastodonAccountEditor extends LitElement {
+   static styles = Overlay.styles;
+
+   _bookmark?: Bookmark;
+
+   set bookmark(value: Bookmark) {
+      const user = value.supplemental as MastodonUserInfo;
+      if (!user) throw new Error("Bookmark has no MastodonUserInfo");
+      this._bookmark = value;
+      this.id = user.username.length > 0 ? user.username + "@" + user.instance : "";
+      this.accessToken = user.bearer ?? "";
+   }
+
+   get bookmark(): Bookmark | undefined {
+      return this._bookmark;
+   }
+
+   @state()
+   errorId = "";
+
+   @state()
+   errorToken = "";
+
+   @state()
+   id: string = "";
+
+   @state()
+   accessToken: string = "";
+
+   @state()
+   errorConnect = "";
+
+   @query("#overlay")
+   overlay?: Overlay;
+
+   @query("#loader")
+   loader?: HTMLElement;
+
+   render() {
+      if (!this.bookmark) return;
+      const isNew = this.bookmark.label.length == 0;
+
+      return html`
+         <ledit-overlay id="overlay" headerTitle="${isNew ? "New Mastodon account" : "Edit Mastodon account"}" .closeCallback=${() => this.remove()} .modal=${true}>
+            <div slot="content" class="w-full flex flex-col gap-4 px-4 pt-4">
+               <label class="font-bold">Account</label>
+               <input @input=${this.idChanged.bind(this)} placeholder="E.g. 'mario@mastodon.social'" .value="${this.id}" />
+               ${this.errorId.length > 0 ? html`<div class="text-xs text-red-600">${this.errorId}</div>` : ""}
+               <label class="font-bold">Access token <a href="" class="text-primary text-sm">(What is this?)</a></label>
+               <input @input=${this.accessTokenChanged.bind(this)} placeholder="E.g. '0baeEdahe342Hdh23h-24h2h3bhaT234i'" .value="${this.accessToken}" />
+               ${this.errorToken.length > 0 ? html`<div class="text-xs text-red-600">${this.errorToken}</div>` : ""}
+               <div class="flex items-center self-end gap-4">
+                  <div id="loader" class="hidden fill-primary">${loaderIcon}</div>
+                  ${this.errorConnect.length > 0 ? html`<div class="text-xs text-red-600">${this.errorConnect}</div>` : ""}
+                  <button @click=${this.saveClicked.bind(this)} ?disabled=${this.id.length == 0 || this.accessToken.length == 0}>Save</button>
+               </div>
+            </div>
+         </ledit-overlay>
+      `;
+   }
+
+   idChanged(event: InputEvent) {
+      this.id = (event.target as HTMLInputElement).value.trim();
+      if (this.id.length == 0) {
+         this.errorId = "Please specify a Mastodon account";
+         return;
+      }
+
+      const tokens = this.id.split("@");
+      if (tokens.length != 2) {
+         this.errorId = "Invalid Mastodon account format. Should be 'user@instance'.";
+         return;
+      }
+
+      if (tokens[0].trim().length == 0 || tokens[1].trim().length == 0) {
+         this.errorId = "Invalid Mastodon account format. Should be 'user@instance'.";
+         return;
+      }
+
+      if (
+         this.bookmark?.label.length == 0 &&
+         getSettings().bookmarks.find((bookmark) => bookmark.supplemental && bookmark.supplemental.username == tokens[0] && bookmark.supplemental.instance == tokens[1])
+      ) {
+         this.errorId = `Account '${this.id}' already exists.`;
+         return;
+      }
+      this.errorId = "";
+   }
+
+   accessTokenChanged(event: InputEvent) {
+      this.accessToken = (event.target as HTMLInputElement).value.trim();
+      if (this.accessToken.length == 0) {
+         this.errorToken = `Please specify an access token`;
+         return;
+      }
+      this.errorToken = "";
+   }
+
+   async saveClicked() {
+      if (!this.bookmark) return;
+      const tokens = this.id.split("@");
+      const user: MastodonUserInfo = { username: tokens[0], instance: tokens[1], bearer: this.accessToken };
+      this.loader?.classList.toggle("hidden");
+      const result = await MastodonApi.getHomeTimeline(null, user);
+      if (result instanceof Error) {
+         this.loader?.classList.toggle("hidden");
+         this.errorConnect = `Could not authenticate user '${this.id}`;
+         return;
+      }
+
+      // All good, save the bookmark and close.
+      this.bookmark.label = this.id;
+      this.bookmark.ids = [this.id + "/home"];
+      this.bookmark.supplemental = { username: tokens[0], instance: tokens[1], bearer: this.accessToken } as MastodonUserInfo;
+
+      const settings = getSettings();
+      if (!settings.bookmarks.find((other) => JSON.stringify(other.supplemental) == JSON.stringify(this.bookmark?.supplemental))) {
+         settings.bookmarks.push(this.bookmark);
+      }
+
+      saveSettings();
+      const callback = () => {
+         window.removeEventListener("hashchange", callback);
+         navigate(bookmarkToHash(this.bookmark!));
+      };
+      window.addEventListener("hashchange", callback);
+      this.overlay?.close();
+   }
+}
+
 export function renderMastodonAccountEditor(params: Record<string, string>) {
    const accountBookmark =
       getSettings().bookmarks.find((bookmark) => bookmark.label == params["id"]) ??
@@ -829,95 +946,7 @@ export function renderMastodonAccountEditor(params: Record<string, string>) {
          isDefault: false,
          supplemental: { username: "", instance: "", bearer: null } as MastodonUserInfo,
       } as Bookmark);
-   const isNew = accountBookmark.label.length == 0;
-
-   const accountEditorTemplate = (user: MastodonUserInfo, errorId: string, errorToken: string, errorConnect: string) => html`
-      <div class="w-full flex flex-col gap-4 px-4 pt-4">
-         <label class="font-bold">Account</label>
-         <input
-            x-id="id"
-            placeholder="E.g. 'mario@mastodon.social'"
-            .value="${user.username.length > 0 ? user.username + "@" + user.instance : ""}"
-         />
-         ${errorId.length > 0 ? html`<div class="text-xs text-red-600">${errorId}</div>` : ""}
-         <label class="font-bold">Access token <a href="" class="text-primary text-sm">(What is this?)</a></label>
-         <input x-id="token" placeholder="E.g. 'mario@mastodon.social'" .value="${user.bearer}" />
-         ${errorToken.length > 0 ? html`<div class="text-xs text-red-600">${errorToken}</div>` : ""}
-         <div class="flex items-center self-end gap-4">
-            <div x-id="loader" class="hidden fill-primary">${unsafeHTML(loaderIcon)}</div>
-            ${errorConnect.length > 0 ? html`<div class="text-xs text-red-600">${errorConnect}</div>` : ""}
-            <button x-id="save">Save</button>
-         </div>
-      </div>
-   `;
-   const overlay = renderOverlay(`New Mastodon account`);
-   render(accountEditorTemplate(accountBookmark.supplemental, "", "", ""), overlay.dom);
-   makeOverlayModal(overlay);
-
-   const { id, token, save, loader } = elements<{ id: HTMLInputElement; token: HTMLInputElement; save: HTMLButtonElement; loader: HTMLElement }>(
-      overlay.dom
-   );
-   save.addEventListener("click", async () => {
-      const settings = getSettings();
-      const idValue = id.value.trim();
-      if (idValue.length == 0) {
-         render(accountEditorTemplate(accountBookmark.supplemental, "Please specify a Mastodon account", "", ""), overlay.dom);
-         id.focus();
-         return;
-      }
-      const tokens = idValue.split("@");
-      if (tokens.length != 2) {
-         render(
-            accountEditorTemplate(accountBookmark.supplemental, "Invalid Mastodon account format. Should be 'user@instance'.", "", ""),
-            overlay.dom
-         );
-         id.focus();
-         return;
-      }
-      if (
-         isNew &&
-         settings.bookmarks.find(
-            (bookmark) => bookmark.supplemental && bookmark.supplemental.username == tokens[0] && bookmark.supplemental.instance == tokens[1]
-         )
-      ) {
-         render(accountEditorTemplate(accountBookmark.supplemental, `Account '${idValue}' already exists.`, "", ""), overlay.dom);
-         id.focus();
-         return;
-      }
-
-      const tokenValue = token.value.trim();
-      if (tokenValue.length == 0) {
-         render(accountEditorTemplate(accountBookmark.supplemental, "", `Please specify an access token`, ""), overlay.dom);
-         token.focus();
-         return;
-      }
-
-      const user: MastodonUserInfo = { username: tokens[0], instance: tokens[1], bearer: tokenValue };
-      id.disabled = token.disabled = save.disabled = true;
-      loader.classList.toggle("hidden");
-      const result = await MastodonApi.getHomeTimeline(null, user);
-      if (result instanceof Error) {
-         id.disabled = token.disabled = save.disabled = false;
-         loader.classList.toggle("hidden");
-         render(accountEditorTemplate(accountBookmark.supplemental, "", "", `Could not authenticate user '${idValue}.`), overlay.dom);
-         return;
-      }
-
-      // All good, save the bookmark and close.
-      accountBookmark.label = idValue;
-      accountBookmark.ids = [idValue + "/home"];
-      accountBookmark.supplemental = { username: idValue.split("@")[0], instance: idValue.split("@")[1], bearer: tokenValue } as MastodonUserInfo;
-
-      if (!settings.bookmarks.find((other) => JSON.stringify(other.supplemental) == JSON.stringify(accountBookmark.supplemental))) {
-         settings.bookmarks.push(accountBookmark);
-      }
-
-      saveSettings();
-      const callback = () => {
-         window.removeEventListener("hashchange", callback);
-         navigate(bookmarkToHash(accountBookmark));
-      };
-      window.addEventListener("hashchange", callback);
-      overlay.close();
-   });
+   const editor = new MastodonAccountEditor();
+   editor.bookmark = accountBookmark;
+   document.body.append(editor);
 }

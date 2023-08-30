@@ -1,15 +1,16 @@
 import { encodeHTML } from "entities";
 import { Page, PageIdentifier, SortingOption, Source, SourcePrefix } from "./data";
 import { addCommasToNumber, dateToText, elements, htmlDecode, onAddedToDOM, setLinkTargetsToBlank } from "../utils";
-import { TemplateResult, html } from "lit-html";
+import { TemplateResult, html, nothing } from "lit-html";
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import { map } from "lit-html/directives/map.js";
 import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderInfoMessage, renderOverlay, renderPosts, safeHTML } from "./utils";
-// @ts-ignore
-import commentIcon from "remixicon/icons/Communication/chat-4-line.svg";
-// @ts-ignore
-import replyIcon from "remixicon/icons/Business/reply-line.svg";
 import { renderComments } from "./comments";
+import { LitElement } from "lit";
+import { customElement, property } from "lit/decorators.js";
+import { r } from "@arrow-js/core";
+import { Overlay } from "./overlay";
+import { commentIcon, replyIcon } from "./icons";
 
 interface HnRawPost {
    by: string;
@@ -223,7 +224,7 @@ export class HackerNewsSource extends Source<HnPost> {
       loader.remove();
       renderPosts(main, page, renderHnPost, (nextPage: PageIdentifier) => {
          return this.getPosts(nextPage);
-      })
+      });
    }
 
    getSortingOptions(): SortingOption[] {
@@ -271,11 +272,11 @@ export function renderHnPost(post: HnPost, showActionButtons = true) {
             ? html`
                  <div class="flex items-flex-start gap-4">
                     <a href="#hn/comments/${post.id}" class="self-link flex items-center gap-1 h-[2em]">
-                       <i class="icon">${unsafeHTML(commentIcon)}</i>
+                       <i class="icon">${commentIcon}</i>
                        <span class="text-primary">${addCommasToNumber(post.numComments)}</span>
                     </span>
                     <a href="https://news.ycombinator.com/item?id=${post.id}" class="flex items-center gap-1 h-[2em]">
-                       <i class="icon">${unsafeHTML(replyIcon)}</i> Reply
+                       <i class="icon">${replyIcon}</i> Reply
                     </a>
                  </div>
               `
@@ -293,39 +294,66 @@ export function renderHnPost(post: HnPost, showActionButtons = true) {
    return postDom;
 }
 
-export async function renderHnComments(source: HackerNewsSource, postId: string) {
-   const content = dom(html`<div class="comments"></div>`)[0];
-   const loader = renderContentLoader();
-   content.append(loader);
-   renderOverlay(location.hash.substring(1), [content]);
+@customElement("ledit-hn-comments")
+export class HnCommentsView extends LitElement {
+   static styles = Overlay.styles;
 
+   @property()
+   post?: HnPost;
+
+   @property()
+   comments?: HnComment[];
+
+   @property()
+   error?: Error;
+
+   render() {
+      return html`<ledit-overlay headerTitle="${location.hash.substring(1)}" .sticky=${true} .closeCallback=${() => this.remove()}>
+         <div slot="content" class="w-full overflow-auto">
+            <div class="comments">
+               ${this.post ? renderHnPost(this.post, false) : this.error ? nothing : renderContentLoader()}
+               ${this.post
+                  ? renderInfoMessage(
+                       html` <div class="flex flex-row items-center gap-4 px-4">
+                          <div class="flex items-center gap-1"><i class="icon fill-color">${commentIcon}</i><span>${addCommasToNumber(this.post.numComments)}</span></div>
+                          <div class="flex items-flex-start gap-4">
+                             <a href="https://news.ycombinator.com/item?id=${this.post.id}" target="_blank" class="flex items-center h-[2em] text-color">
+                                <i class="icon fill-color">${replyIcon}</i> Reply
+                             </a>
+                          </div>
+                       </div>`
+                    )
+                  : nothing}
+               ${this.comments && this.post
+                  ? renderComments(this.comments, renderHnComment, {
+                       op: this.post.author,
+                       isReply: false,
+                    })
+                  : this.post
+                  ? renderContentLoader()
+                  : nothing}
+               ${this.error ? renderErrorMessage("Could not load comments", this.error) : nothing}
+            </div>
+         </div>
+      </ledit-overlay>`;
+   }
+}
+
+export async function renderHnComments(source: HackerNewsSource, postId: string) {
+   const commentsView = new HnCommentsView();
+   document.body.append(commentsView);
    const post = rawToHnPost((await getHnItem(postId)) as HnRawPost);
    if (post instanceof Error) {
-      content.append(...renderErrorMessage("Could not load comments"));
+      commentsView.error = post;
+      return;
    } else {
-      loader.remove();
-      content.append(...renderHnPost(post, false));
-      content.append(
-         ...renderInfoMessage(html`<div class="flex flex-row items-center gap-4 px-4">
-            <span>${addCommasToNumber(post.numComments)} comments</span>
-            <div class="flex items-flex-start gap-4">
-               <a href="https://news.ycombinator.com/item?id=${post.id}" target="_blank" class="flex items-center h-[2em] text"
-                  ><i class="icon mr-1">${unsafeHTML(replyIcon)}</i> Reply</a
-               >
-            </div>
-         </div> `)
-      );
-      content.append(loader);
-      const comments = await source.getComments(post);
-      loader.remove();
-
-      if (comments instanceof Error) {
-         content.append(...renderErrorMessage("Could not load comments"));
-         return;
-      }
-      const scrollWrapper = dom(html`<div class="w-full overflow-auto"></div>`)[0];
-      content.append(scrollWrapper);
-      scrollWrapper.append(...renderComments(comments, renderHnComment, { op: post.author, isReply: false }));
+      commentsView.post = post;
+   }
+   const comments = await source.getComments(post);
+   if (comments instanceof Error) {
+      commentsView.error = comments;
+   } else {
+      commentsView.comments = comments;
    }
 }
 
@@ -340,14 +368,12 @@ export function renderHnComment(comment: HnComment, state: { op: string; isReply
             <span class="flex items-center">•</span>
             <div class="comment-buttons">
                <a href="https://news.ycombinator.com/item?id=${comment.raw.objectID}" class="flex items-center gap-1 text-sm text-color/50"
-                  ><i class="icon fill-color/50">${unsafeHTML(replyIcon)}</i> Reply</a
+                  ><i class="icon fill-color/50">${replyIcon}</i> Reply</a
                >
             </div>
          </div>
          <div class="content">${safeHTML(comment.content)}</div>
-         ${comment.replies.length > 0
-            ? html` <div class="replies">${map(comment.replies, (reply) => renderHnComment(reply, { op: state?.op, isReply: true }))}</div> `
-            : ""}
+         ${comment.replies.length > 0 ? html` <div class="replies">${map(comment.replies, (reply) => renderHnComment(reply, { op: state?.op, isReply: true }))}</div> ` : ""}
          </div>
       </div>
    `;
