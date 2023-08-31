@@ -38,6 +38,16 @@ export class Overlay extends LitElement {
       this.style.position = "relative";
    }
 
+   connectedCallback(): void {
+      super.connectedCallback();
+      window.dispatchEvent(new Event("overlay-opened"));
+   }
+
+   disconnectedCallback(): void {
+      super.disconnectedCallback();
+      window.dispatchEvent(new Event("overlay-closed"));
+   }
+
    render() {
       window.document.body.style.overflow = "hidden";
       return html`
@@ -52,7 +62,7 @@ export class Overlay extends LitElement {
                     `
                   : html`<slot name="header" @slotchange=${this.slotChanged.bind(this)}></slot>`}
             </div>
-            <div id="container" class="w-full flex flex-col max-w-[640px] mx-auto pb-4 ${this.border ? "rounded shadow" : ""}">
+            <div id="container" class="w-full flex flex-col max-w-[640px] mx-auto pb-4">
                <slot name="content" @slotchange=${this.slotChanged.bind(this)}></slot>
             </div>
          </div>

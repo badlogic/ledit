@@ -797,12 +797,6 @@ video:focus {
      object-fit: contain;
 }
 
-.mastodon-emoji {
-  height: 1em;
-  width: 1em;
-  vertical-align: text-top;
-}
-
 .mastodon-post .content {
   width: 100%;
   padding-left: 0px;
@@ -1322,11 +1316,6 @@ main > .post {
   border-style: none;
 }
 
-.border-border {
-  --tw-border-opacity: 1;
-  border-color: rgba(var(--border), var(--tw-border-opacity));
-}
-
 .border-border\/50 {
   border-color: rgba(var(--border), 0.5);
 }
@@ -1433,16 +1422,12 @@ main > .post {
   padding-right: 0.25rem;
 }
 
-.pt-4 {
-  padding-top: 1rem;
-}
-
-.pt-2 {
-  padding-top: 0.5rem;
-}
-
 .pt-3 {
   padding-top: 0.75rem;
+}
+
+.pt-4 {
+  padding-top: 1rem;
 }
 
 .align-middle {
@@ -1493,12 +1478,6 @@ main > .post {
 .text-red-600 {
   --tw-text-opacity: 1;
   color: rgb(220 38 38 / var(--tw-text-opacity));
-}
-
-.shadow {
-  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
-  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
 .outline-none {

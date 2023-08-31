@@ -147,6 +147,7 @@ export function renderVideo(videoDesc: { width: number; height: number; urls: st
 
       const video = videojs(videoDiv);
       var videoElement = video.el().querySelector("video")!;
+      (videoDiv as any).player = video;
 
       // Reset video element width/height so fullscreen works
       videoElement.style.width = "";
