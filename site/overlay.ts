@@ -52,7 +52,7 @@ export class Overlay extends LitElement {
       window.document.body.style.overflow = "hidden";
       return html`
          <div id="overlay" class="fixed top-0 w-full h-full overflow-auto m-auto bg-background" @mousedown=${this.overlayClicked}>
-            <div class="sticky top-0 w-full max-w-[640px] mx-auto">
+            <div class="sticky top-0 w-full max-w-[640px] mx-auto z-[10]">
                ${this.headerTitle
                   ? html`
                        <div class="cursor-pointer py-2 pl-2 pr-1 flex items-center text-lg bg-background border-b border-border/50" @click=${this.close.bind(this)}>

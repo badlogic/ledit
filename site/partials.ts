@@ -170,6 +170,21 @@ export function renderVideo(videoDesc: { width: number; height: number; urls: st
             return;
          }
          if (!video.paused() && !intersectsViewport(videoElement)) {
+            /*if (videoDom.parentElement != document.body) {
+               document.body.append(videoDom);
+               videoDom.style.position = "absolute";
+               videoDom.style.top = "0";
+            }*/
+            video.pause();
+         }
+      });
+
+      // Pause when overlay is opened
+      window.addEventListener("overlay-opened", () => {
+         if (videoElement && videoElement === document.pictureInPictureElement) {
+            return;
+         }
+         if (!video.paused()) {
             video.pause();
          }
       });

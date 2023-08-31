@@ -98,7 +98,8 @@ export class Header extends LitElement {
             .value="${bookmark ? bookmark.source + bookmark.label : this.hash}"
             @focus="${this.feedFocused}"
             @blur="${this.feedBlurred}"
-            @keydown="${this.feedKeydown}"
+            @keyup="${this.feedKeydown}"
+            enterkeyhint="enter"
          />
          ${when(
             this.sortingOptions.length > 0,

@@ -90,13 +90,6 @@ async function main() {
    });
    dispatchEvent(new HashChangeEvent("hashchange"));
 
-   window.addEventListener("overlay-opened", () => {
-      const videos = document.querySelectorAll("video-js");
-      for (const video of Array.from(videos)) {
-         (video as any).player?.pause();
-      }
-   });
-
    const bookmark = getSettings().bookmarks.find((bookmark) => bookmark.source == sourcePrefix && bookmark.label == feed);
    if (bookmark) {
       location.hash = bookmark.source + bookmark.ids.join("+");
