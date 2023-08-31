@@ -1,61 +1,12 @@
-import { TemplateResult, html, render } from "lit-html";
-import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
-import { map } from "lit-html/directives/map.js";
-import { ifDefined } from "lit-html/directives/if-defined.js";
-import {
-   assertNever,
-   elements,
-   firstTextChild,
-   htmlDecode,
-   intersectsViewport,
-   isLink,
-   onAddedToDOM,
-   onTapped,
-   onVisibleOnce,
-   setLinkTargetsToBlank,
-   waitForMediaLoaded,
-} from "../utils";
 import DOMPurify from "dompurify";
+import { TemplateResult, html, render } from "lit-html";
+import { ifDefined } from "lit-html/directives/if-defined.js";
+import { map } from "lit-html/directives/map.js";
+import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import videojs from "video.js";
-import { Page, PageIdentifier, SourcePrefix } from "./data";
-import { escapeGuard, navigationGuard } from "./guards";
-// @ts-ignore
-import closeIcon from "remixicon/icons/System/close-circle-line.svg";
-import { appPages } from "../ledit";
-
-export type Route = { test: (hash: string) => Record<string, string> | null; render: (params: Record<string, string>) => void };
-
-export function route(pattern: string, render: (params: Record<string, string>) => void): Route {
-   return {
-      test: (hash: string) => matchHashPattern(hash, pattern),
-      render,
-   };
-}
-
-function matchHashPattern(urlHash: string, pattern: string): Record<string, string> | null {
-   const patternParts = pattern.split("/");
-   const urlHashParts = urlHash.split("/");
-
-   if (patternParts.length !== urlHashParts.length) {
-      return null; // Number of path elements doesn't match
-   }
-
-   const params: Record<string, string> = {};
-
-   for (let i = 0; i < patternParts.length; i++) {
-      const patternPart = patternParts[i];
-      const hashPart = urlHashParts[i];
-
-      if (patternPart.startsWith(":")) {
-         const paramName = patternPart.slice(1);
-         params[paramName] = decodeURIComponent(hashPart);
-      } else if (patternPart !== hashPart) {
-         return null; // Path element doesn't match
-      }
-   }
-
-   return params;
-}
+import { appPages } from "./app";
+import { Page, PageIdentifier } from "./data";
+import { firstTextChild, htmlDecode, intersectsViewport, isLink, onAddedToDOM, onTapped, onVisibleOnce, setLinkTargetsToBlank, waitForMediaLoaded } from "./utils";
 
 export function dom(template: TemplateResult, container?: HTMLElement | DocumentFragment): HTMLElement[] {
    if (container) {
@@ -119,74 +70,6 @@ export function renderHeaderButton(icon: string, classes?: string, href?: string
          <i class="icon w-[1.2em] h-[1.2em]">${unsafeHTML(icon)}</i>
       </div>`;
    }
-}
-
-export let numOverlays = 0;
-export function renderOverlay(header: HTMLElement[] | string, content: HTMLElement[] = [], closeCallback = () => {}): { dom: HTMLElement; close: () => void } {
-   const overlay = dom(html` <div class="fixed top-0 w-full h-full overflow-auto bg-background">
-      <div class="overlay m-auto backdrop-blur-[8px] flex flex-col" x-id="container"></div>
-   </div>`)[0];
-   overlay.style.zIndex = 1000 + (++numOverlays).toString();
-   console.log("Opening overlay " + numOverlays);
-
-   const { container } = elements<{ container: HTMLElement }>(overlay);
-   if (typeof header === "string") {
-      header = dom(html` <div class="header cursor-pointer">
-         <span class="font-bold text-primary text-ellipsis overflow-hidden ml-2 flex-1">${header}</span>
-         ${renderHeaderButton(closeIcon, "ml-auto")}
-      </header>`);
-   }
-   container.append(...header);
-   container.append(...content);
-
-   const navCallback = navigationGuard.register(() => close());
-   const escapeCallback = escapeGuard.register(() => close());
-
-   container.addEventListener("click", (event) => {
-      if (document.activeElement && (document.activeElement.tagName == "INPUT" || document.activeElement.tagName == "TEXTAREA")) {
-         return;
-      }
-      if (event.target != container) return;
-      event.preventDefault();
-      event.stopPropagation();
-      close();
-   });
-
-   overlay.addEventListener("click", (event) => {
-      if (document.activeElement && (document.activeElement.tagName == "INPUT" || document.activeElement.tagName == "TEXTAREA")) {
-         return;
-      }
-      if (event.target != overlay) return;
-      event.preventDefault();
-      event.stopPropagation();
-      close();
-   });
-
-   let closed = false;
-   const close = () => {
-      if (closed) return;
-      closed = true;
-      --numOverlays;
-      console.log("Closing overlay " + numOverlays);
-      overlay.remove();
-      document.body.style.overflow = "";
-      navigationGuard.remove(navCallback);
-      escapeGuard.remove(escapeCallback);
-      closeCallback();
-   };
-
-   header.forEach((el) =>
-      el.addEventListener("click", (event) => {
-         event.preventDefault();
-         event.stopPropagation();
-         close();
-      })
-   );
-
-   document.body.append(overlay);
-   document.body.style.overflow = "hidden";
-
-   return { dom: container, close };
 }
 
 export function makeOverlayModal(overlay: { dom: HTMLElement; close: () => void }) {
@@ -392,67 +275,4 @@ export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
          }
       });
    });
-}
-
-export function getSourcePrefixFromHash(): string | null {
-   let hash = location.hash;
-   if (hash.length == 0) {
-      return null;
-   }
-   let slashIndex = hash.indexOf("/");
-   if (slashIndex == -1) return null;
-   return decodeURIComponent(hash.substring(1, slashIndex + 1));
-}
-
-export function getFeedFromHash(): string {
-   const hash = location.hash;
-   if (hash.length == 0) {
-      return "";
-   }
-   const prefix = getSourcePrefixFromHash();
-   if (!prefix) return "";
-   const afterPrefix = hash.substring(prefix.length + 1);
-   if (afterPrefix.includes("+")) return afterPrefix;
-
-   const tokens = afterPrefix.split("/");
-   if (tokens.length == 0) return "";
-   return decodeURIComponent(tokens[0]);
-}
-
-export function sourcePrefixToLabel(source: SourcePrefix | string) {
-   if (typeof source == "string" && !source.endsWith("/")) source = source + "/";
-   const src: SourcePrefix = source as SourcePrefix;
-   switch (src) {
-      case "r/":
-         return "Reddit";
-      case "hn/":
-         return "Hackernews";
-      case "rss/":
-         return "RSS";
-      case "yt/":
-         return "YouTube";
-      case "m/":
-         return "Mastodon";
-      default:
-         assertNever(src);
-   }
-}
-
-export function sourcePrefixToFeedLabel(source: SourcePrefix | string) {
-   if (typeof source == "string" && !source.endsWith("/")) source = source + "/";
-   const src: SourcePrefix = source as SourcePrefix;
-   switch (src) {
-      case "r/":
-         return "Subreddits";
-      case "hn/":
-         return "Hackernews";
-      case "rss/":
-         return "RSS feeds";
-      case "yt/":
-         return "YouTube channels";
-      case "m/":
-         return "Mastodon accounts";
-      default:
-         assertNever(src);
-   }
 }

@@ -1005,10 +1005,6 @@ main > .post {
   padding-bottom: 0px;
 }
 
-.collapse {
-  visibility: collapse;
-}
-
 .static {
   position: static;
 }
@@ -1041,10 +1037,6 @@ main > .post {
   top: 0px;
 }
 
-.z-\[1\] {
-  z-index: 1;
-}
-
 .z-\[50\] {
   z-index: 50;
 }
@@ -1066,16 +1058,8 @@ main > .post {
   margin-right: auto;
 }
 
-.ml-2 {
-  margin-left: 0.5rem;
-}
-
 .ml-auto {
   margin-left: auto;
-}
-
-.mr-1 {
-  margin-right: 0.25rem;
 }
 
 .mr-2 {
@@ -1408,6 +1392,11 @@ main > .post {
   padding-right: 0px;
 }
 
+.px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
 .px-4 {
   padding-left: 1rem;
   padding-right: 1rem;
@@ -1428,25 +1417,8 @@ main > .post {
   padding-bottom: 1rem;
 }
 
-.px-2 {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-}
-
 .pb-4 {
   padding-bottom: 1rem;
-}
-
-.pt-4 {
-  padding-top: 1rem;
-}
-
-.pl-4 {
-  padding-left: 1rem;
-}
-
-.pr-2 {
-  padding-right: 0.5rem;
 }
 
 .pl-2 {
@@ -1455,6 +1427,10 @@ main > .post {
 
 .pr-1 {
   padding-right: 0.25rem;
+}
+
+.pt-4 {
+  padding-top: 1rem;
 }
 
 .align-middle {
@@ -1635,15 +1611,6 @@ body {
 .focus\:outline-none:focus {
   outline: 2px solid transparent;
   outline-offset: 2px;
-}
-
-:is(dark-theme .dark\:border) {
-  border-width: 1px;
-}
-
-:is(dark-theme .dark\:border-border) {
-  --tw-border-opacity: 1;
-  border-color: rgba(var(--border), var(--tw-border-opacity));
 }
 
 @media (min-width: 640px) {

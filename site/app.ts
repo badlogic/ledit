@@ -1,16 +1,16 @@
 import { html } from "lit-html";
-import "./ledit-bundle.css";
-import { Source, SourcePrefix } from "./sources/data";
-import "./sources/guards";
-import { HackerNewsSource } from "./sources/hackernews";
-import { Header } from "./sources/header";
-import { MastodonSource, renderMastodonAccountEditor } from "./sources/mastodon";
-import { RedditSource } from "./sources/reddit";
-import { RssSource } from "./sources/rss";
-import { applySettings, bookmarkToHash, getSettings, renderBookmarkEditor, renderBookmarks, renderSettings, renderSourceSelector } from "./sources/settings";
-import { dom, getFeedFromHash, numOverlays, renderErrorMessage, route } from "./sources/utils";
-import { YoutubeSource } from "./sources/youtube";
-import { navigate } from "./utils";
+import { Source, SourcePrefix } from "./data";
+import { HackerNewsSource } from "./hackernews";
+import { Header } from "./header";
+import { renderMastodonAccountEditor } from "./mastodon";
+import { MastodonSource } from "./mastodon";
+import { numOverlays } from "./overlay";
+import { dom, renderErrorMessage } from "./partials";
+import { RedditSource } from "./reddit";
+import { RssSource } from "./rss";
+import { applySettings, bookmarkToHash, getSettings, renderBookmarkEditor, renderBookmarks, renderSettings, renderSourceSelector } from "./settings";
+import { getFeedFromHash, navigate, route } from "./utils";
+import { YoutubeSource } from "./youtube";
 
 export const appPages = [
    route("#settings", renderSettings),

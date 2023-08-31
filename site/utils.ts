@@ -1,6 +1,5 @@
-import videojs from "video.js";
-import { svgImages } from "./svg";
-import "dompurify";
+import Sortable from "sortablejs";
+import { SourcePrefix } from "./data";
 
 export function dateToText(utcTimestamp: number): string {
    const now = Date.now();
@@ -83,28 +82,6 @@ export function intersectsViewport(element: Element | null) {
    return verticalVisible && horizontalVisible;
 }
 
-/**
- * Sanitizes and converts the HTML string to DOM nodes. All DOM manipulation
- * must go through this!
- */
-export function dom(html: string, sanitize = true): HTMLElement[] {
-   const originalHTML = html;
-   html = sanitize ? DOMPurify.sanitize(html, { ADD_ATTR: ["x-id"], ADD_TAGS: ["video-js", "iframe"] }) : html;
-   const removed = DOMPurify.removed;
-   if (DOMPurify.removed.length > 0) {
-      for (const thing of removed) {
-         // console.log("Found potentially malicous markup: " + (thing.attribute?.name + ": " + thing.attribute?.value + " " ?? "") + (thing.from?.tagName + " " ?? "") + (thing.element?.tagName ?? ""));
-      }
-   }
-   const div = document.createElement("div");
-   div.innerHTML = html;
-   const children: Element[] = [];
-   for (let i = 0; i < div.children.length; i++) {
-      children.push(div.children[i]);
-   }
-   return children as HTMLElement[];
-}
-
 export function navigate(hash: string) {
    console.log("navigating to " + hash);
    window.location.hash = hash;
@@ -135,93 +112,6 @@ export function onTapped(element: HTMLElement, callback: () => void) {
    });
 }
 
-export function insertAfter(newNode: HTMLElement, referenceNode: HTMLElement) {
-   referenceNode.parentNode?.insertBefore(newNode, referenceNode.nextSibling);
-}
-
-export function computedCssSizePx(variableName: string) {
-   const computedStyles = getComputedStyle(document.documentElement);
-   const variableValue = computedStyles.getPropertyValue(variableName);
-   return parseInt(variableValue, 10);
-}
-
-export function makeCollapsible(div: HTMLElement, maxHeightInLines: number) {
-   requestAnimationFrame(() => {
-      const computedStyles = getComputedStyle(document.documentElement);
-      const fontSize = parseInt(computedStyles.getPropertyValue("--ledit-font-size"), 10);
-
-      const maxHeight = fontSize * maxHeightInLines;
-      const clickableAreaHeight = fontSize * 2;
-
-      if (div.clientHeight > maxHeight * 1.3) {
-         div.style.height = `${maxHeight}px`;
-         div.style.overflow = "hidden";
-         div.style.marginBottom = "0";
-
-         const showMoreDiv = dom(/*html*/ `
-            <div class="show-more">Show more</div>
-         `)[0];
-
-         let collapsed = true;
-         const loadMore = (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            if (target.tagName == "A") return;
-            let parent = target.parentElement;
-            while (parent) {
-               if (parent.tagName == "A") return;
-               parent = parent.parentElement;
-            }
-
-            event.preventDefault();
-            event.stopPropagation();
-
-            if (collapsed) {
-               div.style.height = "auto";
-               showMoreDiv.style.display = "none";
-            } else {
-               div.style.height = `${maxHeight}px`;
-               showMoreDiv.style.display = "";
-               if (div.getBoundingClientRect().top < 16 * 4) {
-                  div.scrollIntoView(true);
-               }
-            }
-            collapsed = !collapsed;
-         };
-         div.addEventListener("click", loadMore);
-         showMoreDiv.addEventListener("click", loadMore);
-
-         div.insertAdjacentElement("afterend", showMoreDiv);
-      }
-   });
-}
-
-export function removeTrailingEmptyParagraphs(htmlString: string | null): string | null {
-   if (htmlString == null) return null;
-   const parser = new DOMParser();
-   const parsedDoc = parser.parseFromString(htmlString, "text/html");
-
-   const paragraphs = parsedDoc.querySelectorAll("p");
-   let lastNonEmptyParagraphIndex = -1;
-
-   // Find the index of the last non-empty paragraph
-   for (let i = paragraphs.length - 1; i >= 0; i--) {
-      const paragraphText = paragraphs[i].textContent?.trim() || "";
-      if (paragraphText !== "") {
-         lastNonEmptyParagraphIndex = i;
-         break;
-      }
-   }
-
-   if (lastNonEmptyParagraphIndex >= 0) {
-      // Remove the empty paragraphs after the last non-empty paragraph
-      for (let i = paragraphs.length - 1; i > lastNonEmptyParagraphIndex; i--) {
-         paragraphs[i].parentNode?.removeChild(paragraphs[i]);
-      }
-   }
-
-   return parsedDoc.body.innerHTML;
-}
-
 export function assertNever(x: never) {
    throw new Error("Unexpected object: " + x);
 }
@@ -229,111 +119,6 @@ export function assertNever(x: never) {
 export function proxyFetch(url: string) {
    const baseUrl = window.location.host.includes("localhost") ? "http://localhost:3000/proxy/?url=" : "https://ledit.lol/proxy/?url=";
    return fetch(baseUrl + encodeURI(url));
-}
-
-export function renderVideo(
-   embed: { width: number; height: number; dash_url: string | null; hls_url: string | null; fallback_url: string },
-   loop: boolean
-): Element {
-   let videoDom = dom(/*html*/ `
-      <div class="content-video-container">
-         <video-js controls class="video-js" width=${embed.width} ${loop ? "loop" : ""} data-setup="{}">
-               ${embed.dash_url ? `<source src="${embed.dash_url}">` : ""}
-               ${embed.hls_url ? `<source src="${embed.hls_url}">` : ""}
-               ${embed.fallback_url ? `<source src="${embed.fallback_url}">` : ""}
-         </video-js>
-      </div>`)[0];
-   onAddedToDOM(videoDom, () => {
-      const videoDiv = videoDom.querySelector("video-js")! as HTMLElement;
-      let width = embed.width;
-      let height = embed.height;
-      let maxHeight = window.innerHeight * 0.7;
-      const containerWidth = videoDom.parentElement!.clientWidth;
-      if (width > containerWidth || width < containerWidth) {
-         let aspect = height / width;
-         width = containerWidth;
-         height = aspect * width;
-      }
-      if (height > maxHeight) {
-         let scale = maxHeight / height;
-         height = maxHeight;
-         width = width * scale;
-      }
-      videoDiv.style.width = width + "px";
-      videoDiv.style.height = height + "px";
-
-      const video = videojs(videoDiv);
-      var videoElement = video.el().querySelector("video")!;
-
-      // Reset video element width/height so fullscreen works
-      videoElement.style.width = "";
-      videoElement.style.height = "";
-
-      // Toggle pause/play on click
-      const togglePlay = function () {
-         if (video.paused()) {
-            video.play();
-         } else {
-            video.pause();
-         }
-      };
-      videoElement.addEventListener("clicked", togglePlay);
-      onTapped(videoElement, togglePlay);
-      // FIXME this doesn't work, callback is never invoked for some reason
-      // videoDom.addEventListener("clicked", togglePlay);
-      // onTapped(videoDom, togglePlay);
-
-      // Pause when out of view
-      document.addEventListener("scroll", () => {
-         if (videoElement && videoElement === document.pictureInPictureElement) {
-            return;
-         }
-         if (!video.paused() && !intersectsViewport(videoElement)) {
-            video.pause();
-         }
-      });
-   });
-   return videoDom;
-}
-
-export function renderGallery(imageUrls: string[]): { gallery: Element; toggle: Element } {
-   const galleryDom = dom(/*html*/ `
-                           <div class="content-image-gallery">
-                              ${imageUrls.map((img, index) => `<img src="${img}" ${index > 0 ? 'class="hidden"' : ""}>`).join("")}
-                           </div>
-                        `)[0];
-   const imageDoms = galleryDom.querySelectorAll("img");
-   const imageClickListener = () => {
-      let scrolled = false;
-      imageDoms.forEach((img, index) => {
-         if (index == 0) return;
-         if (img.classList.contains("hidden")) {
-            img.classList.remove("hidden");
-         } else {
-            img.classList.add("hidden");
-            if (scrolled) return;
-            scrolled = true;
-            if (imageDoms[0].getBoundingClientRect().top < 16 * 4) {
-               imageDoms[0].scrollIntoView(true);
-            }
-         }
-      });
-   };
-
-   for (let i = 0; i < imageDoms.length; i++) {
-      imageDoms[i].addEventListener("click", imageClickListener);
-   }
-
-   const toggle = dom(/*html*/ `
-      <div class="post-button">
-         <span class="fill-color">${svgImages}</span>
-         <span>${imageUrls.length}</span>
-      </div>
-   `)[0];
-   toggle.addEventListener("click", () => {
-      imageClickListener();
-   });
-   return { gallery: galleryDom, toggle: toggle };
 }
 
 export function scrollToAndCenter(element: Element) {
@@ -344,9 +129,6 @@ export function scrollToAndCenter(element: Element) {
       });
    });
 }
-
-import Sortable from "sortablejs";
-import DOMPurify from "dompurify";
 
 export function makeChildrenDraggable(container: HTMLElement, complete: () => void) {
    const preventContextMenu = (event: any) => {
@@ -419,19 +201,19 @@ export function firstTextChild(divElement: HTMLElement): HTMLElement | null {
    const firstNonWhitespaceSequence = divElement.innerText.trim().match(/\S+/);
 
    if (firstNonWhitespaceSequence) {
-       const sequence = firstNonWhitespaceSequence[0];
+      const sequence = firstNonWhitespaceSequence[0];
 
-       for (const child of Array.from(divElement.children) as HTMLElement[]) {
-           if (child.innerText.includes(sequence)) {
-               const childChild = firstTextChild(child);
-               return childChild ? childChild : child;
-           }
+      for (const child of Array.from(divElement.children) as HTMLElement[]) {
+         if (child.innerText.includes(sequence)) {
+            const childChild = firstTextChild(child);
+            return childChild ? childChild : child;
+         }
 
-           const foundInChildren = firstTextChild(child);
-           if (foundInChildren) {
-               return foundInChildren;
-           }
-       }
+         const foundInChildren = firstTextChild(child);
+         if (foundInChildren) {
+            return foundInChildren;
+         }
+      }
    }
 
    return null;
@@ -448,7 +230,7 @@ export function waitForMediaLoaded(element: HTMLElement, callback: () => void): 
             callback();
          }
       }
-   }
+   };
 
    mediaElements.forEach((el) => {
       const handleImageLoad = () => {
@@ -458,17 +240,17 @@ export function waitForMediaLoaded(element: HTMLElement, callback: () => void): 
       if ((el as any).complete || el.readyState === 4) {
          // Already loaded or errored
          handleImageLoad();
-     } else {
+      } else {
          el.addEventListener("load", handleImageLoad);
          el.addEventListener("error", handleImageLoad);
-     }
+      }
    });
 
    checkAllLoaded();
 }
 
 export function isLink(element: HTMLElement | Element | null) {
-   if(element == null) return false;
+   if (element == null) return false;
    element = element as HTMLElement;
    if (element.tagName == "A") return true;
    let parent = element.parentElement;
@@ -477,4 +259,128 @@ export function isLink(element: HTMLElement | Element | null) {
       parent = parent.parentElement;
    }
    return false;
+}
+
+export type Route = { test: (hash: string) => Record<string, string> | null; render: (params: Record<string, string>) => void };
+
+export function route(pattern: string, render: (params: Record<string, string>) => void): Route {
+   return {
+      test: (hash: string) => matchHashPattern(hash, pattern),
+      render,
+   };
+}
+
+function matchHashPattern(urlHash: string, pattern: string): Record<string, string> | null {
+   const patternParts = pattern.split("/");
+   const urlHashParts = urlHash.split("/");
+
+   if (patternParts.length !== urlHashParts.length) {
+      return null; // Number of path elements doesn't match
+   }
+
+   const params: Record<string, string> = {};
+
+   for (let i = 0; i < patternParts.length; i++) {
+      const patternPart = patternParts[i];
+      const hashPart = urlHashParts[i];
+
+      if (patternPart.startsWith(":")) {
+         const paramName = patternPart.slice(1);
+         params[paramName] = decodeURIComponent(hashPart);
+      } else if (patternPart !== hashPart) {
+         return null; // Path element doesn't match
+      }
+   }
+
+   return params;
+}
+
+export function getSourcePrefixFromHash(): string | null {
+   let hash = location.hash;
+   if (hash.length == 0) {
+      return null;
+   }
+   let slashIndex = hash.indexOf("/");
+   if (slashIndex == -1) return null;
+   return decodeURIComponent(hash.substring(1, slashIndex + 1));
+}
+
+export function getFeedFromHash(): string {
+   const hash = location.hash;
+   if (hash.length == 0) {
+      return "";
+   }
+   const prefix = getSourcePrefixFromHash();
+   if (!prefix) return "";
+   const afterPrefix = hash.substring(prefix.length + 1);
+   if (afterPrefix.includes("+")) return afterPrefix;
+
+   const tokens = afterPrefix.split("/");
+   if (tokens.length == 0) return "";
+   return decodeURIComponent(tokens[0]);
+}
+
+export function sourcePrefixToLabel(source: SourcePrefix | string) {
+   if (typeof source == "string" && !source.endsWith("/")) source = source + "/";
+   const src: SourcePrefix = source as SourcePrefix;
+   switch (src) {
+      case "r/":
+         return "Reddit";
+      case "hn/":
+         return "Hackernews";
+      case "rss/":
+         return "RSS";
+      case "yt/":
+         return "YouTube";
+      case "m/":
+         return "Mastodon";
+      default:
+         assertNever(src);
+   }
+}
+
+export function sourcePrefixToFeedLabel(source: SourcePrefix | string) {
+   if (typeof source == "string" && !source.endsWith("/")) source = source + "/";
+   const src: SourcePrefix = source as SourcePrefix;
+   switch (src) {
+      case "r/":
+         return "Subreddits";
+      case "hn/":
+         return "Hackernews";
+      case "rss/":
+         return "RSS feeds";
+      case "yt/":
+         return "YouTube channels";
+      case "m/":
+         return "Mastodon accounts";
+      default:
+         assertNever(src);
+   }
+}
+
+export function removeTrailingEmptyParagraphs(htmlString: string | null): string | null {
+   if (htmlString == null) return null;
+   const parser = new DOMParser();
+   const parsedDoc = parser.parseFromString(htmlString, "text/html");
+
+   const paragraphs = parsedDoc.querySelectorAll("p");
+   let lastNonEmptyParagraphIndex = -1;
+
+   // Find the index of the last non-empty paragraph
+   for (let i = paragraphs.length - 1; i >= 0; i--) {
+      const paragraphText = paragraphs[i].textContent?.trim() || "";
+      if (paragraphText !== "") {
+         lastNonEmptyParagraphIndex = i;
+         break;
+      }
+   }
+
+   if (lastNonEmptyParagraphIndex >= 0) {
+      // Remove the empty paragraphs after the last non-empty paragraph
+      for (let i = paragraphs.length - 1; i > lastNonEmptyParagraphIndex; i--) {
+         paragraphs[i].parentNode?.removeChild(paragraphs[i]);
+      }
+   }
+
+   return parsedDoc.body.innerHTML;
 }

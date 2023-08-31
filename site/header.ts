@@ -1,99 +1,171 @@
-import { getSource } from "./data";
-import "./header.css";
-import { SettingsView, bookmarkToHash, getSettings, saveSettings } from "./settings";
-import { svgBurger, svgPlus } from "./svg/index";
-import { dom, navigate } from "./utils";
-import { View } from "./view";
+import { LitElement, css, html } from "lit";
+import { ifDefined } from "lit-html/directives/if-defined.js";
+import { map } from "lit-html/directives/map.js";
+import { when } from "lit-html/directives/when.js";
+import { customElement, property, query } from "lit/decorators.js";
+import { SortingOption } from "./data";
+import { addIcon, bookmarkIcon, settingsIcon } from "./icons";
+import { getSettings } from "./settings";
+import { globalStyles } from "./styles";
+import { navigate } from "./utils";
 
-export class HeaderView extends View {
-   constructor() {
-      super();
-      this.render();
-   }
+@customElement("header-button")
+export class HeaderButton extends LitElement {
+   static styles = [globalStyles];
+
+   @property()
+   icon: string = "";
+
+   @property()
+   classes?: string;
+
+   @property()
+   href?: string;
 
    render() {
-      this.innerHTML = "";
-      const source = getSource();
-      const hash = source.getSourcePrefix() + source.getFeed();
-      const bookmark = getSettings().bookmarks.find((bookmark) => bookmarkToHash(bookmark) == hash);
-      this.append(...dom(/*html*/ `
-      <div class="header-container">
-         <div class="header">
-            <div x-id="showMenu" class="header-menu fill-color no-user-select padding-right-small">${svgBurger}</div>
-            <div x-id="feed" class="header-feed">${bookmark ? bookmark.source + bookmark.label : hash}</div>
-            <input x-id="feedInput" class="header-feed-input hidden" value="${source.getSourcePrefix()} + ${source.getFeed()}"/>
-            <select x-id="sorting" class="header-sorting padding-right-big" tabindex="-1">
-            </select>
-            <span x-id="addBookmark" class="header-bookmark-add fill-color padding-right-small">${svgPlus}</span>
-         </div>
-      </div>
-        `));
-
-      const elements = this.elements<{
-         showMenu: Element;
-         feed: HTMLElement;
-         feedInput: HTMLInputElement;
-         sorting: HTMLSelectElement;
-         addBookmark: Element;
-      }>();
-
-      // listen for hash changes to update the feed text
-      window.addEventListener("hashchange", () => {
-         elements.feed.innerText = window.location.hash.substring(1);
-      })
-
-      // Show settings if menu button is clicked.
-      elements.showMenu.addEventListener("click", () => {
-         document.body.append(new SettingsView());
-      });
-
-      // Feed input. If label is clicked, hide it and unhide input.
-      elements.feed.addEventListener("click", () => {
-         elements.feed.classList.add("hidden");
-         elements.feedInput.classList.remove("hidden");
-         elements.feedInput.value = source.getSourcePrefix() + source.getFeed();
-         elements.feedInput.select();
-         elements.feedInput.addEventListener("keydown", (event) => {
-            if (event.key === "Enter" || event.key === "Go" || event.keyCode === 13) {
-               navigate(elements.feedInput.value);
-            }
-         });
-
-         // Switch back to label if the user aborted by unfocusing the input field.
-         elements.feedInput.addEventListener("blur", () => {
-            elements.feed.classList.remove("hidden");
-            elements.feedInput.classList.add("hidden");
-         });
-      });
-
-      // Setup sorting
-      for (const sortingOption of source.getSortingOptions()) {
-         elements.sorting.append(dom(`<option value="${sortingOption.value}">${sortingOption.label}</option>`)[0]);
-      }
-      elements.sorting.value = source.getSorting();
-      elements.sorting.addEventListener("change", () => {
-         const hash = source.getSourcePrefix() + source.getFeed();
-         navigate(hash + (hash.endsWith("/") ? "" : "/") + elements.sorting.value);
-      });
-
-      // Add bookmark button. Either hide it if the feed is already in the
-      // settings, or add click listener to add the feed to the settings as a bookmark.
-      const settings = getSettings();
-      if (settings.bookmarks.some((bookmark) => bookmarkToHash(bookmark) == source.getSourcePrefix() + source.getFeed())) {
-         elements.addBookmark.classList.add("hidden");
+      if (this.href) {
+         return html`<a href="${ifDefined(this.href)}" class="flex items-center justify-center min-w-8 max-w-8 w-8 min-h-8 max-h-8 h-8 ${this.classes ? this.classes : ""}"
+            ><i class="icon w-[1.2em] h-[1.2em]"><slot></slot></i
+         ></a>`;
       } else {
-         elements.addBookmark.addEventListener("click", (event) => {
-            event.stopPropagation();
-            settings.bookmarks.push({
-               source: source.getSourcePrefix(),
-               label: source.getFeed(),
-               ids: source.getFeed().split("+"),
-               isDefault: false
-            });
-            saveSettings();
-            this.render();
-         });
+         return html`<div class="flex items-center justify-center min-w-8 max-w-8 w-8 min-h-8 max-h-8 h-8 ${this.classes ? this.classes : ""}">
+            <i class="icon w-[1.2em] h-[1.2em]"><slot></slot></i>
+         </div>`;
       }
    }
 }
-customElements.define("ledit-header", HeaderView);
+
+@customElement("ledit-header")
+export class Header extends LitElement {
+   static styles = [
+      globalStyles,
+      css`
+         select {
+            background: none;
+            color: rgb(var(--primary));
+            border: none;
+            appearance: none;
+            padding: 0;
+            text-align: right;
+            cursor: pointer;
+            outline-style: none;
+         }
+      `,
+   ];
+
+   @property()
+   hash: string = "";
+
+   @property()
+   sortingOptions: SortingOption[] = [];
+
+   @query("#feed")
+   feed?: HTMLInputElement;
+
+   @query("#sort")
+   sort?: HTMLInputElement;
+
+   constructor() {
+      super();
+      this.classList.add("sticky", "top-0");
+   }
+
+   render() {
+      console.log("Rendering header");
+      const bookmark = this.getBookmark();
+      const tokens = this.hash.split("/");
+      const lastFragment = tokens[tokens.length - 1];
+
+      return html`<div class="w-full sm:max-w-[640px] mx-auto sticky top-0 text-lg flex items-center gap-2 p-2 bg-background backdrop-blur-[8px] border-b border-border/50 z-[50]">
+         <header-button href="#settings">${settingsIcon}</header-button>
+         <input
+            id="feed"
+            class="border-none outline-none text-ellipsis overflow-hidden font-bold text-primary focus:outline-none hover:bg-transparent hover:text-primary flex-1 p-0"
+            .value="${bookmark ? bookmark.source + bookmark.label : this.hash}"
+            @focus="${this.feedFocused}"
+            @blur="${this.feedBlurred}"
+            @keydown="${this.feedKeydown}"
+         />
+         ${when(
+            this.sortingOptions.length > 0,
+            () =>
+               html`<select id="sort" @change="${this.sortChanged}">
+                  ${map(this.sortingOptions, (item) => html`<option value=${item.value} ?selected=${item.value == lastFragment}>${item.label}</option>`)}
+               </select>`,
+            () => html``
+         )}
+         ${!bookmark ? html`<header-button @click=${this.addBookmark}>${addIcon}</header-button>` : ""}
+         <header-button href="#bookmarks">${bookmarkIcon}</header-button>
+      </div>`;
+   }
+
+   private getSource() {
+      return this.hash.substring(0, this.hash.indexOf("/") + 1);
+   }
+
+   private getFeed() {
+      return decodeURIComponent(this.hash.substring(this.hash.indexOf("/") + 1));
+   }
+
+   private getBookmark() {
+      const hashSource = this.getSource();
+      const hashFeed = this.getFeed();
+      return getSettings().bookmarks.find((bookmark) => bookmark.source == hashSource && bookmark.ids.join("+") == hashFeed);
+   }
+
+   private feedFocused(event: Event) {
+      const feed = this.feed;
+      if (!feed) return;
+      requestAnimationFrame(() => {
+         feed.value = this.hash;
+         feed.selectionStart = this.hash.indexOf("/") == -1 ? 0 : this.hash.indexOf("/") + 1;
+         feed.selectionEnd = this.hash.length;
+      });
+   }
+
+   private feedBlurred(event: Event) {
+      const feed = this.feed;
+      if (!feed) return;
+      const bookmark = this.getBookmark();
+      feed.value = bookmark ? bookmark.source + bookmark.label : this.hash;
+   }
+
+   private feedKeydown(event: KeyboardEvent) {
+      const feed = this.feed;
+      if (!feed) return;
+      if (event.key === "Enter" || event.key === "Go" || event.keyCode === 13) {
+         const tokens = feed.value.split("/");
+         const hashSource = tokens[0] + "/";
+         const hashFeed = tokens[1];
+         const bookmark = getSettings().bookmarks.find((bookmark) => bookmark.source == hashSource && bookmark.ids.join("+") == hashFeed);
+         navigate(bookmark ? bookmark.source + bookmark.ids.join("+") : feed.value);
+      }
+   }
+
+   private addBookmark() {
+      const feed = this.feed;
+      if (!feed) return;
+      const hashSource = feed.value.substring(0, feed.value.indexOf("/") + 1);
+      const hashFeed = decodeURIComponent(feed.value.substring(feed.value.indexOf("/") + 1));
+      location.hash = `#bookmarks-new/${hashSource}${encodeURIComponent(hashFeed)}`;
+   }
+
+   private sortChanged(event: Event) {
+      const sort = this.sort;
+      if (!sort) return;
+      const tokens = location.hash.split("/");
+      if (tokens.length == 0) return;
+      if (tokens.length == 1 || !this.sortingOptions.some((option) => option.value == tokens[tokens.length - 1])) {
+         console.log("Reloading due to sort change.");
+         location.hash = location.hash + (location.hash.endsWith("/") ? "" : "/") + sort.value;
+         location.reload();
+         return;
+      } else {
+         tokens.pop();
+         console.log("Reloading due to sort change.");
+         location.hash = tokens.join("/") + "/" + sort.value;
+         location.reload();
+         return;
+      }
+   }
+}

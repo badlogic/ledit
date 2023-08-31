@@ -1,13 +1,18 @@
-// @ts-ignore
-import { Comment, ContentDom, Page, Post, SortingOption, Source, SourcePrefix } from "./data";
-import { RssPostData, RssSource } from "./rss";
-import { dateToText, dom, intersectsViewport, proxyFetch } from "./utils";
+import { Page, PageIdentifier, SortingOption, Source } from "./data";
+import { renderContentLoader, renderPosts, dom, safeHTML } from "./partials";
+import { RssSource, RssPost } from "./rss";
+import { html } from "lit-html";
+import { proxyFetch, dateToText, elements, onVisibleOnce, intersectsViewport } from "./utils";
 
 const channelIds = localStorage.getItem("youtubeCache") ? JSON.parse(localStorage.getItem("youtubeCache")!) : {};
 
-export class YoutubeSource extends Source<RssPostData, void> {
+export interface YoutubePost extends RssPost {
+   author: string;
+   authorUrl: string;
+}
 
-   async getYoutubeChannel(channel: string): Promise<Post<RssPostData>[] | Error> {
+export class YoutubeSource extends Source<YoutubePost> {
+   async getYoutubeChannel(channel: string): Promise<RssPost[] | Error> {
       let channelId: string | null = channelIds[channel];
 
       if (!channelId) {
@@ -25,77 +30,77 @@ export class YoutubeSource extends Source<RssPostData, void> {
       return RssSource.getRssPosts("https://www.youtube.com/feeds/videos.xml?channel_id=" + channelId);
    }
 
-   async getPosts(nextPage: string | null): Promise<Page<Post<RssPostData>>> {
+   async getPosts(nextPage: string | null): Promise<Page<YoutubePost> | Error> {
       const channels = this.getFeed().split("+");
 
-      const promises: Promise<Post<RssPostData>[] | Error>[] = [];
+      const promises: Promise<RssPost[] | Error>[] = [];
       for (const channel of channels) {
          promises.push(this.getYoutubeChannel(channel));
       }
 
       const promisesResult = await Promise.all(promises);
-      const posts: Post<RssPostData>[] = [];
+      const posts: YoutubePost[] = [];
       for (let i = 0; i < channels.length; i++) {
-         const result = promisesResult[i];
-         if (result instanceof Error) continue;
-         const channel = channels[i];
-         for (const post of result) {
-            post.author = channel;
+         const rssPosts = promisesResult[i];
+         if (rssPosts instanceof Error) continue;
+         for (const rssPost of rssPosts) {
+            posts.push({
+               ...rssPost,
+               author: channels[i],
+               authorUrl: "https://www.youtube.com/@" + channels[i],
+            });
          }
-         posts.push(...result);
       }
       posts.sort((a, b) => b.createdAt - a.createdAt);
       return { items: posts, nextPage: "end" };
    }
 
-   async getComments(post: Post<RssPostData>): Promise<Comment<void>[]> {
-      return [];
-   }
-
-   getMetaDom(post: Post<RssPostData>): HTMLElement[] {
-      return dom(/*html*/ `
-      <a href="${"https://youtube.com/@" + post.author}">${post.author}</a>
-      <span>•</span>
-      <span>${dateToText(post.createdAt * 1000)}</span>
-   `);
-   }
-
-   getContentDom(post: Post<RssPostData>): ContentDom {
-      const url = post.url.split("=");
-      if (url.length != 2) return {elements: [], toggles: []};
-
-      const videoDom = dom(`<iframe src="https://www.youtube.com/embed/${url[1]}?feature=oembed&amp;enablejsapi=1" class="youtube-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="" title="Russ Abbot in Married for Life"></iframe>`)[0];
-      document.addEventListener("scroll", () => {
-         if (!intersectsViewport(videoDom)) {
-            (videoDom as HTMLIFrameElement).contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
-         }
+   async renderMain(main: HTMLElement) {
+      const loader = renderContentLoader();
+      main.append(loader);
+      const page = await this.getPosts(null);
+      loader.remove();
+      renderPosts(main, page, renderYoutubePost, (nextPage: PageIdentifier) => {
+         return this.getPosts(nextPage);
       });
-      return {elements: [videoDom], toggles: []};
-   }
-
-   getCommentMetaDom(comment: Comment<void>, opName: string): HTMLElement[] {
-      return [];
-   }
-
-   getFeed(): string {
-      const hash = this.hash;
-      if (hash.length == 0) {
-         return "";
-      }
-      let slashIndex = hash.indexOf("/");
-      if (slashIndex == -1) return "";
-      return decodeURIComponent(hash.substring(slashIndex + 1));
-   }
-
-   getSourcePrefix(): SourcePrefix {
-      return "yt/";
    }
 
    getSortingOptions(): SortingOption[] {
       return [];
    }
+}
 
-   getSorting(): string {
-      return "";
-   }
+export function renderYoutubePost(post: YoutubePost): HTMLElement[] {
+   const date = dateToText(post.createdAt * 1000);
+
+   const postDom = dom(html`
+      <article class="post youtube-post gap-1">
+         <a href="${post.url}" class="font-bold text-lg text-color">${post.title}</a>
+         <div class="flex gap-1 text-xs">
+            <a href="${post.authorUrl}" class="text-color/50">${post.author}</a>
+            <span class="flex items-center text-color/50">•</span>
+            <span class="flex items-center text-color/50">${date}</span>
+         </div>
+         <section x-id="contentDom" class="content px-0 w-full aspect-video"></section>
+      </article>
+   `);
+   const { contentDom } = elements<{ contentDom: HTMLElement }>(postDom[0]);
+   onVisibleOnce(postDom[0], () => {
+      console.log("Rendering video " + post.title);
+      const url = post.url.split("=");
+      if (url.length != 2) return { elements: [], toggles: [] };
+
+      const videoDom = dom(
+         safeHTML(
+            `<iframe src="https://www.youtube.com/embed/${url[1]}?feature=oembed&amp;enablejsapi=1" class="youtube-embed w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen=""></iframe>`
+         )
+      )[0];
+      contentDom.append(videoDom);
+      document.addEventListener("scroll", () => {
+         if (!intersectsViewport(videoDom)) {
+            (videoDom as HTMLIFrameElement).contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
+         }
+      });
+   });
+   return postDom;
 }

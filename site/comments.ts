@@ -1,158 +1,44 @@
-import "./comments.css";
-import { Post, Comment, getSource } from "./data";
-import { svgLoader, svgReply } from "./svg";
-import { dateToText, dom, htmlDecode, onAddedToDOM, scrollToAndCenter, setLinkTargetsToBlank } from "./utils";
-import { View } from "./view";
+import { TemplateResult, html } from "lit-html";
+import { map } from "lit-html/directives/map.js";
+import { dom } from "./partials";
+import { setLinkTargetsToBlank } from "./utils";
 
-const commentsCache = new Map<string, Comment<any>[]>();
-
-export class CommentsView extends View {
-   private comments: Comment<any>[] | null = null;
-
-   constructor(public readonly post: Post<any>, public readonly postView: Element) {
-      super();
-      this.render();
-      this.classList.add("comments");
-      (async () => this.loadComments(post))();
+export function renderComments<T, S>(comments: T[], renderComment: (comment: T, state: S) => TemplateResult, state: S): HTMLElement[] {
+   const outerDom = dom(html` ${map(comments, (comment) => renderComment(comment, state))} `);
+   const commentDoms: HTMLElement[] = [];
+   for (const el of Array.from(outerDom)) {
+      setLinkTargetsToBlank(el);
+      commentDoms.push(el);
+      commentDoms.push(...(Array.from(el.querySelectorAll(".comment")) as HTMLElement[]));
    }
 
-   async loadComments(post: Post<any>) {
-      const source = getSource();
-      const loadingDiv = dom(`<div class="post-loading">${svgLoader}</div>`)[0];
-      this.append(loadingDiv);
-      try {
-         const commentsData = commentsCache.has(post.url) ? commentsCache.get(post.url)! : await source.getComments(post);
-         if (commentsData instanceof Error) {
-            this.append(...dom(`<div class="post-loading">${commentsData.message}</div>`));
-         } else {
-            commentsCache.set(post.url, commentsData);
-            this.comments = commentsData;
-            this.render();
+   for (const commentDom of commentDoms) {
+      const replies = commentDom.querySelector(".replies");
+      if (!replies) continue;
+      if (replies.children.length == 0) continue;
+      const commentButtons = commentDom.querySelector(".comment-buttons");
+      if (!commentButtons) continue;
+
+      const toggle = dom(html`<div class="hidden text-sm text-color/50">${replies.children.length} ${replies.children.length == 1 ? "reply" : "replies"}</div>`)[0];
+      commentButtons.append(toggle);
+      commentDom.addEventListener("click", (event) => {
+         const target = event.target as HTMLElement;
+         if (!target) return;
+         if (target.tagName == "A") return;
+         let parent = target.parentElement;
+         while (parent) {
+            if (parent.classList.contains("comment-buttons")) return;
+            if (parent.classList.contains("comment")) break;
+            parent = parent.parentElement;
          }
-      } catch (e) {
-         console.error("Couldn't load comments", e);
-         this.append(...dom(`<div class="post-loading">Could not load comments</div>`));
-      } finally {
-         loadingDiv.remove();
-      }
-   }
-
-   render() {
-      if (!this.comments) return;
-      for (const comment of this.comments) {
-         this.append(new CommentView(comment, this.post.author));
-      }
-   }
-}
-customElements.define("ledit-comments", CommentsView);
-
-export class CommentView extends View {
-   constructor(private readonly comment: Comment<any>, private readonly opName: string | null) {
-      super();
-      this.render();
-      this.classList.add("comment");
-   }
-
-   prependReply(reply: Comment<any>) {
-      const replyDiv = new CommentView(reply, this.opName);
-      const elements = this.elements<{
-         replies: HTMLElement;
-      }>();
-      if (elements.replies.children.length > 0) {
-         elements.replies.insertBefore(replyDiv, elements.replies.children[0]);
-      } else {
-         elements.replies.append(replyDiv);
-      }
-   }
-
-   render() {
-      const comment = this.comment;
-
-      this.append(...dom(/*html*/ `
-         <div x-id="meta" class="comment-meta"></div>
-         <div x-id="content" class="comment-content"></div>
-         <div x-id="replies" class="comment-replies"></div>
-         <div x-id="repliesCount" class="comment-replies-count hidden"></div>
-      `));
-
-      // Add meta, content, replies and reply count. Setup expand/collapse.
-      const elements = this.elements<{
-         meta: HTMLElement;
-         content: HTMLElement;
-         replies: HTMLElement;
-         repliesCount: HTMLElement;
-         reply: HTMLElement;
-      }>();
-
-      // Scroll to it if highlighted
-      if (comment.highlight) {
-         this.classList.add("comment-highlighted");
-         onAddedToDOM(this, () => {
-            scrollToAndCenter(elements.content);
-         });
-      }
-
-      // Add meta
-      for (const el of getSource().getCommentMetaDom(comment, this.opName)) {
-         elements.meta.append(el);
-      }
-
-      // Create reply children recursively.
-      elements.repliesCount.innerText = `${comment.replies.length == 1 ? "1 reply" : comment.replies.length + " replies"}`;
-      for (const reply of comment.replies) {
-         const replyDom = new CommentView(reply, this.opName);
-         elements.replies.append(replyDom);
-      }
-
-      // Add content and toggle buttons
-      const toggles: Element[] = [];
-      if (typeof comment.content === "string") {
-         elements.content.append(...dom(htmlDecode(comment.content)!));
-      } else {
-         const content = comment.content;
-         for (const el of content.elements) {
-            elements.content.append(el);
-         }
-         if (content.toggles.length > 0) {
-            const togglesDiv = dom(/*html*/`<div class="comment-toggles"></div>`)[0];
-            for (const toggle of content.toggles) {
-               togglesDiv.append(toggle);
-            }
-            this.insertBefore(togglesDiv, elements.replies);
-         }
-         toggles.push(...content.toggles);
-      }
-
-      // Ensure all links open a new tab.
-      setLinkTargetsToBlank(this);
-
-      // Collapse children on click
-      const isLink = (element: HTMLElement) => {
-         let el: HTMLElement | null = element;
-         while (el) {
-            if (el.tagName == "A") return true;
-            if (el.classList.contains("content-image-gallery")) return true;
-            if (toggles.indexOf(el) != -1) return true;
-            el = el.parentElement;
-         }
-         return false;
-      };
-      const toggleCollapsed = (event: MouseEvent) => {
-         if (!isLink(event.target as HTMLElement)) {
-            event.stopPropagation();
+         if (parent == commentDom) {
             event.preventDefault();
-            if (comment.replies.length == 0) return;
-            if (elements.replies.classList.contains("hidden")) {
-               elements.replies.classList.remove("hidden");
-               elements.repliesCount.classList.add("hidden");
-            } else {
-               elements.replies.classList.add("hidden");
-               elements.repliesCount.classList.remove("hidden");
-            }
+            event.stopPropagation();
+            replies.classList.toggle("hidden");
+            toggle.classList.toggle("hidden");
          }
-      };
-      elements.content.addEventListener("click", toggleCollapsed);
-      elements.repliesCount.addEventListener("click", toggleCollapsed);
+      });
    }
+
+   return outerDom;
 }
-customElements.define("ledit-comment", CommentView);

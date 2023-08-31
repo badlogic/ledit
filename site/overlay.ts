@@ -1,11 +1,9 @@
-import { LitElement, html, unsafeCSS } from "lit";
-
-// @ts-ignore
+import { LitElement, html } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
-import { closeIcon } from "./icons";
+import { appPages } from "./app";
 import { escapeGuard, navigationGuard } from "./guards";
-import { appPages } from "../ledit";
-import { globalStyles } from "./css";
+import { closeIcon } from "./icons";
+import { globalStyles } from "./styles";
 
 export let numOverlays = 0;
 

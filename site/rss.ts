@@ -1,11 +1,9 @@
-// @ts-ignore
-import "./rss.css";
-
-// @ts-ignore
-import { FeedEntry, extractFromXml } from "@extractus/feed-extractor";
-import { Comment, ContentDom, Page, Post, SortingOption, Source, SourcePrefix } from "./data";
-import { dateToText, dom, makeCollapsible, proxyFetch, removeTrailingEmptyParagraphs } from "./utils";
-import { parse, isValid } from "date-fns";
+import { extractFromXml } from "@extractus/feed-extractor";
+import { isValid, parse } from "date-fns";
+import { html } from "lit-html";
+import { Page, PageIdentifier, SortingOption, Source } from "./data";
+import { dom, makeCollapsible, renderContentLoader, renderPosts, safeHTML } from "./partials";
+import { dateToText, elements, onVisibleOnce, proxyFetch, removeTrailingEmptyParagraphs, setLinkTargetsToBlank } from "./utils";
 
 function parseFeedDate(dateString: string): Date {
    // Common RSS and Atom date formats (RFC 822 and RFC 3339)
@@ -42,10 +40,11 @@ function getChannelImage(rss: Document) {
    }
 }
 
-export type RssPostData = { channelImage: string | null, entry: FeedEntry }
+export type RssPost = { url: string; title: string; createdAt: number; feed: string; channelImage: string | null; previewImage: string | null; content: string | null };
+export type RssComment = { replies: [] };
 
-export class RssSource extends Source<RssPostData, void> {
-   public static async getRssPosts(url: string): Promise<Post<RssPostData>[] | Error> {
+export class RssSource extends Source<RssPost> {
+   public static async getRssPosts(url: string): Promise<RssPost[] | Error> {
       const options = {
          useISODateFormat: false,
          getExtraEntryFields: (feedEntry: any) => {
@@ -92,17 +91,22 @@ export class RssSource extends Source<RssPostData, void> {
          const result = extractFromXml(text, options);
          if (!result || !result.entries) return new Error(`Could not load entries for RSS feed ${url}`);
 
-         const posts: Post<RssPostData>[] = [];
+         const posts: RssPost[] = [];
          for (const entry of result.entries) {
             if (!entry.link || !entry.published) continue;
+            let previewImage: string | null = null;
+            const enclosure = (entry as any).enclosure;
+            if (enclosure) previewImage = enclosure.url;
+            const mediaContent = (entry as any).mediaContent;
+            if (mediaContent) previewImage = mediaContent.url;
             posts.push({
                url: entry.link,
                title: entry.title!,
-               author: null,
                createdAt: parseFeedDate(entry.published as any as string).getTime() / 1000,
                feed: url,
-               numComments: null,
-               data: { channelImage, entry }
+               channelImage,
+               previewImage,
+               content: (entry as any).html ? removeTrailingEmptyParagraphs((entry as any).html) : entry.description ?? null,
             });
          }
          return posts;
@@ -112,15 +116,15 @@ export class RssSource extends Source<RssPostData, void> {
       }
    }
 
-   async getPosts(nextPage: string | null): Promise<Page<Post<RssPostData>> | Error> {
+   async getPosts(nextPage: string | null): Promise<Page<RssPost> | Error> {
       const urls = this.getFeed().split("+");
-      const promises: Promise<Post<RssPostData>[] | Error>[] = [];
+      const promises: Promise<RssPost[] | Error>[] = [];
       for (const url of urls) {
          promises.push(RssSource.getRssPosts(url));
       }
 
       const promisesResult = await Promise.all(promises);
-      const posts: Post<RssPostData>[] = [];
+      const posts: RssPost[] = [];
       for (const result of promisesResult) {
          if (result instanceof Error) continue;
          posts.push(...result);
@@ -129,71 +133,47 @@ export class RssSource extends Source<RssPostData, void> {
       return { items: posts, nextPage: "end" };
    }
 
-   async getComments(post: Post<RssPostData>): Promise<Comment<void>[]> {
-      throw new Error("Method not implemented.");
-   }
-
-   getMetaDom(post: Post<RssPostData>): HTMLElement[] {
-      return dom(/*html*/ `
-         <a href="${new URL(post.url).host}">${post.feed}</a>
-         <span>•</span>
-         <span>${dateToText(post.createdAt * 1000)}</span>
-      `);
-   }
-
-   getContentDom(post: Post<RssPostData>): ContentDom {
-      const data = post.data;
-      const xmlItem = data.entry;
-      if (!xmlItem) return {elements: [], toggles: []};
-      const description = (xmlItem as any).html ?? xmlItem.description;
-      if (!description) return {elements: [], toggles: []};
-      let imageUrl = null;
-
-      const enclosure = (xmlItem as any).enclosure;
-      if (enclosure) {
-         imageUrl = enclosure.url;
-      }
-
-      const mediaContent = (xmlItem as any).mediaContent;
-      if (mediaContent) {
-         imageUrl = mediaContent.url;
-      }
-
-      const content = dom(
-         `<div class="content rss-content">${
-            imageUrl ? `<img src="${imageUrl}" class="rss-content-image">` : ""
-         } <div>${removeTrailingEmptyParagraphs(description)}</div></div>`
-      )[0];
-      content.querySelectorAll("iframe").forEach((iframe) => iframe.remove());
-      requestAnimationFrame(() => {
-         makeCollapsible(content, 8);
+   async renderMain(main: HTMLElement) {
+      const loader = renderContentLoader();
+      main.append(loader);
+      const page = await this.getPosts(null);
+      loader.remove();
+      renderPosts(main, page, renderRssPost, (nextPage: PageIdentifier) => {
+         return this.getPosts(nextPage);
       });
-      return {elements: [content], toggles: []};
-   }
-
-   getCommentMetaDom(comment: Comment<void>, opName: string): HTMLElement[] {
-      return [];
-   }
-
-   getFeed(): string {
-      const hash = this.hash;
-      if (hash.length == 0) {
-         return "";
-      }
-      let slashIndex = hash.indexOf("/");
-      if (slashIndex == -1) return "";
-      return decodeURIComponent(hash.substring(slashIndex + 1));
-   }
-
-   getSourcePrefix(): SourcePrefix {
-      return "rss/";
    }
 
    getSortingOptions(): SortingOption[] {
       return [];
    }
+}
 
-   getSorting(): string {
-      return "";
+export function renderRssPost(post: RssPost) {
+   const domain = new URL(post.feed).host;
+   const channelImage = post.channelImage;
+   const date = dateToText(post.createdAt * 1000);
+   const previewImage = post.previewImage;
+   const content = post.content;
+
+   const postDom = dom(html`
+      <article class="post gap-1">
+         <a href="${post.url}" class="font-bold text-lg text-color">${post.title}</a>
+         <div class="flex gap-1 text-xs">
+            <a href="https://${domain}" class="text-color/50"> ${channelImage ? html`<img src="${channelImage}" class="max-h-4" />` : domain} </a>
+            <span class="flex items-center text-color/50">•</span>
+            <span class="flex items-center text-color/50">${date}</span>
+         </div>
+         <section x-id="contentDom" class="rss-content">${previewImage ? html`<img src="${previewImage}" class="rss-content-image py-4" />` : ""}</section>
+      </article>
+   `);
+   const { contentDom } = elements<{ contentDom: HTMLElement }>(postDom[0]);
+   if (content) {
+      onVisibleOnce(postDom[0], () => {
+         let element: HTMLElement[] = typeof content === "string" ? dom(html`<div>${safeHTML(content)}</div>`) : content;
+         contentDom.append(...element);
+         makeCollapsible(contentDom, 10);
+         setLinkTargetsToBlank(contentDom);
+      });
    }
+   return postDom;
 }

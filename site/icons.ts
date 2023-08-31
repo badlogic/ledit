@@ -7,7 +7,7 @@ import addIconSvg from "remixicon/icons/System/add-circle-line.svg";
 // @ts-ignore
 import closeIconSvg from "remixicon/icons/System/close-circle-line.svg";
 // @ts-ignore
-import loaderIconSvg from "../svg/loader.svg";
+import loaderIconSvg from "./svg/loader.svg";
 // @ts-ignore
 import commentIconSvg from "remixicon/icons/Communication/chat-4-line.svg";
 // @ts-ignore
@@ -37,15 +37,13 @@ import redditIconSvg from "remixicon/icons/Logos/reddit-line.svg";
 // @ts-ignore
 import mastodonIconSvg from "remixicon/icons/Logos/mastodon-fill.svg";
 // @ts-ignore
-import hackernewsIconSvg from "../svg/hackernews.svg";
+import hackernewsIconSvg from "./svg/hackernews.svg";
 // @ts-ignore
 import editIconSvg from "remixicon/icons/Design/edit-line.svg";
-// @ts-ignore
-import loaderIconSvg from "../svg/loader.svg";
 
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import { SourcePrefix } from "./data";
-import { assertNever } from "../utils";
+import { assertNever } from "./utils";
 
 export const settingsIcon = unsafeHTML(settingsIconSvg);
 export const bookmarkIcon = unsafeHTML(bookmarkIconSvg);
