@@ -26,12 +26,6 @@ export class Overlay extends LitElement {
    @property()
    modal = false;
 
-   @property()
-   sticky = false;
-
-   @property()
-   border = false;
-
    readonly navCallback;
    readonly escapeCallback;
    closed = false;
@@ -47,19 +41,18 @@ export class Overlay extends LitElement {
    render() {
       window.document.body.style.overflow = "hidden";
       return html`
-         <div id="overlay" class="fixed top-0 w-full h-full overflow-auto m-auto" @mousedown=${this.overlayClicked}>
-            <div id="container" class="bg-background w-full h-full flex flex-col max-w-[640px] mx-auto pb-4 ${this.border ? "rounded shadow" : ""}">
+         <div id="overlay" class="fixed top-0 w-full h-full overflow-auto m-auto bg-background" @mousedown=${this.overlayClicked}>
+            <div class="sticky top-0 w-full max-w-[640px] mx-auto">
                ${this.headerTitle
                   ? html`
-                       <div
-                          class="cursor-pointer py-2 pl-2 pr-1 flex items-center text-lg bg-background ${this.sticky ? "sticky top-0 border-b border-border/50" : ""}"
-                          @click=${this.close.bind(this)}
-                       >
+                       <div class="cursor-pointer py-2 pl-2 pr-1 flex items-center text-lg bg-background border-b border-border/50" @click=${this.close.bind(this)}>
                           <span class="font-bold text-primary text-ellipsis overflow-hidden flex-1">${this.headerTitle}</span>
                           <header-button>${closeIcon}</header-button>
                        </div>
                     `
                   : html`<slot name="header" @slotchange=${this.slotChanged.bind(this)}></slot>`}
+            </div>
+            <div id="container" class="w-full flex flex-col max-w-[640px] mx-auto pb-4 ${this.border ? "rounded shadow" : ""}">
                <slot name="content" @slotchange=${this.slotChanged.bind(this)}></slot>
             </div>
          </div>

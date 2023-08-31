@@ -100,8 +100,8 @@ export class SettingsView extends LitElement {
       const self = this;
       return html`
          <ledit-overlay id="overlay" headerTitle="Settings" .closeCallback=${() => this.remove()}>
-            <div slot="content" class="flex flex-col text-lg gap-4 px-4">
-               <div class="text-lg font-bold border-b border-border">View options</div>
+            <div slot="content" class="flex flex-col text-lg gap-4 px-4 pt-3">
+               <div class="text-lg font-bold">View options</div>
                <div class="cursor-pointer flex items-center" @click=${this.themeClicked}>
                   <span>Theme</span>
                   <i class="icon ml-auto mr-2 w-[1.2em] h-[1.2em]">${this.settings.theme == "dark" ? moonIcon : sunIcon}</i>
@@ -110,7 +110,7 @@ export class SettingsView extends LitElement {
                   <span>Collapse seen posts</span>
                   <i class="icon ml-auto mr-2 w-[1.2em] h-[1.2em] ${this.settings.collapseSeenPosts ? "fill-primary" : "fill-primary/50"}">${checkmarkIcon}</i>
                </div>
-               <div class="text-lg font-bold border-b border-border">About</div>
+               <div class="text-lg font-bold">About</div>
                <a href="https://github.com/badlogic/ledit#usage">How does this work?</a>
                <a href="https://github.com/badlogic/ledit" class="flex items-center gap-2"><i class="icon w-[1.2em] h-[1.2em]">${githubIcon}</i> GitHub</a>
                <a href="https://github.com/sponsors/badlogic" class="flex items-center gap-2"><i class="icon w-[1.2em] h-[1.2em]">${heartIcon}</i> Buy me a coffee</a>

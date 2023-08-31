@@ -426,7 +426,7 @@ export class RedditCommentsView extends LitElement {
    render() {
       return html`
          <ledit-overlay headerTitle="${location.hash.substring(1)}" .sticky=${true} .closeCallback=${() => this.remove()}>
-            <div slot="content" class="w-full overflow-auto">
+            <div slot="content" class="w-full">
                <div class="comments">
                   ${this.error ? renderErrorMessage("Could not load comments", this.error) : nothing}
                   ${this.data ? renderRedditPost(this.data.post, false) : this.error ? nothing : renderContentLoader()}
