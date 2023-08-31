@@ -11,6 +11,7 @@ import { RssSource } from "./rss";
 import { applySettings, bookmarkToHash, getSettings, renderBookmarkEditor, renderBookmarks, renderSettings, renderSourceSelector } from "./settings";
 import { getFeedFromHash, navigate, route } from "./utils";
 import { YoutubeSource } from "./youtube";
+import { LitElement } from "lit";
 
 export const appPages = [
    route("#settings", renderSettings),
@@ -30,7 +31,7 @@ function loadDefaultBookmark() {
 
 async function main() {
    applySettings();
-   const hash = location.hash.substring(1);
+   const hash = location.hash.substring(1).trim();
 
    if (location.hash.length == 0 || appPages.some((page) => page.test(location.hash))) {
       loadDefaultBookmark();
@@ -82,29 +83,17 @@ async function main() {
          page.render(page.test(location.hash)!);
          return;
       }
-      if (numOverlays == 0 && sourcePrefix != "hn/" && feed != getFeedFromHash()) {
+      if (numOverlays == 0 && feed != getFeedFromHash()) {
          console.log("Reloading due to feed change: " + feed + " -> " + getFeedFromHash());
          location.reload();
       }
    });
    dispatchEvent(new HashChangeEvent("hashchange"));
 
-   const bookmark = getSettings().bookmarks.find((bookmark) => bookmark.source == tokens[0] + "/" && bookmark.label == feed);
+   const bookmark = getSettings().bookmarks.find((bookmark) => bookmark.source == sourcePrefix && bookmark.label == feed);
    if (bookmark) {
       location.hash = bookmark.source + bookmark.ids.join("+");
    }
-
-   document.addEventListener("keydown", (event) => {
-      // FIXME if you enter any text with b anywhere, this gets triggered...
-      /*if (event.key == "b" && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement)) {
-         const bookmarksView = document.body.querySelector(".bookmarks");
-         if (bookmarksView) {
-            bookmarksView.parentElement!.click();
-         } else {
-            location.href = "#bookmarks";
-         }
-      }*/
-   });
 
    try {
       source.renderMain(main);

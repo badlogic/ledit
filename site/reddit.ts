@@ -5,9 +5,9 @@ import { customElement, property } from "lit/decorators.js";
 import { renderComments } from "./comments";
 import { Page, PageIdentifier, SortingOption, Source } from "./data";
 import { commentIcon, imageIcon, replyIcon } from "./icons";
-import { Overlay } from "./overlay";
 import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderGallery, renderInfoMessage, renderPosts, renderVideo, safeHTML } from "./partials";
 import { addCommasToNumber, dateToText, elements, htmlDecode, intersectsViewport, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
+import { globalStyles } from "./styles";
 
 interface RedditPosts {
    kind: "listing";
@@ -396,7 +396,7 @@ export function renderRedditPost(post: RedditPost, showActionButtons = true): HT
             : ""}
       </article>
    `);
-   const { contentDom, comments, gallery } = elements<{ contentDom: HTMLElement; comments: HTMLElement; gallery: HTMLElement }>(postDom[0]);
+   const { contentDom, gallery } = elements<{ contentDom: HTMLElement; comments: HTMLElement; gallery: HTMLElement }>(postDom[0]);
    onVisibleOnce(postDom[0], () => {
       const media = renderRedditMedia(post, contentDom);
       contentDom.append(...media);
@@ -415,7 +415,7 @@ export function renderRedditPost(post: RedditPost, showActionButtons = true): HT
 
 @customElement("ledit-reddit-comments")
 export class RedditCommentsView extends LitElement {
-   static styles = Overlay.styles;
+   static styles = globalStyles;
 
    @property()
    data?: { post: RedditPost; comments: RedditComment[] };

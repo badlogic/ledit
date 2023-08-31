@@ -11,7 +11,7 @@ import { navigate } from "./utils";
 
 @customElement("header-button")
 export class HeaderButton extends LitElement {
-   static styles = [globalStyles];
+   static styles = globalStyles;
 
    @property()
    icon: string = "";
@@ -65,9 +65,23 @@ export class Header extends LitElement {
    @query("#sort")
    sort?: HTMLInputElement;
 
+   hashChangeListener = () => {
+      this.hash = location.hash.substring(1);
+   };
+
    constructor() {
       super();
-      this.classList.add("sticky", "top-0");
+      this.classList.add("sticky", "top-0", "z-[50]");
+   }
+
+   connectedCallback(): void {
+      super.connectedCallback();
+      window.addEventListener("hashchange", this.hashChangeListener);
+   }
+
+   disconnectedCallback(): void {
+      super.disconnectedCallback();
+      window.removeEventListener("hashchange", this.hashChangeListener);
    }
 
    render() {
@@ -76,7 +90,7 @@ export class Header extends LitElement {
       const tokens = this.hash.split("/");
       const lastFragment = tokens[tokens.length - 1];
 
-      return html`<div class="w-full sm:max-w-[640px] mx-auto sticky top-0 text-lg flex items-center gap-2 p-2 bg-background backdrop-blur-[8px] border-b border-border/50 z-[50]">
+      return html`<div class="w-full sm:max-w-[640px] mx-auto text-lg flex items-center gap-2 p-2 bg-background backdrop-blur-[8px] border-b border-border/50">
          <header-button href="#settings">${settingsIcon}</header-button>
          <input
             id="feed"

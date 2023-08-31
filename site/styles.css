@@ -105,6 +105,10 @@ body {
    .text-ellipsis {
       white-space: pre;
    }
+
+   video:focus {
+      outline: none;
+   }
 }
 
 @layer utilities {
@@ -293,6 +297,25 @@ body {
       @apply py-4 bg-surface border-b border-border/30;
    }
 
+   .content {
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+   }
+
+   .content * {
+      max-width: 100%;
+      overflow-wrap: anywhere;
+   }
+
+   .content p:first-child {
+      @apply mt-0;
+   }
+
+   .content p:last-child {
+      @apply pb-0 mb-0;
+   }
+
    .comments > .post {
       @apply mt-4 pb-0 px-0;
    }
@@ -334,24 +357,5 @@ body {
 
    .reply:last-child {
       @apply pb-0;
-   }
-
-   .content {
-      display: flex;
-      flex-direction: column;
-      cursor: pointer;
-   }
-
-   .content * {
-      max-width: 100%;
-      overflow-wrap: anywhere;
-   }
-
-   .content p:first-child {
-      @apply mt-0;
-   }
-
-   .content p:last-child {
-      @apply pb-0 mb-0;
    }
 }

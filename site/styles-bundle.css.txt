@@ -544,6 +544,10 @@ code {
   white-space: pre;
 }
 
+video:focus {
+  outline: none;
+}
+
 *, ::before, ::after {
   --tw-border-spacing-x: 0;
   --tw-border-spacing-y: 0;
@@ -916,6 +920,26 @@ main > .post {
   padding-bottom: 1rem;
 }
 
+.content {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.content * {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.content p:first-child {
+  margin-top: 0px;
+}
+
+.content p:last-child {
+  margin-bottom: 0px;
+  padding-bottom: 0px;
+}
+
 .comments > .post {
   margin-top: 1rem;
   padding-left: 0px;
@@ -982,26 +1006,6 @@ main > .post {
 }
 
 .reply:last-child {
-  padding-bottom: 0px;
-}
-
-.content {
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-}
-
-.content * {
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
-
-.content p:first-child {
-  margin-top: 0px;
-}
-
-.content p:last-child {
-  margin-bottom: 0px;
   padding-bottom: 0px;
 }
 

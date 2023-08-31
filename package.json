@@ -6,7 +6,7 @@
   "scripts": {
     "prepare": "husky install",
     "clean": "rimraf site/build",
-    "build": "npm run clean && npm run build:css && npm run build:site",
+    "build": "npm run clean && npm run build:css && npm run build:css-txt && npm run build:site",
     "build:css": "npx tailwindcss -i site/styles.css -o site/styles-bundle.css",
     "build:css-txt": "npx tailwindcss -i site/styles.css -o site/styles-bundle.css.txt",
     "build:site": "node ./esbuild.mjs",

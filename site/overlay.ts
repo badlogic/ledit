@@ -9,7 +9,7 @@ export let numOverlays = 0;
 
 @customElement("ledit-overlay")
 export class Overlay extends LitElement {
-   static styles = [globalStyles];
+   static styles = globalStyles;
 
    @property()
    headerTitle?: string;
@@ -40,13 +40,15 @@ export class Overlay extends LitElement {
       super();
       this.navCallback = navigationGuard.register(() => this.close());
       this.escapeCallback = escapeGuard.register(() => this.close());
+      this.style.zIndex = (100 + numOverlays++).toString();
+      this.style.position = "relative";
    }
 
    render() {
-      document.body.style.overflow = "hidden";
+      window.document.body.style.overflow = "hidden";
       return html`
-         <div id="overlay" class="fixed top-0 w-full h-full overflow-auto m-auto backdrop-blur-[8px]" style="z-index: ${100 + numOverlays++};" @mousedown=${this.overlayClicked}>
-            <div id="container" class="bg-background flex flex-col max-w-[640px] mx-auto pb-4 ${this.border ? "rounded shadow" : ""}">
+         <div id="overlay" class="fixed top-0 w-full h-full overflow-auto m-auto" @mousedown=${this.overlayClicked}>
+            <div id="container" class="bg-background w-full h-full flex flex-col max-w-[640px] mx-auto pb-4 ${this.border ? "rounded shadow" : ""}">
                ${this.headerTitle
                   ? html`
                        <div
@@ -92,7 +94,7 @@ export class Overlay extends LitElement {
       this.closed = true;
       --numOverlays;
       console.log("Closing overlay " + numOverlays);
-      document.body.style.overflow = "";
+      window.document.body.style.overflow = "";
       navigationGuard.remove(this.navCallback);
       escapeGuard.remove(this.escapeCallback);
       this.closeCallback();

@@ -305,8 +305,8 @@ export function getSourcePrefixFromHash(): string | null {
    return decodeURIComponent(hash.substring(1, slashIndex + 1));
 }
 
-export function getFeedFromHash(): string {
-   const hash = location.hash;
+export function getFeedFromHash(hash?: string): string {
+   if (!hash) hash = location.hash;
    if (hash.length == 0) {
       return "";
    }
