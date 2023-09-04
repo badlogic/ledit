@@ -219,7 +219,7 @@ export function firstTextChild(divElement: HTMLElement): HTMLElement | null {
    return null;
 }
 
-export function waitForMediaLoaded(element: HTMLElement, callback: () => void): void {
+export function waitForMediaLoaded(element: HTMLElement | ShadowRoot, callback: () => void): void {
    const mediaElements: HTMLMediaElement[] = Array.from(element.querySelectorAll("img, video"));
    let mediaLoaded = 0;
    let callbackCalled = false;

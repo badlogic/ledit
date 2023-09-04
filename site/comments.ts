@@ -3,7 +3,7 @@ import { map } from "lit-html/directives/map.js";
 import { dom } from "./partials";
 import { setLinkTargetsToBlank } from "./utils";
 
-export function renderComments<T, S>(comments: T[], renderComment: (comment: T, state: S) => TemplateResult, state: S): HTMLElement[] {
+export function renderComments<T, S>(comments: T[], renderComment: (comment: T, state: S) => TemplateResult | HTMLElement, state: S): HTMLElement[] {
    const outerDom = dom(html` ${map(comments, (comment) => renderComment(comment, state))} `);
    const commentDoms: HTMLElement[] = [];
    for (const el of Array.from(outerDom)) {

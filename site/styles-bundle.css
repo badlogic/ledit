@@ -1008,9 +1008,26 @@ main > .post {
   padding: 1rem;
 }
 
+.comments > .\!comment {
+  border-bottom-width: 1px;
+  border-color: rgba(var(--border), 0.5);
+  padding: 1rem;
+}
+
 .comment {
   cursor: pointer;
+}
+
+.\!comment {
+  cursor: pointer;
+}
+
+.comment {
   min-width: 200px;
+}
+
+.\!comment {
+  min-width: 200px !important;
 }
 
 .comment .content p:first-child {
@@ -1018,7 +1035,17 @@ main > .post {
   padding-top: 0 !important;
 }
 
+.\!comment .content p:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
 .comment .content p:last-child {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.\!comment .content p:last-child {
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
 }
@@ -1080,10 +1107,6 @@ main > .post {
   left: 0px;
 }
 
-.right-0 {
-  right: 0px;
-}
-
 .top-0 {
   top: 0px;
 }
@@ -1135,6 +1158,10 @@ main > .post {
 
 .mt-\[-1em\] {
   margin-top: -1em;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
 }
 
 .block {
@@ -1259,6 +1286,10 @@ main > .post {
 
 .w-full {
   width: 100%;
+}
+
+.w-\[2em\] {
+  width: 2em;
 }
 
 .min-w-\[1\.5em\] {
@@ -1389,12 +1420,48 @@ main > .post {
   border-width: 1px;
 }
 
+.border-4 {
+  border-width: 4px;
+}
+
 .border-b {
   border-bottom-width: 1px;
 }
 
+.border-l {
+  border-left-width: 1px;
+}
+
+.border-l-4 {
+  border-left-width: 4px;
+}
+
+.border-l-2 {
+  border-left-width: 2px;
+}
+
+.\!border-l-2 {
+  border-left-width: 2px !important;
+}
+
+.\!border-b-0 {
+  border-bottom-width: 0px !important;
+}
+
+.border-solid {
+  border-style: solid;
+}
+
+.\!border-solid {
+  border-style: solid !important;
+}
+
 .border-none {
   border-style: none;
+}
+
+.\!border-none {
+  border-style: none !important;
 }
 
 .border-border {
@@ -1406,8 +1473,18 @@ main > .post {
   border-color: rgba(var(--border), 0.5);
 }
 
-.border-transparent {
-  border-color: transparent;
+.border-border\/80 {
+  border-color: rgba(var(--border), 0.8);
+}
+
+.border-primary {
+  --tw-border-opacity: 1;
+  border-color: rgba(var(--primary), var(--tw-border-opacity));
+}
+
+.\!border-primary {
+  --tw-border-opacity: 1 !important;
+  border-color: rgba(var(--primary), var(--tw-border-opacity)) !important;
 }
 
 .bg-background {

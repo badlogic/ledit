@@ -7,10 +7,12 @@ import { checkmarkIcon, closeIcon, commentIcon, imageIcon, loaderIcon, reblogIco
 import { Overlay } from "./overlay";
 import { ItemList, dom, renderContentLoader, renderErrorMessage, renderGallery, renderList, renderVideo, safeHTML } from "./partials";
 import { Bookmark, bookmarkToHash, getSettings, saveSettings } from "./settings";
-import { addCommasToNumber, dateToText, elements, navigate, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
+import { addCommasToNumber, dateToText, elements, navigate, onVisibleOnce, setLinkTargetsToBlank, waitForMediaLoaded } from "./utils";
 import { globalStyles } from "./styles";
 import { MastodonAccount, MastodonApi, MastodonEmoji, MastodonMedia, MastodonPost, MastodonRelationship, MastodonUserInfo } from "./mastodon-api";
 import { navigationGuard } from "./guards";
+import { renderComments } from "./comments";
+import { HnCommentsView } from "./hackernews";
 
 const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
 
@@ -80,11 +82,24 @@ function extractUsernames(mastodonPost: MastodonPost) {
 }
 
 export interface MastodonWhat {
-   type: "remote-user" | "local-user" | "instance" | "local" | "home" | "profile";
+   type: "remote-user" | "local-user" | "instance" | "id" | "local" | "home" | "profile" | "comments";
    user?: string;
    instance?: string;
-   tag?: string;
+   tag?: string; // FIXME implement tags
+   id?: string;
 }
+
+export type MastodonComment = {
+   post: MastodonPost;
+   replies: MastodonComment[];
+};
+
+export type MastodonComments = {
+   possiblyIncomplete: boolean;
+   remoteInstance: string;
+   originalPost: MastodonPost;
+   root: MastodonComment;
+};
 
 function getFeed(): string {
    const feed = location.hash;
@@ -117,9 +132,14 @@ function getWhats() {
          whats.push({ type: "local" });
       } else if (token == "profile") {
          whats.push({ type: "profile" });
+      } else if (token == "comments") {
+         whats.push({ type: "comments" });
       } else {
-         // mastodon.social
-         whats.push({ type: "instance", instance: token });
+         if (token.includes(".")) {
+            whats.push({ type: "instance", instance: token });
+         } else {
+            whats.push({ type: "id", id: token });
+         }
       }
    }
    let user: MastodonUserInfo | undefined;
@@ -140,13 +160,28 @@ export class MastodonSource extends Source<MastodonPost> {
 
          const result = getWhats();
          if (result instanceof Error) return;
-         const { whats } = result;
+         const { user, whats } = result;
          if (whats.length == 0) return;
          if (whats[0].type == "profile") {
             if (whats.length > 1 && whats[1].type == "remote-user") {
                const lastChild = document.body.children[document.body.children.length - 1];
                if (lastChild.getAttribute("data-account") != whats[1].user + "@" + whats[1].instance) {
                   document.body.append(new MastodonProfileView());
+               }
+            }
+         }
+         if (whats[0].type == "comments") {
+            if (whats.length > 2 && whats[1].type == "instance" && whats[2].type == "id") {
+               const lastChild = document.body.children[document.body.children.length - 1];
+               if (lastChild.getAttribute("data-id") != whats[1].instance + "/" + whats[2].id) {
+                  const commentsView = new MastodonCommentsView();
+                  document.body.append(commentsView);
+                  const comments = await getComments(whats[2].id!, whats[1].instance!, user);
+                  if (comments instanceof Error) {
+                     commentsView.error = comments;
+                  } else {
+                     commentsView.data = comments;
+                  }
                }
             }
          }
@@ -258,7 +293,69 @@ export class MastodonSource extends Source<MastodonPost> {
    }
 }
 
-export function renderMastodonMedia(post: MastodonPost, contentDom: HTMLElement) {
+async function getComments(postId: string, instance: string, user?: MastodonUserInfo): Promise<MastodonComments | Error> {
+   const post = await MastodonApi.getPost(postId, instance, user);
+   if (post instanceof Error) return post;
+   let postToView = post.reblog ?? post;
+
+   // Fetch the context from the remote instance first
+   let possiblyIncomplete = false;
+   const remoteInstance = new URL(postToView.uri).host;
+   const remotePostId = postToView.uri.split("/").pop()!;
+   let context = await MastodonApi.getPostContext(remotePostId, remoteInstance, user);
+   if (context instanceof Error) {
+      if (remoteInstance == postToView.instance) return context;
+      context = await MastodonApi.getPostContext(postToView.id, postToView.instance, user);
+      if (context instanceof Error) return context;
+      possiblyIncomplete = true;
+   } else {
+      const result = await MastodonApi.getPost(remotePostId, remoteInstance, user);
+      if (result instanceof Error) return result;
+      postToView = result;
+   }
+
+   // Fetch the full tree from root downwards
+   if (context.ancestors.length > 0) {
+      const newContext = await MastodonApi.getPostContext(context.ancestors[0].id, context.ancestors[0].instance, user);
+      if (newContext instanceof Error) return newContext;
+      newContext.ancestors.push(context.ancestors[0]);
+      newContext.ancestors = newContext.ancestors.filter((post) => post.id != postToView.id);
+      newContext.descendants = newContext.descendants.filter((post) => post.id != postToView.id);
+      context = newContext;
+   }
+
+   const comments: MastodonComment[] = [];
+   const commentsById = new Map<string, MastodonComment>();
+   let root: MastodonComment | null = null;
+
+   for (const post of [...context.ancestors, ...context.descendants, postToView]) {
+      const comment = { post, replies: [] };
+      comments.push(comment);
+      commentsById.set(comment.post.id, comment);
+      if (!comment.post.in_reply_to_id) {
+         if (root) {
+            console.log("WTF");
+         }
+         root = comment;
+      }
+   }
+
+   if (!root) return new Error("Could not find root comment");
+   for (const comment of comments) {
+      if (comment.post.in_reply_to_id) {
+         const other = commentsById.get(comment.post.in_reply_to_id);
+         if (other) {
+            other.replies.push(comment);
+         } else {
+            return new Error("Could not find parent of comment");
+         }
+      }
+   }
+
+   return { originalPost: postToView, root, possiblyIncomplete, remoteInstance };
+}
+
+export function renderMastodonMedia(post: MastodonPost, contentDom?: HTMLElement) {
    const mediaDom = dom(html`<div class="media flex flex-col items-center gap-2 mt-2"></div>`)[0];
    if (post.media_attachments.length > 0) {
       const images: string[] = [];
@@ -301,7 +398,8 @@ export function renderMastodonMedia(post: MastodonPost, contentDom: HTMLElement)
    // FIXME render poll
    if (post.poll) {
    }
-   if (mediaDom.children.length > 0) contentDom.append(mediaDom);
+   if (mediaDom.children.length > 0 && contentDom) contentDom.append(mediaDom);
+   return mediaDom.children.length > 0 ? mediaDom : undefined;
 }
 
 function getProfileUrl(account: MastodonAccount, user?: MastodonUserInfo) {
@@ -316,7 +414,24 @@ function showProfile(event: Event, account: MastodonAccount, user?: MastodonUser
    event.stopPropagation();
    event.preventDefault();
    navigationGuard.call = false;
-   location.hash = getProfileUrl(account, user);
+   const hash = getProfileUrl(account, user);
+   if (hash != location.hash) location.hash = hash;
+}
+
+function getCommentsUrl(post: MastodonPost, user?: MastodonUserInfo) {
+   const baseUrl = user ? `#m/${user.username}@${user.instance}/` : "#m/";
+   if (!user) {
+      console.log("wtf");
+   }
+   return baseUrl + `comments/${post.instance}/${post.id}`;
+}
+
+function showComments(event: Event, post: MastodonPost, user?: MastodonUserInfo) {
+   event.stopPropagation();
+   event.preventDefault();
+   navigationGuard.call = false;
+   const hash = getCommentsUrl(post, user);
+   if (location.hash != hash) location.hash = hash;
 }
 
 export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) {
@@ -357,7 +472,7 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
          <div class="content-text">${replaceEmojis(postToView.content, postToView.emojis)}</div>
       </div>
       <div class="flex justify-between min-w-[320px] max-w-[320px] mx-auto !mb-[-0.5em]">
-         <a href="" class="self-link flex items-center gap-1 h-[2em]">
+         <a @click=${(event: Event) => showComments(event, postToView, user)} href="" class="self-link flex items-center gap-1 h-[2em]">
             <i class="icon fill-color/60">${commentIcon}</i>
             <span class="text-color/60">${addCommasToNumber(postToView.replies_count)}</span>
          </a>
@@ -751,6 +866,119 @@ export class MastodonProfileView extends LitElement {
                   ? renderContentLoader()
                   : ""}
                ${this.error ? renderErrorMessage(`Could not load Mastodon account profile '${location.hash}'`, this.error) : ""}
+            </div>
+         </ledit-overlay>
+      `;
+   }
+}
+
+export function renderMastodonComment(comment: MastodonComment, data: { originalPost: MastodonPost; op: string; isReply: boolean; user?: MastodonUserInfo }): HTMLElement {
+   const postToView = comment.post.reblog ?? comment.post;
+   const highlight = comment.post.id == data.originalPost.id;
+
+   const commentDom = dom(html`
+      <div class="comment ${data.isReply ? "reply" : ""} ${highlight ? "!border-b-0 !border-l-2 !border-solid !border-primary" : ""}" data-id="${comment.post.id}">
+         <div class="author flex gap-1 text-sm items-center text-color/50">
+            <div class="flex items-center gap-2 w-full">
+               <img class="w-[2em] h-[2em] rounded-full" src="${postToView.account.avatar_static}" />
+               <a
+                  @click=${(event: Event) => showProfile(event, postToView.account, data.user)}
+                  class="flex flex-col inline-block text-sm text-color overflow-hidden cursor-pointer"
+               >
+                  <span class="font-bold overflow-hidden text-ellipsis">${getAccountName(postToView.account)}</span>
+                  <span class="text-color/60 overflow-hidden text-ellipsis"
+                     >${postToView.account.username +
+                     (data.user && data.user.instance == new URL(postToView.account.url).host ? "" : "@" + new URL(postToView.account.url).host)}</span
+                  >
+               </a>
+               <a href="${postToView.url}" class="ml-auto text-xs">${dateToText(new Date(postToView.created_at).getTime())}</a>
+            </div>
+         </div>
+         <div x-id="contentDom" class="content">
+            <div class="content-text">${replaceEmojis(postToView.content, postToView.emojis)}</div>
+         </div>
+      </div>
+   `);
+
+   const { contentDom, gallery } = elements<{ contentDom: HTMLElement; gallery?: HTMLElement }>(commentDom[0]);
+   const repliesDom = dom(html` <div class="replies">${map(comment.replies, (reply) => renderMastodonComment(reply, { ...data, isReply: true }))}</div>`)[0];
+   commentDom[0].append(repliesDom);
+
+   onVisibleOnce(commentDom[0], () => {
+      renderMastodonMedia(postToView, contentDom);
+      setLinkTargetsToBlank(contentDom);
+      if (gallery) {
+         const img = contentDom.querySelector(".media img");
+         if (img) {
+            gallery.addEventListener("click", () => (img as HTMLElement).click());
+         }
+      }
+   });
+
+   return commentDom[0];
+}
+
+@customElement("ledit-mastodon-comments")
+export class MastodonCommentsView extends LitElement {
+   static styles = globalStyles;
+
+   @property()
+   data?: MastodonComments;
+
+   @property()
+   error?: Error;
+
+   scrolled = false;
+
+   protected updated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+      if (this.scrolled) return;
+      if (this.data) {
+         const comment = this.shadowRoot?.querySelector(`[data-id="${this.data.originalPost.id}"] > .author`);
+         if (!comment) {
+            console.log("WTF");
+         } else {
+            this.scrolled = true;
+            setTimeout(() => {
+               comment.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 250);
+         }
+      }
+   }
+
+   render() {
+      const result = getWhats();
+      let header = "";
+      let id = "";
+      if (result instanceof Error) {
+         this.error = result;
+         header = "Error";
+      } else {
+         const { whats } = result;
+         header = "comments/" + whats[1].instance + "/" + whats[2].id;
+         id = whats[1].instance + "/" + whats[2].id;
+      }
+      this.setAttribute("data-id", id);
+      return html`
+         <ledit-overlay headerTitle="${header}" .sticky=${true} .closeCallback=${() => this.remove()}>
+            <div slot="content" class="w-full">
+               ${this.data && this.data.possiblyIncomplete
+                  ? html`<div class="border border-border/50 rounded p-4 text-center text-color/50 mb-4">
+                       <b>Warning</b>: information may be incomplete, as it was retrieved from '${this.data.root.post.instance}' and not from the original instance
+                       '${this.data.remoteInstance}'
+                    </div>`
+                  : ""}
+               <div class="comments">
+                  ${this.error ? renderErrorMessage("Could not load comments", this.error) : nothing}
+                  ${this.data
+                     ? renderComments([this.data.root], renderMastodonComment, {
+                          originalPost: this.data.originalPost,
+                          op: getAccountName(this.data.root.post.account, false) as string,
+                          isReply: false,
+                          user: result instanceof Error ? undefined : result.user,
+                       })
+                     : nothing}
+                  ${!this.error && !this.data ? renderContentLoader() : nothing}
+               </div>
             </div>
          </ledit-overlay>
       `;
