@@ -36,6 +36,7 @@ export class Overlay extends LitElement {
       this.escapeCallback = escapeGuard.register(() => this.close());
       this.style.zIndex = (100 + numOverlays++).toString();
       this.style.position = "relative";
+      console.log("Opening overlay " + (numOverlays - 1));
    }
 
    connectedCallback(): void {
@@ -52,7 +53,7 @@ export class Overlay extends LitElement {
       window.document.body.style.overflow = "hidden";
       return html`
          <div id="overlay" class="fixed top-0 w-full h-full overflow-auto m-auto bg-background" @mousedown=${this.overlayClicked}>
-            <div class="sticky top-0 w-full max-w-[640px] mx-auto z-[10]">
+            <div class="${this.headerTitle ? "sticky" : ""} top-0 w-full max-w-[640px] mx-auto z-[10]">
                ${this.headerTitle
                   ? html`
                        <div class="cursor-pointer py-2 pl-2 pr-1 flex items-center text-lg bg-background border-b border-border/50" @click=${this.close.bind(this)}>
@@ -108,7 +109,7 @@ export class Overlay extends LitElement {
          return;
       }
       if (event.target != this.overlay) return;
-      console.log("Clickd on overlay");
+      console.log("Clicked on overlay");
       event.preventDefault();
       event.stopPropagation();
       this.close();

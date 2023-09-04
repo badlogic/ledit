@@ -2,7 +2,7 @@ import { extractFromXml } from "@extractus/feed-extractor";
 import { isValid, parse } from "date-fns";
 import { html } from "lit-html";
 import { Page, PageIdentifier, SortingOption, Source } from "./data";
-import { dom, makeCollapsible, renderContentLoader, renderPosts, safeHTML } from "./partials";
+import { dom, makeCollapsible, renderContentLoader, renderList, safeHTML } from "./partials";
 import { dateToText, elements, onVisibleOnce, proxyFetch, removeTrailingEmptyParagraphs, setLinkTargetsToBlank } from "./utils";
 
 function parseFeedDate(dateString: string): Date {
@@ -138,7 +138,7 @@ export class RssSource extends Source<RssPost> {
       main.append(loader);
       const page = await this.getPosts(null);
       loader.remove();
-      renderPosts(main, page, renderRssPost, (nextPage: PageIdentifier) => {
+      renderList(main, page, renderRssPost, (nextPage: PageIdentifier) => {
          return this.getPosts(nextPage);
       });
    }

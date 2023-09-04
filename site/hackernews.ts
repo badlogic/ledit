@@ -7,7 +7,7 @@ import { renderComments } from "./comments";
 import { Page, PageIdentifier, SortingOption, Source } from "./data";
 import { commentIcon, replyIcon } from "./icons";
 import { Overlay } from "./overlay";
-import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderInfoMessage, renderPosts, safeHTML } from "./partials";
+import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderInfoMessage, renderList, safeHTML } from "./partials";
 import { addCommasToNumber, dateToText, elements, htmlDecode, onAddedToDOM, setLinkTargetsToBlank } from "./utils";
 
 interface HnRawPost {
@@ -220,7 +220,7 @@ export class HackerNewsSource extends Source<HnPost> {
       main.append(loader);
       const page = await this.getPosts(null);
       loader.remove();
-      renderPosts(main, page, renderHnPost, (nextPage: PageIdentifier) => {
+      renderList(main, page, renderHnPost, (nextPage: PageIdentifier) => {
          return this.getPosts(nextPage);
       });
    }
@@ -269,7 +269,7 @@ export function renderHnPost(post: HnPost, showActionButtons = true) {
          ${showActionButtons
             ? html`
                  <div class="flex items-flex-start gap-4">
-                    <a href="#hn/comments/${post.id}" class="self-link flex items-center gap-1 h-[2em]">
+                    <a href="#hn/comments/${post.id}" class="flex items-center gap-1 h-[2em]">
                        <i class="icon">${commentIcon}</i>
                        <span class="text-primary">${addCommasToNumber(post.numComments)}</span>
                     </span>

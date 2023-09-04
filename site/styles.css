@@ -90,6 +90,10 @@ body {
       @apply border px-4 py-2 border-solid border-primary text-center text-primary rounded hover:bg-primary hover:text-on-primary disabled:border-color disabled:text-color disabled:bg-transparent;
    }
 
+   button[data-selected] {
+      @apply text-primary border-primary hover:text-on-primary;
+   }
+
    pre {
       overflow: auto;
       white-space: pre-wrap;
@@ -108,6 +112,10 @@ body {
 
    video:focus {
       outline: none;
+   }
+
+   .invisble {
+      display: none;
    }
 }
 
@@ -293,6 +301,23 @@ body {
       @apply px-4;
    }
 
+   .item-list {
+      @apply flex flex-col items-center;
+   }
+
+   .item-list > .post {
+      border-bottom-width: 1px;
+      border-color: rgba(var(--border), 0.3);
+      --tw-bg-opacity: 1;
+      background-color: rgba(var(--surface), var(--tw-bg-opacity));
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+   }
+
+   .item-list :first-child {
+      @apply pt-0;
+   }
+
    main > .post {
       @apply py-4 bg-surface border-b border-border/30;
    }
@@ -313,6 +338,14 @@ body {
    }
 
    .content p:last-child {
+      @apply pb-0 mb-0;
+   }
+
+   .content-text p:first-child {
+      @apply mt-0;
+   }
+
+   .content-text p:last-child {
       @apply pb-0 mb-0;
    }
 

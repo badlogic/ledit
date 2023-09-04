@@ -1,5 +1,5 @@
 class BaseGuard<T> {
-   private callbacks: T[] = [];
+   protected callbacks: T[] = [];
 
    register(callback: T): T {
       this.callbacks.push(callback);
@@ -21,7 +21,8 @@ export type NavigationCallback = () => void;
 class NavigationGuard extends BaseGuard<NavigationCallback> {
    private popStateListener;
    private inPopState = false;
-   private call = true;
+   call = true;
+   private lastLocation = "";
 
    constructor() {
       super();
@@ -29,19 +30,31 @@ class NavigationGuard extends BaseGuard<NavigationCallback> {
 
       this.popStateListener = (event: PopStateEvent) => {
          this.inPopState = true;
-         if (this.call) {
-            const callback = this.getTop();
-            if (callback) callback();
-         } else {
-            this.call = true;
+         console.log(window.history.state + ", " + event.state);
+         if (location.href != this.lastLocation) {
+            if (this.call) {
+               const callback = this.getTop();
+               if (callback) callback();
+            } else {
+               this.call = true;
+            }
          }
          this.inPopState = false;
       };
       window.addEventListener("popstate", this.popStateListener);
    }
 
+   counter = 0;
+   register(callback: NavigationCallback): NavigationCallback {
+      this.lastLocation = location.href;
+      window.history.replaceState(this.counter++, "", null);
+      const result = super.register(callback);
+      return result;
+   }
+
    remove(callback: NavigationCallback) {
       super.remove(callback);
+      this.counter--;
       if (!this.inPopState) {
          this.call = false;
          history.back();

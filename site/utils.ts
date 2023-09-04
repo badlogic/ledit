@@ -167,7 +167,7 @@ export function setLinkTargetsToBlank(element: HTMLElement) {
    let links = element.querySelectorAll("a")!;
    for (let i = 0; i < links.length; i++) {
       let link = links[i];
-      if (link.classList.contains("self-link")) continue;
+      if (link.hash.trim().length > 0 && new URL(link.href).host == location.host) continue;
       link.setAttribute("target", "_blank");
    }
 }
@@ -315,6 +315,7 @@ export function getFeedFromHash(hash?: string): string {
    const afterPrefix = hash.substring(prefix.length + 1);
    if (afterPrefix.includes("+")) return afterPrefix;
 
+   // if (prefix == "m/") return afterPrefix;
    const tokens = afterPrefix.split("/");
    if (tokens.length == 0) return "";
    return decodeURIComponent(tokens[0]);

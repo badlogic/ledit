@@ -85,7 +85,6 @@ export class Header extends LitElement {
    }
 
    render() {
-      console.log("Rendering header");
       const bookmark = this.getBookmark();
       const tokens = this.hash.split("/");
       const lastFragment = tokens[tokens.length - 1];

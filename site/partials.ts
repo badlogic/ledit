@@ -7,6 +7,9 @@ import videojs from "video.js";
 import { appPages } from "./app";
 import { Page, PageIdentifier } from "./data";
 import { firstTextChild, htmlDecode, intersectsViewport, isLink, onAddedToDOM, onTapped, onVisibleOnce, setLinkTargetsToBlank, waitForMediaLoaded } from "./utils";
+import { customElement, query } from "lit/decorators.js";
+import { LitElement, PropertyValueMap } from "lit";
+import { globalStyles } from "./styles";
 
 export function dom(template: TemplateResult, container?: HTMLElement | DocumentFragment): HTMLElement[] {
    if (container) {
@@ -41,7 +44,7 @@ export function renderErrorMessage(message: string | TemplateResult, error?: Err
 }
 
 export function renderInfoMessage(message: string | TemplateResult) {
-   return dom(html`<div class="info w-full m-auto py-4">${message}</div>`);
+   return dom(html`<div class="info w-full m-auto py-4 text-center">${message}</div>`);
 }
 
 export function renderContentLoader() {
@@ -192,23 +195,23 @@ export function renderVideo(videoDesc: { width: number; height: number; urls: st
    return videoDom;
 }
 
-export function renderPosts<T, D>(
+export function renderList<T, D>(
    container: HTMLElement,
    page: Page<T> | Error,
-   renderPost: (post: T, data?: D) => HTMLElement[],
+   renderItem: (item: T, data?: D) => HTMLElement[],
    getNextPage: (nextPage: PageIdentifier) => Promise<Page<T> | Error>,
    data?: D
 ) {
    if (page instanceof Error) {
-      container.append(...renderErrorMessage(`Could not load feed`, page));
+      container.append(...renderErrorMessage(`Could not load items`, page));
       return;
    }
 
-   const posts: HTMLElement[] = [];
-   for (const post of page.items) {
-      posts.push(...renderPost(post, data));
+   const items: HTMLElement[] = [];
+   for (const item of page.items) {
+      items.push(...renderItem(item, data));
    }
-   container.append(...posts);
+   container.append(...items);
    setLinkTargetsToBlank(container);
 
    if (page.nextPage != "end") {
@@ -220,11 +223,40 @@ export function renderPosts<T, D>(
          if (newPage instanceof Error) {
             container.append(...renderErrorMessage("Could not load next page", newPage));
          } else {
-            renderPosts(container, newPage, renderPost, getNextPage);
+            renderList(container, newPage, renderItem, getNextPage, data);
          }
       });
    } else {
-      container.append(...renderInfoMessage("No more posts"));
+      container.append(...renderInfoMessage("No more items"));
+   }
+}
+
+@customElement("ledit-item-list")
+export class ItemList extends LitElement {
+   static styles = globalStyles;
+
+   @query("#list")
+   items?: HTMLElement;
+
+   _load?: () => void;
+
+   load<T, D>(page: Page<T> | Error, renderItem: (item: T, data?: D) => HTMLElement[], getNextPage: (nextPage: PageIdentifier) => Promise<Page<T> | Error>, data?: D) {
+      this._load = () => {
+         this.items!.innerHTML = "";
+         renderList(this.items!, page, renderItem, getNextPage, data);
+      };
+      this.requestUpdate();
+   }
+
+   protected updated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+      if (this._load) {
+         this._load();
+         this._load = undefined;
+      }
+   }
+
+   render() {
+      return html`<div id="list" class="item-list">${renderContentLoader()}</div>`;
    }
 }
 

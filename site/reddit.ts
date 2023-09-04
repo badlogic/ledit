@@ -5,7 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import { renderComments } from "./comments";
 import { Page, PageIdentifier, SortingOption, Source } from "./data";
 import { commentIcon, imageIcon, replyIcon } from "./icons";
-import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderGallery, renderInfoMessage, renderPosts, renderVideo, safeHTML } from "./partials";
+import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderGallery, renderInfoMessage, renderList, renderVideo, safeHTML } from "./partials";
 import { addCommasToNumber, dateToText, elements, htmlDecode, intersectsViewport, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
 import { globalStyles } from "./styles";
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
@@ -142,7 +142,7 @@ export class RedditSource extends Source<RedditPost> {
       main.append(loader);
       const page = await this.getPosts(null);
       loader.remove();
-      renderPosts(main, page, renderRedditPost, (nextPage: PageIdentifier) => {
+      renderList(main, page, renderRedditPost, (nextPage: PageIdentifier) => {
          return this.getPosts(nextPage);
       });
    }
@@ -384,7 +384,7 @@ export function renderRedditPost(post: RedditPost, showActionButtons = true): HT
          ${showActionButtons
             ? html`
                  <div class="flex items-flex-start gap-4">
-                    <a href="${`#${post.data.permalink.substring(1)}`}" class="self-link flex items-center gap-1 h-[2em]">
+                    <a href="${`#${post.data.permalink.substring(1)}`}" class="flex items-center gap-1 h-[2em]">
                        <i class="icon">${commentIcon}</i>
                        <span class="text-primary">${addCommasToNumber(post.data.num_comments)}</span>
                     </span>

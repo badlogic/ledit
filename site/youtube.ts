@@ -1,5 +1,5 @@
 import { Page, PageIdentifier, SortingOption, Source } from "./data";
-import { renderContentLoader, renderPosts, dom, safeHTML } from "./partials";
+import { renderContentLoader, renderList, dom, safeHTML } from "./partials";
 import { RssSource, RssPost } from "./rss";
 import { html } from "lit-html";
 import { proxyFetch, dateToText, elements, onVisibleOnce, intersectsViewport } from "./utils";
@@ -60,7 +60,7 @@ export class YoutubeSource extends Source<YoutubePost> {
       main.append(loader);
       const page = await this.getPosts(null);
       loader.remove();
-      renderPosts(main, page, renderYoutubePost, (nextPage: PageIdentifier) => {
+      renderList(main, page, renderYoutubePost, (nextPage: PageIdentifier) => {
          return this.getPosts(nextPage);
       });
    }
