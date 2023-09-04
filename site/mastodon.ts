@@ -9,7 +9,7 @@ import { ItemList, dom, renderContentLoader, renderErrorMessage, renderGallery, 
 import { Bookmark, bookmarkToHash, getSettings, saveSettings } from "./settings";
 import { addCommasToNumber, dateToText, elements, navigate, onVisibleOnce, setLinkTargetsToBlank, waitForMediaLoaded } from "./utils";
 import { globalStyles } from "./styles";
-import { MastodonAccount, MastodonApi, MastodonEmoji, MastodonMedia, MastodonPost, MastodonRelationship, MastodonUserInfo } from "./mastodon-api";
+import { MastodonAccount, MastodonApi, MastodonEmoji, MastodonMedia, MastodonPost, MastodonPostContext, MastodonRelationship, MastodonUserInfo } from "./mastodon-api";
 import { navigationGuard } from "./guards";
 import { renderComments } from "./comments";
 import { HnCommentsView } from "./hackernews";
@@ -92,6 +92,8 @@ export interface MastodonWhat {
 export type MastodonComment = {
    post: MastodonPost;
    replies: MastodonComment[];
+   isParented: boolean;
+   fetchedReplies: boolean;
 };
 
 export type MastodonComments = {
@@ -300,18 +302,32 @@ async function getComments(postId: string, instance: string, user?: MastodonUser
 
    // Fetch the context from the remote instance first
    let possiblyIncomplete = false;
-   const remoteInstance = new URL(postToView.uri).host;
-   const remotePostId = postToView.uri.split("/").pop()!;
+   let remoteInstance = new URL(postToView.uri).host;
+   let remotePostId = postToView.uri.split("/").pop()!;
    let context = await MastodonApi.getPostContext(remotePostId, remoteInstance, user);
    if (context instanceof Error) {
+      // Failed to fetch it from the remote, try the local instance
       if (remoteInstance == postToView.instance) return context;
+      remotePostId = postToView.id;
+      remoteInstance = postToView.instance;
       context = await MastodonApi.getPostContext(postToView.id, postToView.instance, user);
       if (context instanceof Error) return context;
       possiblyIncomplete = true;
    } else {
-      const result = await MastodonApi.getPost(remotePostId, remoteInstance, user);
-      if (result instanceof Error) return result;
-      postToView = result;
+      // Fetch the original post from the remote if neccessary
+      if (remotePostId != postToView.id && remoteInstance != postToView.instance) {
+         const result = await MastodonApi.getPost(remotePostId, remoteInstance, user);
+         if (result instanceof Error) return result;
+         postToView = result;
+      }
+   }
+
+   // Instance may not return all ancestors, walk up the tree
+   if (context.ancestors.length > 0) {
+      while (context.ancestors[0].in_reply_to_id) {
+         context = await MastodonApi.getPostContext(context.ancestors[0].id, context.ancestors[0].instance);
+         if (context instanceof Error) return context;
+      }
    }
 
    // Fetch the full tree from root downwards
@@ -324,33 +340,80 @@ async function getComments(postId: string, instance: string, user?: MastodonUser
       context = newContext;
    }
 
+   // Gather the initial set of comments and determine the root
    const comments: MastodonComment[] = [];
    const commentsById = new Map<string, MastodonComment>();
    let root: MastodonComment | null = null;
-
    for (const post of [...context.ancestors, ...context.descendants, postToView]) {
-      const comment = { post, replies: [] };
+      const comment = { post, replies: [], isParented: false, fetchedReplies: false };
       comments.push(comment);
       commentsById.set(comment.post.id, comment);
       if (!comment.post.in_reply_to_id) {
-         if (root) {
-            console.log("WTF");
-         }
          root = comment;
       }
    }
 
-   if (!root) return new Error("Could not find root comment");
+   // Reconstruct the comment tree
    for (const comment of comments) {
-      if (comment.post.in_reply_to_id) {
+      if (comment.post.in_reply_to_id && !comment.isParented) {
          const other = commentsById.get(comment.post.in_reply_to_id);
          if (other) {
             other.replies.push(comment);
+            comment.isParented = true;
          } else {
+            // If this is the post to view, we might find it later when
+            // resolving missing descendants
+            if (comment.post.id == postToView.id) continue;
             return new Error("Could not find parent of comment");
          }
       }
    }
+
+   // Find all leafs that miss their descendants and fetch them.
+   // Repeat until no more descendants need fetching.
+   let missingDescendants: MastodonComment[] = comments.filter((comment) => comment.post.replies_count > 0 && comment.replies.length == 0);
+   while (missingDescendants.length > 0) {
+      const promises: Promise<MastodonPostContext | Error>[] = [];
+      for (const missing of missingDescendants) {
+         missing.fetchedReplies = true;
+         promises.push(MastodonApi.getPostContext(missing.post.id, missing.post.instance, user));
+      }
+      const descendants = await Promise.all(promises);
+      for (const descendant of descendants) {
+         if (descendant instanceof Error) {
+            possiblyIncomplete = true;
+         } else {
+            for (const post of descendant.descendants) {
+               const comment = { post, replies: [], isParented: false, fetchedReplies: false };
+               if (!commentsById.has(comment.post.id)) {
+                  comments.push(comment);
+                  commentsById.set(comment.post.id, comment);
+               }
+            }
+         }
+      }
+
+      for (const comment of comments) {
+         if (comment.post.in_reply_to_id && !comment.isParented) {
+            const other = commentsById.get(comment.post.in_reply_to_id);
+            if (other && other.replies) {
+               other.replies.push(comment);
+               comment.isParented = true;
+            } else {
+               // If this is the post to view, we might find it later when
+               // resolving missing descendants
+               if (comment.post.id == postToView.id) continue;
+               return new Error("Could not find parent of comment");
+            }
+         }
+      }
+
+      missingDescendants = comments.filter((comment) => !comment.fetchedReplies && comment.post.replies_count > comment.replies.length);
+   }
+
+   if (postToView.in_reply_to_id && !commentsById.get(postToView.in_reply_to_id)) return Error("Could not find parent of selected comment");
+
+   if (!root) return new Error("Could not find root comment");
 
    return { originalPost: postToView, root, possiblyIncomplete, remoteInstance };
 }

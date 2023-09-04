@@ -1014,25 +1014,20 @@ main > .post {
   padding: 1rem;
 }
 
-.comment {
-  cursor: pointer;
-}
-
 .\!comment {
   cursor: pointer;
 }
 
 .comment {
-  min-width: 200px;
+  cursor: pointer;
 }
 
 .\!comment {
   min-width: 200px !important;
 }
 
-.comment .content p:first-child {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
+.comment {
+  min-width: 200px;
 }
 
 .\!comment .content p:first-child {
@@ -1040,12 +1035,17 @@ main > .post {
   padding-top: 0 !important;
 }
 
-.comment .content p:last-child {
+.comment .content p:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.\!comment .content p:last-child {
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
 }
 
-.\!comment .content p:last-child {
+.comment .content p:last-child {
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
 }
@@ -1140,6 +1140,10 @@ main > .post {
   margin-bottom: -0.5em !important;
 }
 
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
 .ml-2 {
   margin-left: 0.5rem;
 }
@@ -1158,10 +1162,6 @@ main > .post {
 
 .mt-\[-1em\] {
   margin-top: -1em;
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
 }
 
 .block {
@@ -1280,16 +1280,16 @@ main > .post {
   width: 2.5em;
 }
 
+.w-\[2em\] {
+  width: 2em;
+}
+
 .w-\[80\%\] {
   width: 80%;
 }
 
 .w-full {
   width: 100%;
-}
-
-.w-\[2em\] {
-  width: 2em;
 }
 
 .min-w-\[1\.5em\] {
@@ -1420,36 +1420,16 @@ main > .post {
   border-width: 1px;
 }
 
-.border-4 {
-  border-width: 4px;
-}
-
-.border-b {
-  border-bottom-width: 1px;
-}
-
-.border-l {
-  border-left-width: 1px;
-}
-
-.border-l-4 {
-  border-left-width: 4px;
-}
-
-.border-l-2 {
-  border-left-width: 2px;
+.\!border-b-0 {
+  border-bottom-width: 0px !important;
 }
 
 .\!border-l-2 {
   border-left-width: 2px !important;
 }
 
-.\!border-b-0 {
-  border-bottom-width: 0px !important;
-}
-
-.border-solid {
-  border-style: solid;
+.border-b {
+  border-bottom-width: 1px;
 }
 
 .\!border-solid {
@@ -1460,8 +1440,9 @@ main > .post {
   border-style: none;
 }
 
-.\!border-none {
-  border-style: none !important;
+.\!border-primary {
+  --tw-border-opacity: 1 !important;
+  border-color: rgba(var(--primary), var(--tw-border-opacity)) !important;
 }
 
 .border-border {
@@ -1471,20 +1452,6 @@ main > .post {
 
 .border-border\/50 {
   border-color: rgba(var(--border), 0.5);
-}
-
-.border-border\/80 {
-  border-color: rgba(var(--border), 0.8);
-}
-
-.border-primary {
-  --tw-border-opacity: 1;
-  border-color: rgba(var(--primary), var(--tw-border-opacity));
-}
-
-.\!border-primary {
-  --tw-border-opacity: 1 !important;
-  border-color: rgba(var(--primary), var(--tw-border-opacity)) !important;
 }
 
 .bg-background {
