@@ -959,7 +959,7 @@ export class MastodonProfileView extends LitElement {
 
       return html`
          <ledit-overlay id="overlay" .headerTitle=${this.accountId} .closeCallback=${() => this.remove()}>
-            <div slot="content" class="w-full flex flex-col gap-4">
+            <div slot="content" class="w-full flex flex-col gap-4 mt-4">
                ${this.account && !this.account.header_static?.includes("missing.png")
                   ? html`<img src="${this.account.header_static}" class="max-h-[30vh] w-full object-cover object-center mt-[-1em]" />`
                   : ""}
