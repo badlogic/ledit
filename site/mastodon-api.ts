@@ -419,7 +419,7 @@ export class MastodonApi {
       try {
          const resolvedPost = await this.resolvePost(post.uri, userInfo);
          if (resolvedPost instanceof Error) return false;
-         const url = `https://${userInfo.instance}/api/v1/statuses/${resolvedPost.id}/${post.reblogged ? "reblog" : "unreblog"}`;
+         const url = `https://${userInfo.instance}/api/v1/statuses/${resolvedPost.id}/${!post.reblogged ? "reblog" : "unreblog"}`;
          const options = {
             method: "POST",
             headers: {
@@ -427,6 +427,7 @@ export class MastodonApi {
             },
          };
          const response = await fetch(url, options);
+         post.reblogged = !post.reblogged;
          return response.status == 200;
       } catch (e) {
          return false;
@@ -437,7 +438,7 @@ export class MastodonApi {
       try {
          const resolvedPost = await this.resolvePost(post.uri, userInfo);
          if (resolvedPost instanceof Error) return false;
-         const url = `https://${userInfo.instance}/api/v1/statuses/${resolvedPost.id}/${post.favourited ? "favourite" : "unfavourite"}`;
+         const url = `https://${userInfo.instance}/api/v1/statuses/${resolvedPost.id}/${!post.favourited ? "favourite" : "unfavourite"}`;
          const options = {
             method: "POST",
             headers: {
@@ -445,6 +446,7 @@ export class MastodonApi {
             },
          };
          const response = await fetch(url, options);
+         post.favourited = !post.favourited;
          return response.status == 200;
       } catch (e) {
          return false;

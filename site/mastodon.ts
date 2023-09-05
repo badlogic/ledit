@@ -411,8 +411,8 @@ async function getComments(postId: string, instance: string, user?: MastodonUser
       missingDescendants = comments.filter((comment) => !comment.fetchedReplies && comment.post.replies_count > comment.replies.length);
    }
 
+   // Sanity checks
    if (postToView.in_reply_to_id && !commentsById.get(postToView.in_reply_to_id)) return Error("Could not find parent of selected comment");
-
    if (!root) return new Error("Could not find root comment");
 
    return { originalPost: postToView, root, possiblyIncomplete, remoteInstance };
@@ -497,6 +497,20 @@ function showComments(event: Event, post: MastodonPost, user?: MastodonUserInfo)
    if (location.hash != hash) location.hash = hash;
 }
 
+async function favouritePost(event: Event, post: MastodonPost, user?: MastodonUserInfo) {
+   event.stopPropagation();
+   event.preventDefault();
+   if (!user) return;
+   return await MastodonApi.favouritePost(post, user);
+}
+
+async function reblogPost(event: Event, post: MastodonPost, user?: MastodonUserInfo) {
+   event.stopPropagation();
+   event.preventDefault();
+   if (!user) return;
+   return await MastodonApi.reblogPost(post, user);
+}
+
 export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) {
    const postToView = post.reblog ?? post;
    const postDom = dom(html` <article class="post mastodon-post gap-2">
@@ -545,11 +559,11 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
                  <span class="text-color/60">Reply</span>
               </a>`
             : nothing}
-         <a href="" class="flex items-center gap-1 h-[2em]" ?disabled=${user}>
+         <a x-id="reblog" class="flex items-center gap-1 h-[2em] cursor-pointer" ?disabled=${user}>
             <i class="icon ${postToView.reblogged ? "fill-primary" : "fill-color/60"}">${reblogIcon}</i>
             <span class="${postToView.reblogged ? "text-primary" : "text-color/60"}">${addCommasToNumber(postToView.reblogs_count)}</span>
          </a>
-         <a href="" class="flex items-center gap-1 h-[2em]" ?disabled=${user}>
+         <a x-id="favourite" class="flex items-center gap-1 h-[2em] cursor-pointer" ?disabled=${user}>
             <i class="icon ${postToView.favourited ? "fill-primary" : "fill-color/60"}">${starIcon}</i>
             <span class="${postToView.favourited ? "text-primary" : "text-color/60"}">${addCommasToNumber(postToView.favourites_count)}</span>
          </a>
@@ -562,7 +576,55 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
       </div>
    </article>`);
 
-   const { contentDom, gallery } = elements<{ contentDom: HTMLElement; gallery?: HTMLElement }>(postDom[0]);
+   const { contentDom, gallery, reblog, favourite } = elements<{ contentDom: HTMLElement; gallery?: HTMLElement; reblog?: HTMLElement; favourite?: HTMLElement }>(postDom[0]);
+
+   let reblogging = false;
+   reblog?.addEventListener("click", async (event) => {
+      if (reblogging) return;
+      reblogging = true;
+      const icon = reblog.querySelector("i")!;
+      const span = reblog.querySelector("span")!;
+      span.innerText = (Number.parseInt(span.innerText) + (post.reblogged ? -1 : 1)).toString();
+      icon.classList.toggle("fill-color/60");
+      span.classList.toggle("text-color/60");
+      icon.classList.toggle("fill-primary");
+      span.classList.toggle("text-primary");
+      if (!(await reblogPost(event, postToView, user))) {
+         alert("Could not reblog post");
+         post.favourited = !post.favourited;
+         span.innerText = (Number.parseInt(span.innerText) + (post.favourited ? -1 : 1)).toString();
+         icon.classList.toggle("fill-color/60");
+         span.classList.toggle("text-color/60");
+         icon.classList.toggle("fill-primary");
+         span.classList.toggle("text-primary");
+      }
+      reblogging = false;
+   });
+
+   // W/"64f745b4-11b012"
+
+   let favouriting = false;
+   favourite?.addEventListener("click", async (event) => {
+      if (favouriting) return;
+      favouriting = true;
+      const icon = favourite.querySelector("i")!;
+      const span = favourite.querySelector("span")!;
+      span.innerText = (Number.parseInt(span.innerText) + (post.favourited ? -1 : 1)).toString();
+      icon.classList.toggle("fill-color/60");
+      span.classList.toggle("text-color/60");
+      icon.classList.toggle("fill-primary");
+      span.classList.toggle("text-primary");
+      if (!(await favouritePost(event, postToView, user))) {
+         alert("Could not favourite post");
+         post.favourited = !post.favourited;
+         span.innerText = (Number.parseInt(span.innerText) + (post.favourited ? -1 : 1)).toString();
+         icon.classList.toggle("fill-color/60");
+         span.classList.toggle("text-color/60");
+         icon.classList.toggle("fill-primary");
+         span.classList.toggle("text-primary");
+      }
+      favouriting = false;
+   });
 
    onVisibleOnce(postDom[0], () => {
       renderMastodonMedia(postToView, contentDom);
@@ -960,10 +1022,80 @@ export function renderMastodonComment(comment: MastodonComment, data: { original
          <div x-id="contentDom" class="content">
             <div class="content-text">${replaceEmojis(postToView.content, postToView.emojis)}</div>
          </div>
+         <div class="flex justify-between min-w-[320px] max-w-[320px] mx-auto !mb-[-0.5em]">
+            ${data.user
+               ? html`<a href="" class="flex items-center gap-1 h-[2em]">
+                    <i class="icon fill-color/70">${replyIcon}</i>
+                    <span class="text-color/60">Reply</span>
+                 </a>`
+               : nothing}
+            <a x-id="reblog" class="flex items-center gap-1 h-[2em] cursor-pointer" ?disabled=${data.user}>
+               <i class="icon ${postToView.reblogged ? "fill-primary" : "fill-color/60"}">${reblogIcon}</i>
+               <span class="${postToView.reblogged ? "text-primary" : "text-color/60"}">${addCommasToNumber(postToView.reblogs_count)}</span>
+            </a>
+            <a x-id="favourite" class="flex items-center gap-1 h-[2em] cursor-pointer" ?disabled=${data.user}>
+               <i class="icon ${postToView.favourited ? "fill-primary" : "fill-color/60"}">${starIcon}</i>
+               <span class="${postToView.favourited ? "text-primary" : "text-color/60"}">${addCommasToNumber(postToView.favourites_count)}</span>
+            </a>
+            ${postToView.media_attachments.length > 1
+               ? html` <span class="flex items-center gap-1 cursor-pointer h-[2em]" x-id="gallery">
+                    <i class="icon fill-color/70">${imageIcon}</i>
+                    <span class="text-color/70">${postToView.media_attachments.length}</span>
+                 </span>`
+               : ""}
+         </div>
       </div>
    `);
 
-   const { contentDom, gallery } = elements<{ contentDom: HTMLElement; gallery?: HTMLElement }>(commentDom[0]);
+   const { contentDom, gallery, reblog, favourite } = elements<{ contentDom: HTMLElement; gallery?: HTMLElement; reblog?: HTMLElement; favourite?: HTMLElement }>(commentDom[0]);
+   let reblogging = false;
+   reblog?.addEventListener("click", async (event) => {
+      if (reblogging) return;
+      reblogging = true;
+      const icon = reblog.querySelector("i")!;
+      const span = reblog.querySelector("span")!;
+      span.innerText = (Number.parseInt(span.innerText) + (postToView.reblogged ? -1 : 1)).toString();
+      icon.classList.toggle("fill-color/60");
+      span.classList.toggle("text-color/60");
+      icon.classList.toggle("fill-primary");
+      span.classList.toggle("text-primary");
+      if (!(await reblogPost(event, postToView, data.user))) {
+         alert("Could not reblog post");
+         postToView.reblogged = !postToView.reblogged;
+         span.innerText = (Number.parseInt(span.innerText) + (postToView.reblogged ? -1 : 1)).toString();
+         icon.classList.toggle("fill-color/60");
+         span.classList.toggle("text-color/60");
+         icon.classList.toggle("fill-primary");
+         span.classList.toggle("text-primary");
+      }
+      reblogging = false;
+   });
+
+   // W/"64f745b4-11b012"
+
+   let favouriting = false;
+   favourite?.addEventListener("click", async (event) => {
+      if (favouriting) return;
+      favouriting = true;
+      const icon = favourite.querySelector("i")!;
+      const span = favourite.querySelector("span")!;
+      span.innerText = (Number.parseInt(span.innerText) + (postToView.favourited ? -1 : 1)).toString();
+      icon.classList.toggle("fill-color/60");
+      span.classList.toggle("text-color/60");
+      icon.classList.toggle("fill-primary");
+      span.classList.toggle("text-primary");
+      if (!(await favouritePost(event, postToView, data.user))) {
+         alert("Could not favourite post");
+         postToView.favourited = !postToView.favourited;
+         span.innerText = (Number.parseInt(span.innerText) + (postToView.favourited ? -1 : 1)).toString();
+         icon.classList.toggle("fill-color/60");
+         span.classList.toggle("text-color/60");
+         icon.classList.toggle("fill-primary");
+         span.classList.toggle("text-primary");
+      }
+      favouriting = false;
+   });
+
    const repliesDom = dom(html` <div class="replies">${map(comment.replies, (reply) => renderMastodonComment(reply, { ...data, isReply: true }))}</div>`)[0];
    commentDom[0].append(repliesDom);
 
