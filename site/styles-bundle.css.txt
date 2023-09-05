@@ -1023,11 +1023,11 @@ main > .post {
 }
 
 .\!comment {
-  min-width: 200px !important;
+  min-width: 260px !important;
 }
 
 .comment {
-  min-width: 200px;
+  min-width: 260px;
 }
 
 .\!comment .content p:first-child {
@@ -1158,6 +1158,10 @@ main > .post {
 
 .mt-2 {
   margin-top: 0.5rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
 }
 
 .mt-\[-1em\] {
@@ -1673,7 +1677,7 @@ main > .post {
 html[data-theme="dark"] {
   --background: 17, 17, 17;
   --color: 250, 250, 250;
-  --border: 55, 55, 55;
+  --border: 100, 100, 100;
   --primary: 204, 125, 36;
   --on-primary: 250, 250, 250;
   --surface: 17, 17, 17;

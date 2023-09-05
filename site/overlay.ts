@@ -63,7 +63,7 @@ export class Overlay extends LitElement {
                     `
                   : html`<slot name="header" @slotchange=${this.slotChanged.bind(this)}></slot>`}
             </div>
-            <div id="container" class="w-full flex flex-col max-w-[640px] mx-auto pb-4">
+            <div id="container" class="w-full flex flex-col max-w-[640px] mx-auto pb-4 overflow-auto">
                <slot name="content" @slotchange=${this.slotChanged.bind(this)}></slot>
             </div>
          </div>

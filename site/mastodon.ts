@@ -331,20 +331,26 @@ async function getComments(postId: string, instance: string, user?: MastodonUser
    }
 
    // Fetch the full tree from root downwards
-   if (context.ancestors.length > 0) {
-      const newContext = await MastodonApi.getPostContext(context.ancestors[0].id, context.ancestors[0].instance, user);
-      if (newContext instanceof Error) return newContext;
-      newContext.ancestors.push(context.ancestors[0]);
-      newContext.ancestors = newContext.ancestors.filter((post) => post.id != postToView.id);
-      newContext.descendants = newContext.descendants.filter((post) => post.id != postToView.id);
-      context = newContext;
-   }
+   const tempRoot = context.ancestors.length > 0 ? context.ancestors[0] : postToView;
+   let rootInstance = new URL(tempRoot.uri).host;
+   let rootPostId = tempRoot.uri.split("/").pop()!;
+   const promises: Promise<MastodonPostContext | MastodonPost | Error>[] = [];
+   promises.push(MastodonApi.getPostContext(rootPostId, rootInstance, user));
+   promises.push(MastodonApi.getPost(rootPostId, rootInstance, user));
+   const results = await Promise.all(promises);
+   let newContext = results[0];
+   if (newContext instanceof Error) return newContext;
+   newContext = newContext as MastodonPostContext;
+   const rootPost = results[1];
+   if (rootPost instanceof Error) return rootPost;
+   newContext.ancestors.push(rootPost as MastodonPost);
+   context = newContext;
 
    // Gather the initial set of comments and determine the root
    const comments: MastodonComment[] = [];
    const commentsById = new Map<string, MastodonComment>();
    let root: MastodonComment | null = null;
-   for (const post of [...context.ancestors, ...context.descendants, postToView]) {
+   for (const post of [...context.ancestors, ...context.descendants]) {
       const comment = { post, replies: [], isParented: false, fetchedReplies: false };
       comments.push(comment);
       commentsById.set(comment.post.id, comment);
@@ -361,11 +367,12 @@ async function getComments(postId: string, instance: string, user?: MastodonUser
             other.replies.push(comment);
             comment.isParented = true;
          } else {
-            // If this is the post to view, we might find it later when
-            // resolving missing descendants
-            if (comment.post.id == postToView.id) continue;
             return new Error("Could not find parent of comment");
          }
+      }
+      // check if this is our post to view and set it up accordingly
+      if (comment.post.uri == postToView.uri) {
+         postToView = comment.post;
       }
    }
 
@@ -402,9 +409,12 @@ async function getComments(postId: string, instance: string, user?: MastodonUser
             } else {
                // If this is the post to view, we might find it later when
                // resolving missing descendants
-               if (comment.post.id == postToView.id) continue;
                return new Error("Could not find parent of comment");
             }
+         }
+         // check if this is our post to view and set it up accordingly
+         if (comment.post.uri == postToView.uri) {
+            postToView = comment.post;
          }
       }
 
@@ -548,17 +558,11 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
       <div x-id="contentDom" class="content">
          <div class="content-text">${replaceEmojis(postToView.content, postToView.emojis)}</div>
       </div>
-      <div class="flex justify-between min-w-[320px] max-w-[320px] mx-auto !mb-[-0.5em]">
+      <div class="flex justify-between gap-4 mx-auto !mb-[-0.5em]">
          <a @click=${(event: Event) => showComments(event, postToView, user)} href="" class="self-link flex items-center gap-1 h-[2em]">
             <i class="icon fill-color/60">${commentIcon}</i>
             <span class="text-color/60">${addCommasToNumber(postToView.replies_count)}</span>
          </a>
-         ${user
-            ? html`<a href="" class="flex items-center gap-1 h-[2em]">
-                 <i class="icon fill-color/70">${replyIcon}</i>
-                 <span class="text-color/60">Reply</span>
-              </a>`
-            : nothing}
          <a x-id="reblog" class="flex items-center gap-1 h-[2em] cursor-pointer" ?disabled=${user}>
             <i class="icon ${postToView.reblogged ? "fill-primary" : "fill-color/60"}">${reblogIcon}</i>
             <span class="${postToView.reblogged ? "text-primary" : "text-color/60"}">${addCommasToNumber(postToView.reblogs_count)}</span>
@@ -567,6 +571,12 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
             <i class="icon ${postToView.favourited ? "fill-primary" : "fill-color/60"}">${starIcon}</i>
             <span class="${postToView.favourited ? "text-primary" : "text-color/60"}">${addCommasToNumber(postToView.favourites_count)}</span>
          </a>
+         ${user
+            ? html`<a href="" class="flex items-center gap-1 h-[2em]">
+                 <i class="icon fill-color/70">${replyIcon}</i>
+                 <span class="text-color/60">Reply</span>
+              </a>`
+            : nothing}
          ${postToView.media_attachments.length > 1
             ? html` <span class="flex items-center gap-1 cursor-pointer h-[2em]" x-id="gallery">
                  <i class="icon fill-color/70">${imageIcon}</i>
@@ -870,8 +880,37 @@ export class MastodonProfileView extends LitElement {
          }
          this.account = account;
 
-         MastodonApi.getAccountPosts(this.account.id, this.account.instance, null, user).then((result) => {
-            this.posts!.load(result, renderMastodonPost, async (nextPage) => await MastodonApi.getAccountPosts(this.account!.id, this.account!.instance, nextPage, user), user);
+         const fetchReplyToPosts = async (page: Page<MastodonPost> | Error) => {
+            if (page instanceof Error) return;
+            const inReplyToPromises: Promise<MastodonPost | Error>[] = [];
+            for (const post of page.items) {
+               const postToView = post.reblog ?? post;
+               if (postToView.in_reply_to_id) {
+                  inReplyToPromises.push(MastodonApi.getPost(postToView.in_reply_to_id, postToView.instance));
+               }
+            }
+            const inReplyToPosts: (MastodonPost | Error)[] = await Promise.all(inReplyToPromises);
+            let idx = 0;
+            for (const post of page.items) {
+               const postToView = post.reblog ?? post;
+               if (postToView.in_reply_to_id) {
+                  const inReplyToPost = inReplyToPosts[idx++];
+                  postToView.in_reply_to_post = inReplyToPost instanceof Error ? null : inReplyToPost;
+               }
+            }
+         };
+         MastodonApi.getAccountPosts(this.account.id, this.account.instance, null, user).then(async (result) => {
+            await fetchReplyToPosts(result);
+            this.posts!.load(
+               result,
+               renderMastodonPost,
+               async (nextPage) => {
+                  const page = await MastodonApi.getAccountPosts(this.account!.id, this.account!.instance, nextPage, user);
+                  await fetchReplyToPosts(page);
+                  return page;
+               },
+               user
+            );
          });
 
          const renderMastodonAccount = (account: MastodonAccount, data?: MastodonUserInfo) => {
@@ -919,13 +958,7 @@ export class MastodonProfileView extends LitElement {
       }
 
       return html`
-         <ledit-overlay id="overlay" .closeCallback=${() => this.remove()}>
-            <div slot="header" class="relative min-h-[4em]">
-               <div class="cursor-pointer py-2 pl-2 pr-1 flex items-center text-lg bg-background border-b border-border/50" @click=${() => this.overlay?.close()}>
-                  <span class="font-bold text-primary text-ellipsis overflow-hidden flex-1">${this.accountId}</span>
-                  <header-button>${closeIcon}</header-button>
-               </div>
-            </div>
+         <ledit-overlay id="overlay" .headerTitle=${this.accountId} .closeCallback=${() => this.remove()}>
             <div slot="content" class="w-full flex flex-col gap-4">
                ${this.account && !this.account.header_static?.includes("missing.png")
                   ? html`<img src="${this.account.header_static}" class="max-h-[30vh] w-full object-cover object-center mt-[-1em]" />`
@@ -948,7 +981,7 @@ export class MastodonProfileView extends LitElement {
                           ${relationshipLabel.length > 0 ? html`<button class="ml-auto">${relationshipLabel}</button>` : ""}
                        </div>
                        ${this.possiblyIncomplete
-                          ? html`<div class="border border-border/50 rounded p-4 text-center text-color/50">
+                          ? html`<div class="border border-border/50 rounded p-4 mt-4 text-center text-color/50">
                                <b>Warning</b>: information may be incomplete, as it was retrieved from '${this.account.instance}' and not from the original instance
                                '${new URL(this.account.url).host}'
                             </div>`
@@ -1022,18 +1055,18 @@ export function renderMastodonComment(comment: MastodonComment, data: { original
          <div x-id="contentDom" class="content">
             <div class="content-text">${replaceEmojis(postToView.content, postToView.emojis)}</div>
          </div>
-         <div class="flex justify-between min-w-[320px] max-w-[320px] mx-auto !mb-[-0.5em]">
+         <div class="flex gap-4 min-w-[320px] max-w-[320px] !mb-[-0.5em]">
             ${data.user
-               ? html`<a href="" class="flex items-center gap-1 h-[2em]">
+               ? html`<a href="" class="flex items-center gap-1 h-[2em] text-sm">
                     <i class="icon fill-color/70">${replyIcon}</i>
                     <span class="text-color/60">Reply</span>
                  </a>`
                : nothing}
-            <a x-id="reblog" class="flex items-center gap-1 h-[2em] cursor-pointer" ?disabled=${data.user}>
+            <a x-id="reblog" class="flex items-center gap-1 h-[2em] cursor-pointer text-sm" ?disabled=${data.user}>
                <i class="icon ${postToView.reblogged ? "fill-primary" : "fill-color/60"}">${reblogIcon}</i>
                <span class="${postToView.reblogged ? "text-primary" : "text-color/60"}">${addCommasToNumber(postToView.reblogs_count)}</span>
             </a>
-            <a x-id="favourite" class="flex items-center gap-1 h-[2em] cursor-pointer" ?disabled=${data.user}>
+            <a x-id="favourite" class="flex items-center gap-1 h-[2em] cursor-pointer text-sm" ?disabled=${data.user}>
                <i class="icon ${postToView.favourited ? "fill-primary" : "fill-color/60"}">${starIcon}</i>
                <span class="${postToView.favourited ? "text-primary" : "text-color/60"}">${addCommasToNumber(postToView.favourites_count)}</span>
             </a>
@@ -1048,6 +1081,7 @@ export function renderMastodonComment(comment: MastodonComment, data: { original
    `);
 
    const { contentDom, gallery, reblog, favourite } = elements<{ contentDom: HTMLElement; gallery?: HTMLElement; reblog?: HTMLElement; favourite?: HTMLElement }>(commentDom[0]);
+   renderMastodonMedia(postToView, contentDom);
    let reblogging = false;
    reblog?.addEventListener("click", async (event) => {
       if (reblogging) return;
@@ -1100,7 +1134,6 @@ export function renderMastodonComment(comment: MastodonComment, data: { original
    commentDom[0].append(repliesDom);
 
    onVisibleOnce(commentDom[0], () => {
-      renderMastodonMedia(postToView, contentDom);
       setLinkTargetsToBlank(contentDom);
       if (gallery) {
          const img = contentDom.querySelector(".media img");
@@ -1128,15 +1161,17 @@ export class MastodonCommentsView extends LitElement {
    protected updated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
       if (this.scrolled) return;
       if (this.data) {
-         const comment = this.shadowRoot?.querySelector(`[data-id="${this.data.originalPost.id}"] > .author`);
-         if (!comment) {
-            console.log("WTF");
-         } else {
-            this.scrolled = true;
-            setTimeout(() => {
-               comment.scrollIntoView({ behavior: "smooth", block: "center" });
-            }, 250);
-         }
+         waitForMediaLoaded(this.shadowRoot!, () => {
+            const comment = this.shadowRoot?.querySelector(`[data-id="${this.data!.originalPost.id}"] > .author`);
+            if (!comment) {
+               console.log("WTF");
+            } else {
+               this.scrolled = true;
+               setTimeout(() => {
+                  comment.scrollIntoView({ behavior: "smooth", block: "center" });
+               }, 250);
+            }
+         });
       }
    }
 
@@ -1157,11 +1192,17 @@ export class MastodonCommentsView extends LitElement {
          <ledit-overlay headerTitle="${header}" .sticky=${true} .closeCallback=${() => this.remove()}>
             <div slot="content" class="w-full">
                ${this.data && this.data.possiblyIncomplete
-                  ? html`<div class="border border-border/50 rounded p-4 text-center text-color/50 mb-4">
+                  ? html`<div class="border border-border/50 rounded p-4 mt-4 text-center text-color/50 mb-4">
                        <b>Warning</b>: information may be incomplete, as it was retrieved from '${this.data.root.post.instance}' and not from the original instance
                        '${this.data.remoteInstance}'
                     </div>`
                   : ""}
+               ${!(result instanceof Error) && this.data && result.user && this.data.root.post.instance != result.user.instance
+                  ? html`<div class="border border-border/50 rounded p-4 mt-4 text-center text-color/50 mb-4">
+                       <b>Warning</b>: Can not show your reblogs and favourites as comments were not fetched from your instance '${result.user.instance}' but the original poster's
+                       instance '${this.data.root.post.instance}'
+                    </div>`
+                  : nothing}
                <div class="comments">
                   ${this.error ? renderErrorMessage("Could not load comments", this.error) : nothing}
                   ${this.data
