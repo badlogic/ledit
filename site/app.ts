@@ -21,7 +21,7 @@ export const appPages = [
    route("#bookmarks-new/:source/:feed", renderBookmarkEditor),
    route("#bookmarks-edit/:id", renderBookmarkEditor),
    route("#bookmarks-add-mastodon-account", renderMastodonAccountEditor),
-   route("#mastodon-edit-account/:id", renderMastodonAccountEditor),
+   route("#mastodon-edit-account/:id/home", renderMastodonAccountEditor),
 ];
 
 function loadDefaultBookmark() {

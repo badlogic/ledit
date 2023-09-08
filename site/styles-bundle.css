@@ -1256,6 +1256,10 @@ main > .post {
   min-height: 1.5em;
 }
 
+.min-h-\[10em\] {
+  min-height: 10em;
+}
+
 .w-10 {
   width: 2.5rem;
 }

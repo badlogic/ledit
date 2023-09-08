@@ -12,9 +12,6 @@ import { globalStyles } from "./styles";
 import { MastodonAccount, MastodonApi, MastodonEmoji, MastodonMedia, MastodonPost, MastodonPostContext, MastodonRelationship, MastodonUserInfo } from "./mastodon-api";
 import { navigationGuard } from "./guards";
 import { renderComments } from "./comments";
-import { HnCommentsView } from "./hackernews";
-
-const mastodonUserIds = localStorage.getItem("mastodonCache") ? JSON.parse(localStorage.getItem("mastodonCache")!) : {};
 
 function replaceEmojis(text: string, emojis: MastodonEmoji[]): TemplateResult {
    let replacedText = text;
@@ -82,7 +79,7 @@ function extractUsernames(mastodonPost: MastodonPost) {
 }
 
 export interface MastodonWhat {
-   type: "remote-user" | "local-user" | "instance" | "id" | "local" | "home" | "profile" | "comments";
+   type: "remote-user" | "local-user" | "instance" | "id" | "local" | "home" | "profile" | "comments" | "reply";
    user?: string;
    instance?: string;
    tag?: string; // FIXME implement tags
@@ -136,6 +133,8 @@ function getWhats() {
          whats.push({ type: "profile" });
       } else if (token == "comments") {
          whats.push({ type: "comments" });
+      } else if (token == "reply") {
+         whats.push({ type: "reply" });
       } else {
          if (token.includes(".")) {
             whats.push({ type: "instance", instance: token });
@@ -172,6 +171,7 @@ export class MastodonSource extends Source<MastodonPost> {
                }
             }
          }
+
          if (whats[0].type == "comments") {
             if (whats.length > 2 && whats[1].type == "instance" && whats[2].type == "id") {
                const lastChild = document.body.children[document.body.children.length - 1];
@@ -184,6 +184,23 @@ export class MastodonSource extends Source<MastodonPost> {
                   } else {
                      commentsView.data = comments;
                   }
+               }
+            }
+         }
+
+         if (whats[0].type == "reply") {
+            if (!user) {
+               history.back();
+               return;
+            }
+            if (whats.length > 2 && whats[1].type == "instance" && whats[2].type == "id") {
+               const editor = new MastodonPostEditor();
+               document.body.append(editor);
+               const post = await MastodonApi.getPost(whats[2].id!, whats[1].instance!, user);
+               if (post instanceof Error) {
+                  editor.error = post;
+               } else {
+                  editor.post = post;
                }
             }
          }
@@ -367,7 +384,8 @@ async function getComments(postId: string, instance: string, user?: MastodonUser
             other.replies.push(comment);
             comment.isParented = true;
          } else {
-            return new Error("Could not find parent of comment");
+            console.log("Found orphaned comment");
+            //return new Error("Could not find parent of comment");
          }
       }
       // check if this is our post to view and set it up accordingly
@@ -407,9 +425,8 @@ async function getComments(postId: string, instance: string, user?: MastodonUser
                other.replies.push(comment);
                comment.isParented = true;
             } else {
-               // If this is the post to view, we might find it later when
-               // resolving missing descendants
-               return new Error("Could not find parent of comment");
+               console.log("Found orphaned comment");
+               // return new Error("Could not find parent of comment");
             }
          }
          // check if this is our post to view and set it up accordingly
@@ -491,20 +508,30 @@ function showProfile(event: Event, account: MastodonAccount, user?: MastodonUser
    if (hash != location.hash) location.hash = hash;
 }
 
-function getCommentsUrl(post: MastodonPost, user?: MastodonUserInfo) {
+function getActionUrl(prefix: string, post: MastodonPost, user?: MastodonUserInfo) {
    const baseUrl = user ? `#m/${user.username}@${user.instance}/` : "#m/";
-   if (!user) {
-      console.log("wtf");
-   }
-   return baseUrl + `comments/${post.instance}/${post.id}`;
+   return baseUrl + `${prefix}/${post.instance}/${post.id}`;
 }
 
 function showComments(event: Event, post: MastodonPost, user?: MastodonUserInfo) {
    event.stopPropagation();
    event.preventDefault();
-   navigationGuard.call = false;
-   const hash = getCommentsUrl(post, user);
-   if (location.hash != hash) location.hash = hash;
+   const hash = getActionUrl("comments", post, user);
+   if (location.hash != hash) {
+      navigationGuard.call = false;
+      location.hash = hash;
+   }
+}
+
+async function showReplyEditor(event: Event, post: MastodonPost, user?: MastodonUserInfo) {
+   event.stopPropagation();
+   event.preventDefault();
+   if (!user) return;
+   const hash = getActionUrl("reply", post, user);
+   if (location.hash != hash) {
+      navigationGuard.call = false;
+      location.hash = hash;
+   }
 }
 
 async function favouritePost(event: Event, post: MastodonPost, user?: MastodonUserInfo) {
@@ -625,12 +652,14 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
            </div>`
          : ""}
       <div class="flex items-center gap-2">
-         <img class="w-[2.5em] h-[2.5em] rounded-full" src="${postToView.account.avatar_static}" />
-         <a @click=${(event: Event) => showProfile(event, postToView.account, user)} class="flex inline-block flex-col text-sm text-color overflow-hidden cursor-pointer">
-            <span class="font-bold overflow-hidden text-ellipsis">${getAccountName(postToView.account)}</span>
-            <span class="text-color/60 overflow-hidden text-ellipsis"
-               >${postToView.account.username + (user && user.instance == new URL(postToView.account.url).host ? "" : "@" + new URL(postToView.account.url).host)}</span
-            >
+         <a @click=${(event: Event) => showProfile(event, postToView.account, user)} class="flex items-center gap-2">
+            <img class="w-[2.5em] h-[2.5em] rounded-full cursor-pointer" src="${postToView.account.avatar_static}" />
+            <div class="flex inline-block flex-col text-sm text-color overflow-hidden cursor-pointer">
+               <span class="font-bold overflow-hidden text-ellipsis">${getAccountName(postToView.account)}</span>
+               <span class="text-color/60 overflow-hidden text-ellipsis"
+                  >${postToView.account.username + (user && user.instance == new URL(postToView.account.url).host ? "" : "@" + new URL(postToView.account.url).host)}</span
+               >
+            </div>
          </a>
          <a href="${postToView.url}" class="ml-auto text-xs self-start">${dateToText(new Date(postToView.created_at).getTime())}</a>
       </div>
@@ -650,7 +679,7 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
          <div class="content-text">${replaceEmojis(postToView.content, postToView.emojis)}</div>
       </div>
       <div class="flex justify-between gap-4 mx-auto !mb-[-0.5em]">
-         <a @click=${(event: Event) => showComments(event, postToView, user)} href="" class="self-link flex items-center gap-1 h-[2em]">
+         <a @click=${(event: Event) => showComments(event, postToView, user)} class="self-link flex items-center gap-1 h-[2em] cursor-pointer">
             <i class="icon fill-color/60">${commentIcon}</i>
             <span class="text-color/60">${addCommasToNumber(postToView.replies_count)}</span>
          </a>
@@ -663,7 +692,7 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
             <span class="${postToView.favourited ? "text-primary" : "text-color/60"}">${addCommasToNumber(postToView.favourites_count)}</span>
          </a>
          ${user
-            ? html`<a href="" class="flex items-center gap-1 h-[2em]">
+            ? html`<a @click=${(event: Event) => showReplyEditor(event, postToView, user)} class="flex items-center gap-1 h-[2em] cursor-pointer">
                  <i class="icon fill-color/70">${replyIcon}</i>
                  <span class="text-color/60">Reply</span>
               </a>`
@@ -828,7 +857,7 @@ export class MastodonAccountEditor extends LitElement {
 
 export function renderMastodonAccountEditor(params: Record<string, string>) {
    const accountBookmark =
-      getSettings().bookmarks.find((bookmark) => bookmark.label == params["id"]) ??
+      getSettings().bookmarks.find((bookmark) => bookmark.label == params["id"] + "/home") ??
       ({
          source: "m/",
          label: "",
@@ -1022,7 +1051,7 @@ export class MastodonProfileView extends LitElement {
                           ${this.relationship?.followed_by
                              ? html`<span class="ml-2 border border-border p-1 rounded grow-0 shrink-1 text-xs text-color/50">Follows you</span>`
                              : ""}
-                          ${relationshipLabel.length > 0 ? html`<button class="ml-auto">${relationshipLabel}</button>` : ""}
+                          ${relationshipLabel.length > 0 ? html`<button @click=${() => this.clickedFollow()} class="ml-auto">${relationshipLabel}</button>` : ""}
                        </div>
                        ${this.possiblyIncomplete
                           ? html`<div class="border border-border/50 rounded p-4 mt-4 text-center text-color/50">
@@ -1072,6 +1101,23 @@ export class MastodonProfileView extends LitElement {
          </ledit-overlay>
       `;
    }
+
+   isFollowing = false;
+   async clickedFollow() {
+      // FIXME this doesn't handle follow requests, it will just show we're following.
+      if (!this.relationship || !this.account || !this.user) return;
+      if (this.isFollowing) return;
+      this.isFollowing = true;
+      this.relationship = { ...this.relationship, following: !this.relationship.following };
+      this.requestUpdate();
+      if (!(await MastodonApi.followAccount(this.account, this.relationship.following, this.user))) {
+         alert(`Could not ${this.relationship.following ? "unfollow" : "follow"} user '${getAccountName(this.account, false)}'`);
+         this.relationship = { ...this.relationship, following: !this.relationship.following };
+         this.requestUpdate();
+         return;
+      }
+      this.isFollowing = false;
+   }
 }
 
 export function renderMastodonComment(comment: MastodonComment, data: { originalPost: MastodonPost; op: string; isReply: boolean; user?: MastodonUserInfo }): HTMLElement {
@@ -1082,16 +1128,15 @@ export function renderMastodonComment(comment: MastodonComment, data: { original
       <div class="comment ${data.isReply ? "reply" : ""} ${highlight ? "!border-b-0 !border-l-2 !border-solid !border-primary" : ""}" data-id="${comment.post.id}">
          <div class="author flex gap-1 text-sm items-center text-color/50">
             <div class="flex items-center gap-2 w-full">
-               <img class="w-[2em] h-[2em] rounded-full" src="${postToView.account.avatar_static}" />
-               <a
-                  @click=${(event: Event) => showProfile(event, postToView.account, data.user)}
-                  class="flex flex-col inline-block text-sm text-color overflow-hidden cursor-pointer"
-               >
-                  <span class="font-bold overflow-hidden text-ellipsis">${getAccountName(postToView.account)}</span>
-                  <span class="text-color/60 overflow-hidden text-ellipsis"
-                     >${postToView.account.username +
-                     (data.user && data.user.instance == new URL(postToView.account.url).host ? "" : "@" + new URL(postToView.account.url).host)}</span
-                  >
+               <a @click=${(event: Event) => showProfile(event, postToView.account, data.user)} class="flex items-center gap-2 w-full">
+                  <img class="w-[2em] h-[2em] rounded-full cursor-pointer" src="${postToView.account.avatar_static}" />
+                  <div class="flex flex-col inline-block text-sm text-color overflow-hidden cursor-pointer">
+                     <span class="font-bold overflow-hidden text-ellipsis">${getAccountName(postToView.account)}</span>
+                     <span class="text-color/60 overflow-hidden text-ellipsis"
+                        >${postToView.account.username +
+                        (data.user && data.user.instance == new URL(postToView.account.url).host ? "" : "@" + new URL(postToView.account.url).host)}</span
+                     >
+                  </div>
                </a>
                <a href="${postToView.url}" class="ml-auto text-xs">${dateToText(new Date(postToView.created_at).getTime())}</a>
             </div>
@@ -1101,7 +1146,7 @@ export function renderMastodonComment(comment: MastodonComment, data: { original
          </div>
          <div class="flex gap-4 min-w-[320px] max-w-[320px] !mb-[-0.5em]">
             ${data.user
-               ? html`<a href="" class="flex items-center gap-1 h-[2em] text-sm">
+               ? html`<a @click=${(event: Event) => showReplyEditor(event, postToView, data.user)} class="flex items-center gap-1 h-[2em] text-sm">
                     <i class="icon fill-color/70">${replyIcon}</i>
                     <span class="text-color/60">Reply</span>
                  </a>`
@@ -1216,5 +1261,111 @@ export class MastodonCommentsView extends LitElement {
             </div>
          </ledit-overlay>
       `;
+   }
+}
+
+@customElement("mastodon-post-editor")
+export class MastodonPostEditor extends LitElement {
+   static styles = globalStyles;
+
+   @property()
+   error?: Error;
+
+   @property()
+   post?: MastodonPost;
+
+   @query("#post-text")
+   postText?: HTMLTextAreaElement;
+
+   @query("#overlay")
+   overlay?: Overlay;
+
+   @query("publish")
+   publish?: HTMLButtonElement;
+
+   user?: MastodonUserInfo;
+
+   protected updated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+      this.postText?.focus();
+   }
+
+   render() {
+      const result = getWhats();
+      if (result instanceof Error) {
+         // FIXME
+         this.error = result;
+         return;
+      }
+      const { user, whats } = result;
+      if (!user) {
+         // FIXME
+         return;
+      }
+
+      this.user = user;
+
+      let header = "Replying";
+      let userHandles: string[] = [];
+      if (this.post) {
+         header = "Replying to " + getAccountName(this.post.account, false);
+         const commentHost = new URL(this.post.uri).host;
+         userHandles.push(...extractUsernames(this.post).map((handle) => handle.replace("@" + user.instance, "")));
+         const commentUser = "@" + this.post.account.username + (commentHost == user.instance ? "" : "@" + commentHost);
+         if (userHandles.indexOf(commentUser) == -1) userHandles.push(commentUser);
+         userHandles = userHandles.filter((handle) => handle != "@" + user.username && handle != "@" + user.username + "@" + user.instance);
+      }
+
+      return html` <ledit-overlay id="overlay" headerTitle="${header}" .sticky=${true} .closeCallback=${() => this.remove()}>
+         <div slot="content" class="w-full flex flex-col gap-4 mt-4 px-4">
+            ${this.post
+               ? html`
+                    <div class="flex gap-1 text-sm items-center text-color/50">
+                       <div class="flex items-center gap-2 w-full">
+                          <a @click=${(event: Event) => showProfile(event, this.post!.account, user)} class="flex items-center gap-2 w-full">
+                             <img class="w-[2em] h-[2em] rounded-full cursor-pointer" src="${this.post.account.avatar_static}" />
+                             <div class="flex flex-col inline-block text-sm text-color overflow-hidden cursor-pointer">
+                                <span class="font-bold overflow-hidden text-ellipsis">${getAccountName(this.post.account)}</span>
+                                <span class="text-color/60 overflow-hidden text-ellipsis"
+                                   >${this.post.account.username +
+                                   (user && user.instance == new URL(this.post.account.url).host ? "" : "@" + new URL(this.post.account.url).host)}</span
+                                >
+                             </div>
+                          </a>
+                          <a href="${this.post.url}" class="ml-auto text-xs">${dateToText(new Date(this.post.created_at).getTime())}</a>
+                       </div>
+                    </div>
+                    <div class="content">
+                       <div class="content-text text-color/50">${replaceEmojis(this.post.content, this.post.emojis)}</div>
+                    </div>
+                 `
+               : nothing}
+            ${this.error ? renderErrorMessage(this.error.message, this.error) : nothing}
+            <textarea id="post-text" class="min-h-[10em]" .value=${userHandles.join(" ") + " " ?? ""}> </textarea>
+            <button id="publish" @click=${() => this.clickedPublish()} id="publish" class="ml-auto">Send</button>
+         </div>
+      </ledit-overlay>`;
+   }
+
+   async clickedPublish() {
+      if (!this.user) {
+         this.error = new Error("You must be logged in to reply. Add a Mastodon account.");
+         return;
+      }
+
+      if (!this.post) {
+         this.error = new Error("Not replying to a post");
+      }
+
+      const reply = await MastodonApi.publishPost(this.post!, this.postText!.value, this.user);
+      if (reply instanceof Error) {
+         this.error = reply;
+      } else {
+         this.overlay!.close();
+         const mainPost = renderMastodonPost(reply, this.user);
+         const main = document.body.querySelector("main") as HTMLElement;
+         if (main.children.length > 0) main?.insertBefore(mainPost[0], main.children[0]);
+         else main.append(mainPost[0]);
+         showComments(new Event("nop"), reply, this.user);
+      }
    }
 }
