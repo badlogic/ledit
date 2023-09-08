@@ -521,6 +521,97 @@ async function reblogPost(event: Event, post: MastodonPost, user?: MastodonUserI
    return await MastodonApi.reblogPost(post, user);
 }
 
+class ReblogEvent extends Event {
+   constructor(public readonly postUrl: string, public readonly reblogged: boolean) {
+      super("mastodon-reblog-event");
+   }
+}
+
+class FavouriteEvent extends Event {
+   constructor(public readonly postUrl: string, public readonly favourited: boolean) {
+      super("mastodon-favourite-event");
+   }
+}
+
+export function setupReblogFavouriteHandlers(postToView: MastodonPost, user?: MastodonUserInfo, reblog?: HTMLElement, favourite?: HTMLElement) {
+   let reblogging = false;
+   reblog?.addEventListener("click", async (event) => {
+      if (reblogging) return;
+      reblogging = true;
+      const icon = reblog.querySelector("i")!;
+      const span = reblog.querySelector("span")!;
+      span.innerText = (Number.parseInt(span.innerText) + (postToView.reblogged ? -1 : 1)).toString();
+      icon.classList.toggle("fill-color/60");
+      span.classList.toggle("text-color/60");
+      icon.classList.toggle("fill-primary");
+      span.classList.toggle("text-primary");
+      if (!(await reblogPost(event, postToView, user))) {
+         alert("Could not reblog post");
+         postToView.reblogged = !postToView.reblogged;
+         span.innerText = (Number.parseInt(span.innerText) + (postToView.reblogged ? -1 : 1)).toString();
+         icon.classList.toggle("fill-color/60");
+         span.classList.toggle("text-color/60");
+         icon.classList.toggle("fill-primary");
+         span.classList.toggle("text-primary");
+      } else {
+         window.dispatchEvent(new ReblogEvent(postToView.url, postToView.reblogged));
+      }
+      reblogging = false;
+   });
+   window.addEventListener("mastodon-reblog-event", (e: Event) => {
+      if (!reblog || reblogging) return;
+      const event = e as ReblogEvent;
+      if (event.postUrl != postToView.url) return;
+      postToView.reblogged = event.reblogged;
+      const icon = reblog.querySelector("i")!;
+      const span = reblog.querySelector("span")!;
+      span.innerText = (Number.parseInt(span.innerText) + (postToView.reblogged ? 1 : -1)).toString();
+      icon.classList.toggle("fill-color/60");
+      span.classList.toggle("text-color/60");
+      icon.classList.toggle("fill-primary");
+      span.classList.toggle("text-primary");
+   });
+
+   let favouriting = false;
+   favourite?.addEventListener("click", async (event) => {
+      if (favouriting) return;
+      favouriting = true;
+      const icon = favourite.querySelector("i")!;
+      const span = favourite.querySelector("span")!;
+      span.innerText = (Number.parseInt(span.innerText) + (postToView.favourited ? -1 : 1)).toString();
+      icon.classList.toggle("fill-color/60");
+      span.classList.toggle("text-color/60");
+      icon.classList.toggle("fill-primary");
+      span.classList.toggle("text-primary");
+      if (!(await favouritePost(event, postToView, user))) {
+         alert("Could not favourite post");
+         postToView.favourited = !postToView.favourited;
+         span.innerText = (Number.parseInt(span.innerText) + (postToView.favourited ? -1 : 1)).toString();
+         icon.classList.toggle("fill-color/60");
+         span.classList.toggle("text-color/60");
+         icon.classList.toggle("fill-primary");
+         span.classList.toggle("text-primary");
+      } else {
+         window.dispatchEvent(new FavouriteEvent(postToView.url, postToView.favourited));
+      }
+      favouriting = false;
+   });
+
+   window.addEventListener("mastodon-favourite-event", (e: Event) => {
+      if (!favourite || favouriting) return;
+      const event = e as FavouriteEvent;
+      if (event.postUrl != postToView.url) return;
+      postToView.favourited = event.favourited;
+      const icon = favourite.querySelector("i")!;
+      const span = favourite.querySelector("span")!;
+      span.innerText = (Number.parseInt(span.innerText) + (postToView.favourited ? 1 : -1)).toString();
+      icon.classList.toggle("fill-color/60");
+      span.classList.toggle("text-color/60");
+      icon.classList.toggle("fill-primary");
+      span.classList.toggle("text-primary");
+   });
+}
+
 export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) {
    const postToView = post.reblog ?? post;
    const postDom = dom(html` <article class="post mastodon-post gap-2">
@@ -587,54 +678,7 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
    </article>`);
 
    const { contentDom, gallery, reblog, favourite } = elements<{ contentDom: HTMLElement; gallery?: HTMLElement; reblog?: HTMLElement; favourite?: HTMLElement }>(postDom[0]);
-
-   let reblogging = false;
-   reblog?.addEventListener("click", async (event) => {
-      if (reblogging) return;
-      reblogging = true;
-      const icon = reblog.querySelector("i")!;
-      const span = reblog.querySelector("span")!;
-      span.innerText = (Number.parseInt(span.innerText) + (post.reblogged ? -1 : 1)).toString();
-      icon.classList.toggle("fill-color/60");
-      span.classList.toggle("text-color/60");
-      icon.classList.toggle("fill-primary");
-      span.classList.toggle("text-primary");
-      if (!(await reblogPost(event, postToView, user))) {
-         alert("Could not reblog post");
-         post.favourited = !post.favourited;
-         span.innerText = (Number.parseInt(span.innerText) + (post.favourited ? -1 : 1)).toString();
-         icon.classList.toggle("fill-color/60");
-         span.classList.toggle("text-color/60");
-         icon.classList.toggle("fill-primary");
-         span.classList.toggle("text-primary");
-      }
-      reblogging = false;
-   });
-
-   // W/"64f745b4-11b012"
-
-   let favouriting = false;
-   favourite?.addEventListener("click", async (event) => {
-      if (favouriting) return;
-      favouriting = true;
-      const icon = favourite.querySelector("i")!;
-      const span = favourite.querySelector("span")!;
-      span.innerText = (Number.parseInt(span.innerText) + (post.favourited ? -1 : 1)).toString();
-      icon.classList.toggle("fill-color/60");
-      span.classList.toggle("text-color/60");
-      icon.classList.toggle("fill-primary");
-      span.classList.toggle("text-primary");
-      if (!(await favouritePost(event, postToView, user))) {
-         alert("Could not favourite post");
-         post.favourited = !post.favourited;
-         span.innerText = (Number.parseInt(span.innerText) + (post.favourited ? -1 : 1)).toString();
-         icon.classList.toggle("fill-color/60");
-         span.classList.toggle("text-color/60");
-         icon.classList.toggle("fill-primary");
-         span.classList.toggle("text-primary");
-      }
-      favouriting = false;
-   });
+   setupReblogFavouriteHandlers(postToView, user, reblog, favourite);
 
    onVisibleOnce(postDom[0], () => {
       renderMastodonMedia(postToView, contentDom);
@@ -1082,53 +1126,7 @@ export function renderMastodonComment(comment: MastodonComment, data: { original
 
    const { contentDom, gallery, reblog, favourite } = elements<{ contentDom: HTMLElement; gallery?: HTMLElement; reblog?: HTMLElement; favourite?: HTMLElement }>(commentDom[0]);
    renderMastodonMedia(postToView, contentDom);
-   let reblogging = false;
-   reblog?.addEventListener("click", async (event) => {
-      if (reblogging) return;
-      reblogging = true;
-      const icon = reblog.querySelector("i")!;
-      const span = reblog.querySelector("span")!;
-      span.innerText = (Number.parseInt(span.innerText) + (postToView.reblogged ? -1 : 1)).toString();
-      icon.classList.toggle("fill-color/60");
-      span.classList.toggle("text-color/60");
-      icon.classList.toggle("fill-primary");
-      span.classList.toggle("text-primary");
-      if (!(await reblogPost(event, postToView, data.user))) {
-         alert("Could not reblog post");
-         postToView.reblogged = !postToView.reblogged;
-         span.innerText = (Number.parseInt(span.innerText) + (postToView.reblogged ? -1 : 1)).toString();
-         icon.classList.toggle("fill-color/60");
-         span.classList.toggle("text-color/60");
-         icon.classList.toggle("fill-primary");
-         span.classList.toggle("text-primary");
-      }
-      reblogging = false;
-   });
-
-   // W/"64f745b4-11b012"
-
-   let favouriting = false;
-   favourite?.addEventListener("click", async (event) => {
-      if (favouriting) return;
-      favouriting = true;
-      const icon = favourite.querySelector("i")!;
-      const span = favourite.querySelector("span")!;
-      span.innerText = (Number.parseInt(span.innerText) + (postToView.favourited ? -1 : 1)).toString();
-      icon.classList.toggle("fill-color/60");
-      span.classList.toggle("text-color/60");
-      icon.classList.toggle("fill-primary");
-      span.classList.toggle("text-primary");
-      if (!(await favouritePost(event, postToView, data.user))) {
-         alert("Could not favourite post");
-         postToView.favourited = !postToView.favourited;
-         span.innerText = (Number.parseInt(span.innerText) + (postToView.favourited ? -1 : 1)).toString();
-         icon.classList.toggle("fill-color/60");
-         span.classList.toggle("text-color/60");
-         icon.classList.toggle("fill-primary");
-         span.classList.toggle("text-primary");
-      }
-      favouriting = false;
-   });
+   setupReblogFavouriteHandlers(postToView, data.user, reblog, favourite);
 
    const repliesDom = dom(html` <div class="replies">${map(comment.replies, (reply) => renderMastodonComment(reply, { ...data, isReply: true }))}</div>`)[0];
    commentDom[0].append(repliesDom);
