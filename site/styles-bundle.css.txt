@@ -1196,6 +1196,10 @@ main > .post {
   aspect-ratio: 16 / 9;
 }
 
+.\!h-full {
+  height: 100% !important;
+}
+
 .h-10 {
   height: 2.5rem;
 }
@@ -1240,6 +1244,10 @@ main > .post {
   height: 100%;
 }
 
+.\!max-h-full {
+  max-height: 100% !important;
+}
+
 .max-h-4 {
   max-height: 1rem;
 }
@@ -1258,6 +1266,10 @@ main > .post {
 
 .min-h-\[10em\] {
   min-height: 10em;
+}
+
+.\!w-\[6\.5em\] {
+  width: 6.5em !important;
 }
 
 .w-10 {
@@ -1318,6 +1330,10 @@ main > .post {
 
 .flex-1 {
   flex: 1 1 0%;
+}
+
+.flex-none {
+  flex: none;
 }
 
 .grow-0 {
@@ -1420,6 +1436,11 @@ main > .post {
   border-radius: 9999px;
 }
 
+.\!rounded-r-none {
+  border-top-right-radius: 0px !important;
+  border-bottom-right-radius: 0px !important;
+}
+
 .border {
   border-width: 1px;
 }
@@ -1504,6 +1525,11 @@ main > .post {
 
 .fill-primary\/50 {
   fill: rgba(var(--primary), 0.5);
+}
+
+.\!object-cover {
+  -o-object-fit: cover !important;
+     object-fit: cover !important;
 }
 
 .object-cover {

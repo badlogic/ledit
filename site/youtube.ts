@@ -2,7 +2,7 @@ import { Page, PageIdentifier, SortingOption, Source } from "./data";
 import { renderContentLoader, renderList, dom, safeHTML } from "./partials";
 import { RssSource, RssPost } from "./rss";
 import { html } from "lit-html";
-import { proxyFetch, dateToText, elements, onVisibleOnce, intersectsViewport } from "./utils";
+import { proxyFetch, dateToText, elements, onVisibleOnce, intersectsViewport, enableYoutubePause } from "./utils";
 
 const channelIds = localStorage.getItem("youtubeCache") ? JSON.parse(localStorage.getItem("youtubeCache")!) : {};
 
@@ -96,11 +96,7 @@ export function renderYoutubePost(post: YoutubePost): HTMLElement[] {
          )
       )[0];
       contentDom.append(videoDom);
-      document.addEventListener("scroll", () => {
-         if (!intersectsViewport(videoDom)) {
-            (videoDom as HTMLIFrameElement).contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
-         }
-      });
+      enableYoutubePause(videoDom as HTMLIFrameElement);
    });
    return postDom;
 }

@@ -67,6 +67,36 @@ export function onAddedToDOM(element: Element, callback: () => void) {
    checkForInsertion();
 }
 
+export function enableYoutubeJSApi(originalString: string) {
+   const srcIndex = originalString.indexOf('src="');
+
+   if (srcIndex !== -1) {
+      const closingQuoteIndex = originalString.indexOf('"', srcIndex + 5);
+
+      if (closingQuoteIndex !== -1) {
+         const srcValue = originalString.substring(srcIndex + 5, closingQuoteIndex);
+         const updatedSrcValue = `${srcValue}&enablejsapi=1`;
+         const updatedString = originalString.replace(srcValue, updatedSrcValue);
+         return updatedString;
+      }
+   }
+   return originalString;
+}
+
+export function enableYoutubePause(videoElement: HTMLIFrameElement) {
+   // Pause when out of view
+   document.addEventListener("scroll", () => {
+      if (videoElement && !intersectsViewport(videoElement)) {
+         videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
+      }
+   });
+   window.addEventListener("overlay-opened", () => {
+      if (videoElement) {
+         videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
+      }
+   });
+}
+
 export function htmlDecode(input: string) {
    var doc = new DOMParser().parseFromString(input, "text/html");
    return doc.documentElement.textContent;

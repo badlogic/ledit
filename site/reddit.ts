@@ -6,7 +6,7 @@ import { renderComments } from "./comments";
 import { Page, PageIdentifier, SortingOption, Source } from "./data";
 import { commentIcon, imageIcon, replyIcon } from "./icons";
 import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderGallery, renderInfoMessage, renderList, renderVideo, safeHTML } from "./partials";
-import { addCommasToNumber, dateToText, elements, htmlDecode, intersectsViewport, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
+import { addCommasToNumber, dateToText, elements, enableYoutubePause, htmlDecode, intersectsViewport, onVisibleOnce, setLinkTargetsToBlank } from "./utils";
 import { globalStyles } from "./styles";
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 
@@ -301,18 +301,8 @@ function renderRedditMedia(canonicalPost: RedditPost, container: HTMLElement): H
          // Make YouTube videos stop if they scroll out of frame.
          if (embed.content.includes("youtube")) {
             // Pause when out of view
-            document.addEventListener("scroll", () => {
-               const videoElement = embedDom.querySelector("iframe");
-               if (videoElement && !intersectsViewport(videoElement)) {
-                  videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
-               }
-            });
-            window.addEventListener("overlay-opened", () => {
-               const videoElement = embedDom.querySelector("iframe");
-               if (videoElement) {
-                  videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
-               }
-            });
+            const videoElement = embedDom.querySelector("iframe") as HTMLIFrameElement;
+            enableYoutubePause(videoElement);
             return [embedDom];
          }
       } else {

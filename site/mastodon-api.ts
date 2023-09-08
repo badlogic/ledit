@@ -69,7 +69,21 @@ export interface MastodonEmoji {
    static_url: string;
 }
 
-export interface MastodonCard {}
+export interface MastodonCard {
+   url: string;
+   title: string;
+   description: string;
+   type: "link" | "photo" | "video" | "rich";
+   author_name: string;
+   autor_url: string;
+   provider_name: string;
+   provider_url: string;
+   html: string;
+   width: number;
+   height: number;
+   image: string | null;
+   embed_url: string;
+}
 
 export interface MastodonPoll {
    options: { title: string; votes_count: number }[];

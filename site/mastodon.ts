@@ -7,7 +7,19 @@ import { checkmarkIcon, closeIcon, commentIcon, imageIcon, loaderIcon, reblogIco
 import { Overlay } from "./overlay";
 import { ItemList, dom, renderContentLoader, renderErrorMessage, renderGallery, renderList, renderVideo, safeHTML } from "./partials";
 import { Bookmark, bookmarkToHash, getSettings, saveSettings } from "./settings";
-import { addCommasToNumber, dateToText, elements, navigate, onVisibleOnce, setLinkTargetsToBlank, waitForMediaLoaded } from "./utils";
+import {
+   addCommasToNumber,
+   dateToText,
+   elements,
+   enableYoutubeJSApi,
+   htmlDecode,
+   intersectsViewport,
+   navigate,
+   onAddedToDOM,
+   onVisibleOnce,
+   setLinkTargetsToBlank,
+   waitForMediaLoaded,
+} from "./utils";
 import { globalStyles } from "./styles";
 import { MastodonAccount, MastodonApi, MastodonEmoji, MastodonMedia, MastodonPost, MastodonPostContext, MastodonRelationship, MastodonUserInfo } from "./mastodon-api";
 import { navigationGuard } from "./guards";
@@ -482,7 +494,65 @@ export function renderMastodonMedia(post: MastodonPost, contentDom?: HTMLElement
    }
 
    // FIXME render cards
-   if (post.card) {
+   if (post.card && post.media_attachments.length == 0) {
+      const renderCard = () => {
+         mediaDom.append(
+            dom(html`
+               <a href="${post.card.url}" class="inline-block w-full border border-border/50 rounded">
+                  <div class="flex">
+                     ${post.card.image
+                        ? html`<div class="flex-none"><img src="${htmlDecode(post.card.image)}" class="!w-[6.5em] !max-h-full !h-full !object-cover !rounded-r-none" /></div>`
+                        : nothing}
+                     <div class="flex flex-col overflow-hidden text-ellipsis p-4">
+                        <span class="font-bold text-sm text-color text-ellipsis overflow-hidden">${post.card.title}</span>
+                        <span class="py-2 text-color text-sm text-ellipsis overflow-hidden">${post.card.description.split("\n")[0]}</span>
+                        <span class="text-xs text-color/50 text-ellipsis overflow-hidden">${new URL(post.card.url).host}</span>
+                     </div>
+                  </div>
+               </a>
+            `)[0]
+         );
+      };
+      if (post.card.type == "link") {
+         renderCard();
+      }
+
+      if (post.card.type == "photo") {
+         renderCard();
+      }
+
+      if (post.card.type == "video") {
+         if (post.card.html.includes("iframe")) {
+            const embedUrl = post.card.html
+               .replace(`width="${post.card.width}"`, `style="width: 100%; aspect-ratio: ${post.card.width} / ${post.card.height};"`)
+               .replace(`height="${post.card.height}"`, "")
+               .replace("position:absolute;", "");
+
+            if (post.card.html.includes("youtube")) {
+               const embedHtml = safeHTML(enableYoutubeJSApi(embedUrl!));
+               mediaDom.append(dom(embedHtml)[0]);
+
+               // Pause when out of view
+               document.addEventListener("scroll", () => {
+                  const videoElement = mediaDom.querySelector("iframe");
+                  if (videoElement && !intersectsViewport(videoElement)) {
+                     videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
+                  }
+               });
+               window.addEventListener("overlay-opened", () => {
+                  const videoElement = mediaDom.querySelector("iframe");
+                  if (videoElement) {
+                     videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
+                  }
+               });
+            } else {
+               const embedHtml = safeHTML(embedUrl!);
+               mediaDom.append(dom(embedHtml)[0]);
+            }
+         } else {
+            renderCard();
+         }
+      }
    }
 
    // FIXME render poll
