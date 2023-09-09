@@ -834,18 +834,18 @@ video:focus {
   }
 }
 
-.mastodon-post .content .media img {
+.content .media img {
   padding-left: 0px;
   padding-right: 0px;
 }
 
 @media (min-width: 640px) {
-  .mastodon-post .content .media img {
+  .content .media img {
     border-radius: 0.25rem;
   }
 }
 
-.mastodon-post .content .media img {
+.content .media img {
   align-self: start;
   margin: 0 auto;
   max-width: 100%;
@@ -1099,6 +1099,10 @@ main > .post {
   position: sticky;
 }
 
+.bottom-1 {
+  bottom: 0.25rem;
+}
+
 .bottom-\[-0\.5em\] {
   bottom: -0.5em;
 }
@@ -1107,8 +1111,16 @@ main > .post {
   left: 0px;
 }
 
+.left-1 {
+  left: 0.25rem;
+}
+
 .top-0 {
   top: 0px;
+}
+
+.z-\[10000\] {
+  z-index: 10000;
 }
 
 .z-\[10\] {
@@ -1142,6 +1154,10 @@ main > .post {
 
 .mb-4 {
   margin-bottom: 1rem;
+}
+
+.ml-1 {
+  margin-left: 0.25rem;
 }
 
 .ml-2 {
@@ -1308,6 +1324,10 @@ main > .post {
   width: 100%;
 }
 
+.w-\[350px\] {
+  width: 350px;
+}
+
 .min-w-\[1\.5em\] {
   min-width: 1.5em;
 }
@@ -1322,6 +1342,10 @@ main > .post {
 
 .max-w-\[320px\] {
   max-width: 320px;
+}
+
+.max-w-\[350px\] {
+  max-width: 350px;
 }
 
 .max-w-\[640px\] {
@@ -1728,6 +1752,7 @@ body {
   color: rgb(var(--color));
   background-color: rgb(var(--background));
   -webkit-tap-highlight-color: transparent;
+  position: relative;
 }
 
 @layer animation {

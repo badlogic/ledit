@@ -39,6 +39,7 @@ body {
    color: rgb(var(--color));
    background-color: rgb(var(--background));
    -webkit-tap-highlight-color: transparent;
+   position: relative;
 }
 
 @layer base {
@@ -270,7 +271,7 @@ body {
       @apply px-4 sm:px-0;
    }
 
-   .mastodon-post .content .media img {
+   .content .media img {
       @apply px-0 sm:rounded;
       align-self: start;
       margin: 0 auto;

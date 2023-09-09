@@ -26,6 +26,9 @@ export class Overlay extends LitElement {
    @property()
    modal = false;
 
+   @property()
+   closeOnClick = true;
+
    readonly navCallback;
    readonly escapeCallback;
    closed = false;
@@ -101,6 +104,7 @@ export class Overlay extends LitElement {
    }
 
    overlayClicked(event: Event) {
+      if (!this.closeOnClick) return;
       if (document.activeElement && (document.activeElement.tagName == "INPUT" || document.activeElement.tagName == "TEXTAREA")) {
          return;
       }

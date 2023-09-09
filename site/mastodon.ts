@@ -460,11 +460,13 @@ export function renderMastodonMedia(post: MastodonPost, contentDom?: HTMLElement
    const mediaDom = dom(html`<div class="media flex flex-col items-center gap-2 mt-2"></div>`)[0];
    if (post.media_attachments.length > 0) {
       const images: string[] = [];
+      const imageAlts: string[] = [];
       const videos: MastodonMedia[] = [];
 
       for (const media of post.media_attachments) {
          if (media.type == "image") {
             images.push(media.url);
+            imageAlts.push(media.description ?? "");
          } else if (media.type == "gifv") {
             videos.push(media);
          } else if (media.type == "video") {
@@ -473,7 +475,7 @@ export function renderMastodonMedia(post: MastodonPost, contentDom?: HTMLElement
       }
 
       if (images.length >= 1) {
-         const gallery = renderGallery(images);
+         const gallery = renderGallery(images, imageAlts);
          mediaDom.append(gallery);
       }
       if (videos.length >= 1) {
@@ -734,7 +736,17 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
               </a>
            </div>`
          : ""}
-      <div x-id="contentDom" class="content">
+      ${postToView.sensitive
+         ? html`
+         <div class="content">
+            <div class="content-text">
+               <span><em>${replaceEmojis(postToView.spoiler_text, postToView.emojis)}</em></span>
+               <button x-id="showMore" class="ml-1 inline-block text-xs p-1">Show more</span>
+            </div>
+         </div>
+         `
+         : nothing}
+      <div x-id="contentDom" class="content ${postToView.sensitive ? "hidden" : ""}">
          <div class="content-text">${replaceEmojis(postToView.content, postToView.emojis)}</div>
       </div>
       <div class="flex justify-between gap-4 mx-auto !mb-[-0.5em]">
@@ -765,7 +777,13 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
       </div>
    </article>`);
 
-   const { contentDom, gallery, reblog, favourite } = elements<{ contentDom: HTMLElement; gallery?: HTMLElement; reblog?: HTMLElement; favourite?: HTMLElement }>(postDom[0]);
+   const { contentDom, gallery, reblog, favourite, showMore } = elements<{
+      contentDom: HTMLElement;
+      gallery?: HTMLElement;
+      reblog?: HTMLElement;
+      favourite?: HTMLElement;
+      showMore?: HTMLButtonElement;
+   }>(postDom[0]);
    setupReblogFavouriteHandlers(postToView, user, reblog, favourite);
 
    onVisibleOnce(postDom[0], () => {
@@ -777,6 +795,15 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
          if (img) {
             gallery.addEventListener("click", () => (img as HTMLElement).click());
          }
+      }
+   });
+
+   showMore?.addEventListener("click", () => {
+      contentDom.classList.toggle("hidden");
+      if (showMore.innerText == "Show more") {
+         showMore.innerText = "Show less";
+      } else {
+         showMore.innerText = "Show more";
       }
    });
 
@@ -1200,7 +1227,17 @@ export function renderMastodonComment(comment: MastodonComment, data: { original
                <a href="${postToView.url}" class="ml-auto text-xs">${dateToText(new Date(postToView.created_at).getTime())}</a>
             </div>
          </div>
-         <div x-id="contentDom" class="content">
+         ${postToView.sensitive
+            ? html`
+         <div class="content">
+            <div class="content-text">
+               <span><em>${replaceEmojis(postToView.spoiler_text, postToView.emojis)}</em></span>
+               <button x-id="showMore" class="ml-1 inline-block text-xs p-1">Show more</span>
+            </div>
+         </div>
+         `
+            : nothing}
+         <div x-id="contentDom" class="content ${postToView.sensitive ? "hidden" : ""}">
             <div class="content-text">${replaceEmojis(postToView.content, postToView.emojis)}</div>
          </div>
          <div class="flex gap-4 min-w-[320px] max-w-[320px] !mb-[-0.5em]">
@@ -1228,7 +1265,13 @@ export function renderMastodonComment(comment: MastodonComment, data: { original
       </div>
    `);
 
-   const { contentDom, gallery, reblog, favourite } = elements<{ contentDom: HTMLElement; gallery?: HTMLElement; reblog?: HTMLElement; favourite?: HTMLElement }>(commentDom[0]);
+   const { contentDom, gallery, reblog, favourite, showMore } = elements<{
+      contentDom: HTMLElement;
+      gallery?: HTMLElement;
+      reblog?: HTMLElement;
+      favourite?: HTMLElement;
+      showMore?: HTMLElement;
+   }>(commentDom[0]);
    renderMastodonMedia(postToView, contentDom);
    setupReblogFavouriteHandlers(postToView, data.user, reblog, favourite);
 
@@ -1242,6 +1285,15 @@ export function renderMastodonComment(comment: MastodonComment, data: { original
          if (img) {
             gallery.addEventListener("click", () => (img as HTMLElement).click());
          }
+      }
+   });
+
+   showMore?.addEventListener("click", () => {
+      contentDom.classList.toggle("hidden");
+      if (showMore.innerText == "Show more") {
+         showMore.innerText = "Show less";
+      } else {
+         showMore.innerText = "Show more";
       }
    });
 
@@ -1350,6 +1402,9 @@ export class MastodonPostEditor extends LitElement {
    @query("publish")
    publish?: HTMLButtonElement;
 
+   @property()
+   text: string = "";
+
    user?: MastodonUserInfo;
 
    protected updated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
@@ -1381,9 +1436,11 @@ export class MastodonPostEditor extends LitElement {
          if (userHandles.indexOf(commentUser) == -1) userHandles.push(commentUser);
          userHandles = userHandles.filter((handle) => handle != "@" + user.username && handle != "@" + user.username + "@" + user.instance);
       }
+      this.text = userHandles.join(" ") + " " ?? "";
+      const initialText = this.text;
 
-      return html` <ledit-overlay id="overlay" headerTitle="${header}" .sticky=${true} .closeCallback=${() => this.remove()}>
-         <div slot="content" class="w-full flex flex-col gap-4 mt-4 px-4">
+      return html` <ledit-overlay id="overlay" headerTitle="${header}" .sticky=${true} .closeOnClick=${false} .closeCallback=${() => this.remove()}>
+         <div slot="content" class="w-full h-full flex flex-col gap-4 mt-4 px-4">
             ${this.post
                ? html`
                     <div class="flex gap-1 text-sm items-center text-color/50">
@@ -1407,10 +1464,18 @@ export class MastodonPostEditor extends LitElement {
                  `
                : nothing}
             ${this.error ? renderErrorMessage(this.error.message, this.error) : nothing}
-            <textarea id="post-text" class="min-h-[10em]" .value=${userHandles.join(" ") + " " ?? ""}> </textarea>
-            <button id="publish" @click=${() => this.clickedPublish()} id="publish" class="ml-auto">Send</button>
+            <input id="content-warning" placeholder="Content warning" />
+            <textarea id="post-text" class="min-h-[10em]" ${this.text.length > 500}.value=${initialText}> </textarea>
+            <div class="flex items-center gap-4">
+               <span id="count" class="ml-auto">${this.text.length}</span>
+               <button id="publish" @click=${() => this.clickedPublish()} id="publish" ?disabled=${this.text.length == 0}>Send</button>
+            </div>
          </div>
       </ledit-overlay>`;
+   }
+
+   inputText() {
+      this.text = this.postText?.value ?? "";
    }
 
    async clickedPublish() {

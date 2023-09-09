@@ -61,6 +61,7 @@ export interface MastodonMedia {
            }
          | undefined;
    };
+   description: string | null;
 }
 
 export interface MastodonEmoji {

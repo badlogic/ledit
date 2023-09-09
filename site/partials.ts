@@ -1,5 +1,5 @@
 import DOMPurify from "dompurify";
-import { TemplateResult, html, render } from "lit-html";
+import { TemplateResult, html, nothing, render } from "lit-html";
 import { ifDefined } from "lit-html/directives/if-defined.js";
 import { map } from "lit-html/directives/map.js";
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
@@ -7,7 +7,7 @@ import videojs from "video.js";
 import { appPages } from "./app";
 import { Page, PageIdentifier } from "./data";
 import { firstTextChild, htmlDecode, intersectsViewport, isLink, onAddedToDom, onTapped, onVisibleOnce, setLinkTargetsToBlank, waitForMediaLoaded } from "./utils";
-import { customElement, query } from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { LitElement, PropertyValueMap } from "lit";
 import { globalStyles } from "./styles";
 
@@ -94,19 +94,53 @@ export function makeOverlayModal(overlay: { dom: HTMLElement; close: () => void 
    }
 }
 
-export function renderGallery(imageUrls: string[]): HTMLElement {
+@customElement("ledit-popup")
+export class Popup extends LitElement {
+   static styles = globalStyles;
+
+   @property()
+   buttonText = "Click me";
+
+   @property()
+   show = false;
+
+   protected render(): TemplateResult {
+      return html`<div class="relative">
+         <div @click=${() => (this.show = !this.show)} class="rounded bg-background p-1 text-xs">${this.buttonText}</div>
+         ${this.show ? html`<div @click=${() => (this.show = !this.show)} class="absolute bg-background p-4 rounded border border-border/50"><slot></slot></div>` : nothing}
+      </div> `;
+   }
+}
+
+export function renderGallery(imageUrls: string[], imageAlts?: string[]): HTMLElement {
    const galleryDom = dom(html`
-      <div class="flex flex-col gap-2">${imageUrls.map((img, index) => html`<img src="${htmlDecode(img)}" ${index > 0 ? 'class="hidden"' : ""}) />`)}</div>
+      <div class="flex flex-col gap-2">
+         ${imageUrls.map(
+            (img, index) => html`
+               <div class="relative ${index ? "hidden" : ""}">
+                  <img src="${htmlDecode(img)}" ${imageAlts ? `alt="${imageAlts[index]}"` : ""}) />
+                  ${imageAlts && imageAlts[index].length > 0
+                     ? html`<ledit-popup buttonText="ALT" text="${imageAlts[index]}" class="absolute left-1 bottom-1 cursor-pointer">
+                          <div class="w-[350px]">${imageAlts[index]}</div>
+                       </ledit-popup>`
+                     : nothing}
+               </div>
+            `
+         )}
+      </div>
    `)[0];
+   if (imageAlts) {
+      let i = 0;
+      for (const child of Array.from(galleryDom.querySelectorAll("img"))) {
+         const el = child as HTMLImageElement;
+         if (el) el.alt = imageAlts[i++];
+      }
+   }
    const imageDoms = galleryDom.querySelectorAll("img");
-   imageDoms.forEach((img, index) => {
-      if (index == 0) return;
-      img.classList.toggle("hidden");
-   });
    const imageClickListener = () => {
       imageDoms.forEach((img, index) => {
          if (index == 0) return;
-         img.classList.toggle("hidden");
+         img.parentElement!.classList.toggle("hidden");
       });
       if (imageDoms[1].classList.contains("hidden")) {
          imageDoms[0].scrollIntoView({
