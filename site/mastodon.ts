@@ -496,7 +496,6 @@ export function renderMastodonMedia(post: MastodonPost, contentDom?: HTMLElement
       }
    }
 
-   // FIXME render cards
    if (post.card && post.media_attachments.length == 0) {
       const renderCard = () => {
          mediaDom.append(
@@ -1301,6 +1300,7 @@ export function renderMastodonComment(comment: MastodonComment, data: { original
    });
 
    addWindowEventListener(commentDom[0], "mastodon-reply-event", (event: ReplyEvent) => {
+      // FIXME this doesn't work when replying to e.g. Eni
       if (event.replyToUrl == comment.post.url) {
          const replyDom = renderMastodonComment({ fetchedReplies: true, isParented: true, post: event.reply, replies: [] }, { ...data, isReply: true, originalPost: event.reply });
          repliesDom.append(replyDom);
@@ -1396,6 +1396,9 @@ export class MastodonPostEditor extends LitElement {
    @property()
    post?: MastodonPost;
 
+   @query("#content-warning")
+   contentWarning?: HTMLTextAreaElement;
+
    @query("#post-text")
    postText?: HTMLTextAreaElement;
 
@@ -1405,56 +1408,66 @@ export class MastodonPostEditor extends LitElement {
    @query("publish")
    publish?: HTMLButtonElement;
 
-   @property()
-   text: string = "";
-
    user?: MastodonUserInfo;
+   whats?: MastodonWhat[];
 
-   protected updated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
-      this.postText?.focus();
-   }
+   @state()
+   text = "";
 
-   render() {
+   connectedCallback(): void {
+      super.connectedCallback();
       const result = getWhats();
       if (result instanceof Error) {
-         // FIXME
          this.error = result;
-         return;
+      } else {
+         this.user = result.user;
+         this.whats = result.whats;
       }
-      const { user, whats } = result;
-      if (!user) {
-         // FIXME
-         return;
+   }
+
+   protected updated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+      if (_changedProperties.has("post")) {
+         this.text = this.getUserHandles();
+         this.postText!.value = this.text + " ";
+         this.postText!.focus();
       }
+   }
 
-      this.user = user;
-
-      let header = "Replying";
+   getUserHandles() {
       let userHandles: string[] = [];
-      if (this.post) {
-         header = "Replying to " + getAccountName(this.post.account, false);
+      if (this.post && this.user) {
+         let user = this.user;
          const commentHost = new URL(this.post.uri).host;
          userHandles.push(...extractUsernames(this.post).map((handle) => handle.replace("@" + user.instance, "")));
          const commentUser = "@" + this.post.account.username + (commentHost == user.instance ? "" : "@" + commentHost);
          if (userHandles.indexOf(commentUser) == -1) userHandles.push(commentUser);
          userHandles = userHandles.filter((handle) => handle != "@" + user.username && handle != "@" + user.username + "@" + user.instance);
       }
-      this.text = userHandles.join(" ") + " " ?? "";
-      const initialText = this.text;
+      return userHandles.join(" ");
+   }
 
-      return html` <ledit-overlay id="overlay" headerTitle="${header}" .sticky=${true} .closeOnClick=${false} .closeCallback=${() => this.remove()}>
+   render() {
+      const textLength = this.text.length + (this.contentWarning?.value.length ?? 0);
+
+      return html` <ledit-overlay
+         id="overlay"
+         headerTitle="${this.post ? "Replying to " + getAccountName(this.post.account, false) : "Replying"}"
+         .sticky=${true}
+         .closeOnClick=${false}
+         .closeCallback=${() => this.remove()}
+      >
          <div slot="content" class="w-full h-full flex flex-col gap-4 mt-4 px-4">
-            ${this.post
+            ${this.post && this.user
                ? html`
                     <div class="flex gap-1 text-sm items-center text-color/50">
                        <div class="flex items-center gap-2 w-full">
-                          <a @click=${(event: Event) => showProfile(event, this.post!.account, user)} class="flex items-center gap-2 w-full">
+                          <a @click=${(event: Event) => showProfile(event, this.post!.account, this.user)} class="flex items-center gap-2 w-full">
                              <img class="w-[2em] h-[2em] rounded-full cursor-pointer" src="${this.post.account.avatar_static}" />
                              <div class="flex flex-col inline-block text-sm text-color overflow-hidden cursor-pointer">
                                 <span class="font-bold overflow-hidden text-ellipsis">${getAccountName(this.post.account)}</span>
                                 <span class="text-color/60 overflow-hidden text-ellipsis"
                                    >${this.post.account.username +
-                                   (user && user.instance == new URL(this.post.account.url).host ? "" : "@" + new URL(this.post.account.url).host)}</span
+                                   (this.user.instance == new URL(this.post.account.url).host ? "" : "@" + new URL(this.post.account.url).host)}</span
                                 >
                              </div>
                           </a>
@@ -1467,11 +1480,11 @@ export class MastodonPostEditor extends LitElement {
                  `
                : nothing}
             ${this.error ? renderErrorMessage(this.error.message, this.error) : nothing}
-            <input id="content-warning" placeholder="Content warning" />
-            <textarea id="post-text" class="min-h-[10em]" ${this.text.length > 500}.value=${initialText}> </textarea>
+            <input @input=${() => this.requestUpdate()} id="content-warning" placeholder="Content warning" />
+            <textarea @input=${this.inputText} id="post-text" class="min-h-[10em]" .value=${this.getUserHandles()}> </textarea>
             <div class="flex items-center gap-4">
-               <span id="count" class="ml-auto">${this.text.length}</span>
-               <button id="publish" @click=${() => this.clickedPublish()} id="publish" ?disabled=${this.text.length == 0}>Send</button>
+               <span id="count" class="ml-auto" style="${textLength > 500 ? "color: red;" : ""}">${textLength}</span>
+               <button id="publish" @click=${() => this.clickedPublish()} id="publish" ?disabled=${textLength == 0 || textLength > 500}>Send</button>
             </div>
          </div>
       </ledit-overlay>`;
