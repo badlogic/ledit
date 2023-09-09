@@ -17,12 +17,14 @@ import {
    dateToText,
    elements,
    enableYoutubeJSApi,
+   enableYoutubePause,
    htmlDecode,
    navigate,
    onVisibleOnce,
    setLinkTargetsToBlank,
    waitForMediaLoaded,
 } from "./utils";
+import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 
 function replaceEmojis(text: string, emojis: MastodonEmoji[]): TemplateResult {
    let replacedText = text;
@@ -530,8 +532,9 @@ export function renderMastodonMedia(post: MastodonPost, contentDom?: HTMLElement
                .replace("position:absolute;", "");
 
             if (post.card.html.includes("youtube")) {
-               const embedHtml = safeHTML(enableYoutubeJSApi(embedUrl!));
-               mediaDom.append(dom(embedHtml)[0]);
+               const youtubeIFrame = dom(html`${unsafeHTML(enableYoutubeJSApi(embedUrl!))}`)[0];
+               enableYoutubePause(youtubeIFrame as HTMLIFrameElement);
+               mediaDom.append(youtubeIFrame);
             } else {
                const embedHtml = safeHTML(embedUrl!);
                mediaDom.append(dom(embedHtml)[0]);

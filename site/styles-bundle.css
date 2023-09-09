@@ -1119,10 +1119,6 @@ main > .post {
   top: 0px;
 }
 
-.z-\[10000\] {
-  z-index: 10000;
-}
-
 .z-\[10\] {
   z-index: 10;
 }
@@ -1316,16 +1312,16 @@ main > .post {
   width: 2em;
 }
 
+.w-\[350px\] {
+  width: 350px;
+}
+
 .w-\[80\%\] {
   width: 80%;
 }
 
 .w-full {
   width: 100%;
-}
-
-.w-\[350px\] {
-  width: 350px;
 }
 
 .min-w-\[1\.5em\] {
@@ -1342,10 +1338,6 @@ main > .post {
 
 .max-w-\[320px\] {
   max-width: 320px;
-}
-
-.max-w-\[350px\] {
-  max-width: 350px;
 }
 
 .max-w-\[640px\] {
