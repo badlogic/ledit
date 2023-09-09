@@ -362,8 +362,8 @@ async function getComments(postId: string, instance: string, user?: MastodonUser
 
    // Fetch the full tree from root downwards
    const tempRoot = context.ancestors.length > 0 ? context.ancestors[0] : postToView;
-   let rootInstance = new URL(tempRoot.uri).host;
-   let rootPostId = tempRoot.uri.split("/").pop()!;
+   let rootInstance = tempRoot.instance;
+   let rootPostId = tempRoot.id;
    const promises: Promise<MastodonPostContext | MastodonPost | Error>[] = [];
    promises.push(MastodonApi.getPostContext(rootPostId, rootInstance, user));
    promises.push(MastodonApi.getPost(rootPostId, rootInstance, user));
