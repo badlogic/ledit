@@ -56,17 +56,6 @@ export function onVisibleOnce(target: Element, callback: () => void) {
    observer.observe(target);
 }
 
-export function onAddedToDOM(element: Element, callback: () => void) {
-   const checkForInsertion = () => {
-      if (element.isConnected) {
-         callback();
-      } else {
-         requestAnimationFrame(checkForInsertion);
-      }
-   };
-   checkForInsertion();
-}
-
 export function enableYoutubeJSApi(originalString: string) {
    const srcIndex = originalString.indexOf('src="');
 
@@ -414,4 +403,27 @@ export function removeTrailingEmptyParagraphs(htmlString: string | null): string
    }
 
    return parsedDoc.body.innerHTML;
+}
+
+export function onAddedToDom(element: Element, callback: () => void) {
+   const checkForInsertion = () => {
+      if (element.isConnected) {
+         callback();
+      } else {
+         requestAnimationFrame(checkForInsertion);
+      }
+   };
+   checkForInsertion();
+}
+
+export function addWindowEventListener<T>(element: Element | undefined, eventName: string, callback: (event: T) => void) {
+   if (!element) return;
+   const listener = (e: any) => {
+      if (!element.isConnected) {
+         window.removeEventListener(eventName, listener);
+      } else {
+         callback(e as T);
+      }
+   };
+   window.addEventListener(eventName, listener);
 }

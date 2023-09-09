@@ -2,28 +2,27 @@ import { LitElement, PropertyValueMap } from "lit";
 import { TemplateResult, html, nothing } from "lit-html";
 import { map } from "lit-html/directives/map.js";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { renderComments } from "./comments";
 import { Page, PageIdentifier, SortingOption, Source } from "./data";
-import { checkmarkIcon, closeIcon, commentIcon, imageIcon, loaderIcon, reblogIcon, replyIcon, starIcon } from "./icons";
+import { navigationGuard } from "./guards";
+import { checkmarkIcon, commentIcon, imageIcon, loaderIcon, reblogIcon, replyIcon, starIcon } from "./icons";
+import { MastodonAccount, MastodonApi, MastodonEmoji, MastodonMedia, MastodonPost, MastodonPostContext, MastodonRelationship, MastodonUserInfo } from "./mastodon-api";
 import { Overlay } from "./overlay";
 import { ItemList, dom, renderContentLoader, renderErrorMessage, renderGallery, renderList, renderVideo, safeHTML } from "./partials";
 import { Bookmark, bookmarkToHash, getSettings, saveSettings } from "./settings";
+import { globalStyles } from "./styles";
 import {
    addCommasToNumber,
+   addWindowEventListener,
    dateToText,
    elements,
    enableYoutubeJSApi,
    htmlDecode,
-   intersectsViewport,
    navigate,
-   onAddedToDOM,
    onVisibleOnce,
    setLinkTargetsToBlank,
    waitForMediaLoaded,
 } from "./utils";
-import { globalStyles } from "./styles";
-import { MastodonAccount, MastodonApi, MastodonEmoji, MastodonMedia, MastodonPost, MastodonPostContext, MastodonRelationship, MastodonUserInfo } from "./mastodon-api";
-import { navigationGuard } from "./guards";
-import { renderComments } from "./comments";
 
 function replaceEmojis(text: string, emojis: MastodonEmoji[]): TemplateResult {
    let replacedText = text;
@@ -531,20 +530,6 @@ export function renderMastodonMedia(post: MastodonPost, contentDom?: HTMLElement
             if (post.card.html.includes("youtube")) {
                const embedHtml = safeHTML(enableYoutubeJSApi(embedUrl!));
                mediaDom.append(dom(embedHtml)[0]);
-
-               // Pause when out of view
-               document.addEventListener("scroll", () => {
-                  const videoElement = mediaDom.querySelector("iframe");
-                  if (videoElement && !intersectsViewport(videoElement)) {
-                     videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
-                  }
-               });
-               window.addEventListener("overlay-opened", () => {
-                  const videoElement = mediaDom.querySelector("iframe");
-                  if (videoElement) {
-                     videoElement.contentWindow?.postMessage('{"event":"command","func":"' + "pauseVideo" + '","args":""}', "*");
-                  }
-               });
             } else {
                const embedHtml = safeHTML(embedUrl!);
                mediaDom.append(dom(embedHtml)[0]);
@@ -630,6 +615,12 @@ class FavouriteEvent extends Event {
    }
 }
 
+class ReplyEvent extends Event {
+   constructor(public readonly replyToUrl: string | undefined, public readonly reply: MastodonPost) {
+      super("mastodon-reply-event");
+   }
+}
+
 export function setupReblogFavouriteHandlers(postToView: MastodonPost, user?: MastodonUserInfo, reblog?: HTMLElement, favourite?: HTMLElement) {
    let reblogging = false;
    reblog?.addEventListener("click", async (event) => {
@@ -655,9 +646,8 @@ export function setupReblogFavouriteHandlers(postToView: MastodonPost, user?: Ma
       }
       reblogging = false;
    });
-   window.addEventListener("mastodon-reblog-event", (e: Event) => {
+   addWindowEventListener(reblog, "mastodon-reblog-event", (event: ReblogEvent) => {
       if (!reblog || reblogging) return;
-      const event = e as ReblogEvent;
       if (event.postUrl != postToView.url) return;
       postToView.reblogged = event.reblogged;
       const icon = reblog.querySelector("i")!;
@@ -694,9 +684,8 @@ export function setupReblogFavouriteHandlers(postToView: MastodonPost, user?: Ma
       favouriting = false;
    });
 
-   window.addEventListener("mastodon-favourite-event", (e: Event) => {
+   addWindowEventListener(favourite, "mastodon-favourite-event", (event: FavouriteEvent) => {
       if (!favourite || favouriting) return;
-      const event = e as FavouriteEvent;
       if (event.postUrl != postToView.url) return;
       postToView.favourited = event.favourited;
       const icon = favourite.querySelector("i")!;
@@ -1256,6 +1245,14 @@ export function renderMastodonComment(comment: MastodonComment, data: { original
       }
    });
 
+   addWindowEventListener(commentDom[0], "mastodon-reply-event", (event: ReplyEvent) => {
+      if (event.replyToUrl == comment.post.url) {
+         const replyDom = renderMastodonComment({ fetchedReplies: true, isParented: true, post: event.reply, replies: [] }, { ...data, isReply: true, originalPost: event.reply });
+         repliesDom.append(replyDom);
+         replyDom.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+   });
+
    return commentDom[0];
 }
 
@@ -1435,7 +1432,7 @@ export class MastodonPostEditor extends LitElement {
          const main = document.body.querySelector("main") as HTMLElement;
          if (main.children.length > 0) main?.insertBefore(mainPost[0], main.children[0]);
          else main.append(mainPost[0]);
-         showComments(new Event("nop"), reply, this.user);
+         window.dispatchEvent(new ReplyEvent(this.post?.url, reply));
       }
    }
 }

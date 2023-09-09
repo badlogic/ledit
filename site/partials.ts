@@ -6,7 +6,7 @@ import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import videojs from "video.js";
 import { appPages } from "./app";
 import { Page, PageIdentifier } from "./data";
-import { firstTextChild, htmlDecode, intersectsViewport, isLink, onAddedToDOM, onTapped, onVisibleOnce, setLinkTargetsToBlank, waitForMediaLoaded } from "./utils";
+import { firstTextChild, htmlDecode, intersectsViewport, isLink, onAddedToDom, onTapped, onVisibleOnce, setLinkTargetsToBlank, waitForMediaLoaded } from "./utils";
 import { customElement, query } from "lit/decorators.js";
 import { LitElement, PropertyValueMap } from "lit";
 import { globalStyles } from "./styles";
@@ -128,7 +128,7 @@ export function renderVideo(videoDesc: { width: number; height: number; urls: st
          ${map(videoDesc.urls, (url) => html`<source src="${htmlDecode(url)}" />`)}
       </video-js>
    </div>`)[0];
-   onAddedToDOM(videoDom, () => {
+   onAddedToDom(videoDom, () => {
       const videoDiv = videoDom.querySelector("video-js")! as HTMLElement;
       let width = videoDesc.width;
       let height = videoDesc.height;

@@ -8,7 +8,7 @@ import { Page, PageIdentifier, SortingOption, Source } from "./data";
 import { commentIcon, replyIcon } from "./icons";
 import { Overlay } from "./overlay";
 import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderInfoMessage, renderList, safeHTML } from "./partials";
-import { addCommasToNumber, dateToText, elements, htmlDecode, onAddedToDOM, setLinkTargetsToBlank } from "./utils";
+import { addCommasToNumber, dateToText, elements, htmlDecode, onAddedToDom, setLinkTargetsToBlank } from "./utils";
 
 interface HnRawPost {
    by: string;
@@ -284,7 +284,7 @@ export function renderHnPost(post: HnPost, showActionButtons = true) {
    setLinkTargetsToBlank(postDom[0]);
    const { contentDom } = elements<{ contentDom: HTMLElement }>(postDom[0]);
    if (post.content) {
-      onAddedToDOM(postDom[0], () => {
+      onAddedToDom(postDom[0], () => {
          makeCollapsible(contentDom, 10);
       });
    }
