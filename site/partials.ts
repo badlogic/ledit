@@ -4,7 +4,6 @@ import { ifDefined } from "lit-html/directives/if-defined.js";
 import { map } from "lit-html/directives/map.js";
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import videojs from "video.js";
-import { appPages } from "./app";
 import { Page, PageIdentifier } from "./data";
 import { firstTextChild, htmlDecode, intersectsViewport, isLink, onAddedToDom, onTapped, onVisibleOnce, setLinkTargetsToBlank, waitForMediaLoaded } from "./utils";
 import { customElement, property, query } from "lit/decorators.js";
@@ -75,7 +74,7 @@ export function renderHeaderButton(icon: string, classes?: string, href?: string
    }
 }
 
-export function makeOverlayModal(overlay: { dom: HTMLElement; close: () => void }) {
+/*export function makeOverlayModal(overlay: { dom: HTMLElement; close: () => void }) {
    for (const link of Array.from(overlay.dom.querySelectorAll("a"))) {
       link.addEventListener("click", (event) => {
          event.preventDefault();
@@ -92,7 +91,7 @@ export function makeOverlayModal(overlay: { dom: HTMLElement; close: () => void 
          overlay.close();
       });
    }
-}
+}*/
 
 @customElement("ledit-popup")
 export class Popup extends LitElement {
@@ -112,12 +111,12 @@ export class Popup extends LitElement {
    }
 }
 
-export function renderGallery(imageUrls: string[], imageAlts?: string[]): HTMLElement {
+export function renderGallery(imageUrls: string[], imageAlts?: string[], expandGallery = false): HTMLElement {
    const galleryDom = dom(html`
       <div class="flex flex-col gap-2">
          ${imageUrls.map(
             (img, index) => html`
-               <div class="relative ${index ? "hidden" : ""}">
+               <div class="relative ${index && !expandGallery ? "hidden" : ""}">
                   <img src="${htmlDecode(img)}" ${imageAlts ? `alt="${imageAlts[index]}"` : ""}) />
                   ${imageAlts && imageAlts[index].length > 0
                      ? html`<ledit-popup buttonText="ALT" text="${imageAlts[index]}" class="absolute left-1 bottom-1 cursor-pointer">

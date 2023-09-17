@@ -11,5 +11,12 @@
             "url": "http://localhost:8080/",
             "webRoot": "${workspaceFolder}/site",
         },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "mastoreader",
+            "url": "http://localhost:8080/mastoreader.html",
+            "webRoot": "${workspaceFolder}/site",
+        },
     ]
 }

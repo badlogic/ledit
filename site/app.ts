@@ -1,28 +1,16 @@
 import { html } from "lit-html";
+import { appPages } from "./apppages";
 import { Source, SourcePrefix } from "./data";
 import { HackerNewsSource } from "./hackernews";
 import { Header } from "./header";
-import { renderMastodonAccountEditor } from "./mastodon";
 import { MastodonSource } from "./mastodon";
 import { numOverlays } from "./overlay";
 import { dom, renderErrorMessage } from "./partials";
 import { RedditSource } from "./reddit";
 import { RssSource } from "./rss";
-import { applySettings, bookmarkToHash, getSettings, renderBookmarkEditor, renderBookmarks, renderSettings, renderSourceSelector } from "./settings";
-import { getFeedFromHash, navigate, route } from "./utils";
+import { applySettings, bookmarkToHash, getSettings } from "./settings";
+import { getFeedFromHash, navigate } from "./utils";
 import { YoutubeSource } from "./youtube";
-import { LitElement } from "lit";
-
-export const appPages = [
-   route("#settings", renderSettings),
-   route("#bookmarks", renderBookmarks),
-   route("#bookmarks-select-source", renderSourceSelector),
-   route("#bookmarks-new/:source", renderBookmarkEditor),
-   route("#bookmarks-new/:source/:feed", renderBookmarkEditor),
-   route("#bookmarks-edit/:id", renderBookmarkEditor),
-   route("#bookmarks-add-mastodon-account", renderMastodonAccountEditor),
-   route("#mastodon-edit-account/:id/home", renderMastodonAccountEditor),
-];
 
 function loadDefaultBookmark() {
    const defaultBookmark = getSettings().bookmarks.find((bookmark) => bookmark.isDefault == true);

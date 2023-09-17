@@ -9,6 +9,7 @@ import { commentIcon, replyIcon } from "./icons";
 import { Overlay } from "./overlay";
 import { dom, makeCollapsible, renderContentLoader, renderErrorMessage, renderInfoMessage, renderList, safeHTML } from "./partials";
 import { addCommasToNumber, dateToText, elements, htmlDecode, onAddedToDom, setLinkTargetsToBlank } from "./utils";
+import { globalStyles } from "./styles";
 
 interface HnRawPost {
    by: string;
@@ -294,7 +295,7 @@ export function renderHnPost(post: HnPost, showActionButtons = true) {
 
 @customElement("ledit-hn-comments")
 export class HnCommentsView extends LitElement {
-   static styles = Overlay.styles;
+   static styles = globalStyles;
 
    @property()
    post?: HnPost;

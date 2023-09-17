@@ -7,6 +7,7 @@ let watch = process.argv.length >= 3 && process.argv[2] == "--watch";
 const config = {
    entryPoints: {
       app: "site/app.ts",
+      mastoreader: "site/mastoreader.ts",
    },
    bundle: true,
    sourcemap: true,

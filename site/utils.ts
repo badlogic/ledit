@@ -179,7 +179,7 @@ export function makeChildrenDraggable(container: HTMLElement, complete: () => vo
    });
 }
 
-export function setLinkTargetsToBlank(element: HTMLElement) {
+export function setLinkTargetsToBlank(element: HTMLElement | ShadowRoot) {
    if (element instanceof HTMLAnchorElement) {
       element.setAttribute("target", "_blank");
    }

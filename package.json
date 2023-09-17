@@ -53,6 +53,7 @@
   "dependencies": {
     "@arrow-js/core": "^1.0.0-alpha.9",
     "@types/video.js": "^7.3.52",
+    "html2pdf.js": "^0.9.3",
     "lit": "^2.8.0",
     "lit-html": "^2.8.0",
     "remixicon": "^3.5.0"

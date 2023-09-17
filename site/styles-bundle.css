@@ -1793,6 +1793,18 @@ body {
   }
 }
 
+.hover\:rounded:hover {
+  border-radius: 0.25rem;
+}
+
+.hover\:border:hover {
+  border-width: 1px;
+}
+
+.hover\:border-border\/50:hover {
+  border-color: rgba(var(--border), 0.5);
+}
+
 .hover\:bg-transparent:hover {
   background-color: transparent;
 }

@@ -6,6 +6,7 @@ import { SourcePrefix } from "./data";
 import { checkmarkIcon, closeIcon, editIcon, getIconForSource, githubIcon, heartIcon, moonIcon, sunIcon } from "./icons";
 import { Overlay } from "./overlay";
 import { assertNever, makeChildrenDraggable, sourcePrefixToFeedLabel, sourcePrefixToLabel } from "./utils";
+import { globalStyles } from "./styles";
 
 export interface Bookmark {
    source: SourcePrefix;
@@ -88,7 +89,7 @@ export function resetSettings() {
 
 @customElement("ledit-settings")
 export class SettingsView extends LitElement {
-   static styles = Overlay.styles;
+   static styles = globalStyles;
 
    @query("#overlay")
    overlay?: Overlay;
@@ -147,7 +148,7 @@ export function renderSettings() {
 
 @customElement("ledit-source-selector")
 export class SourceSelector extends LitElement {
-   static styles = Overlay.styles;
+   static styles = globalStyles;
 
    render() {
       const sources = [
@@ -172,7 +173,7 @@ export function renderSourceSelector() {
 
 @customElement("ledit-bookmarks")
 export class BookmarksView extends LitElement {
-   static styles = Overlay.styles;
+   static styles = globalStyles;
 
    @property()
    bookmarks: Bookmark[];
@@ -266,7 +267,7 @@ export function renderBookmarks() {
 
 @customElement("ledit-bookmark-editor")
 export class BookmarkEditor extends LitElement {
-   static styles = Overlay.styles;
+   static styles = globalStyles;
 
    _bookmark?: Bookmark;
 

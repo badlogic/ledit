@@ -26,7 +26,7 @@ import {
 } from "./utils";
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 
-function replaceEmojis(text: string, emojis: MastodonEmoji[]): TemplateResult {
+export function replaceEmojis(text: string, emojis: MastodonEmoji[]): TemplateResult {
    let replacedText = text;
 
    for (const emoji of emojis) {
@@ -40,7 +40,7 @@ function replaceEmojis(text: string, emojis: MastodonEmoji[]): TemplateResult {
    return html`${safeHTML(replacedText)}`;
 }
 
-function getAccountName(account: MastodonAccount, shouldReplaceEmojis = true): TemplateResult | string {
+export function getAccountName(account: MastodonAccount, shouldReplaceEmojis = true): TemplateResult | string {
    let name = account.display_name && account.display_name.length > 0 ? account.display_name : account.username;
    if (shouldReplaceEmojis) {
       return html`<span>${replaceEmojis(name, account.emojis)}</span>`;
@@ -325,7 +325,7 @@ export class MastodonSource extends Source<MastodonPost> {
    }
 }
 
-async function getComments(postId: string, instance: string, user?: MastodonUserInfo): Promise<MastodonComments | Error> {
+export async function getComments(postId: string, instance: string, user?: MastodonUserInfo): Promise<MastodonComments | Error> {
    const post = await MastodonApi.getPost(postId, instance, user);
    if (post instanceof Error) return post;
    let postToView = post.reblog ?? post;
@@ -458,7 +458,7 @@ async function getComments(postId: string, instance: string, user?: MastodonUser
    return { originalPost: postToView, root, possiblyIncomplete, remoteInstance };
 }
 
-export function renderMastodonMedia(post: MastodonPost, contentDom?: HTMLElement) {
+export function renderMastodonMedia(post: MastodonPost, contentDom?: HTMLElement, expandGalleries = false) {
    const mediaDom = dom(html`<div class="media flex flex-col items-center gap-2 mt-2"></div>`)[0];
    if (post.media_attachments.length > 0) {
       const images: string[] = [];
@@ -477,7 +477,7 @@ export function renderMastodonMedia(post: MastodonPost, contentDom?: HTMLElement
       }
 
       if (images.length >= 1) {
-         const gallery = renderGallery(images, imageAlts);
+         const gallery = renderGallery(images, imageAlts, expandGalleries);
          mediaDom.append(gallery);
       }
       if (videos.length >= 1) {
@@ -814,7 +814,7 @@ export function renderMastodonPost(post: MastodonPost, user?: MastodonUserInfo) 
 
 @customElement("ledit-mastodon-account-editor")
 export class MastodonAccountEditor extends LitElement {
-   static styles = Overlay.styles;
+   static styles = globalStyles;
 
    _bookmark?: Bookmark;
 

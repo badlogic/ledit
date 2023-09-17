@@ -8,5 +8,6 @@
       "experimentalDecorators": true,
       "skipLibCheck": true // stupid video.js
    },
+   "allowedCommonJsDependencies": ["html2pdf.js"],
    "exclude": ["site/old"]
 }
