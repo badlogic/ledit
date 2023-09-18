@@ -13,7 +13,7 @@ stream.on("notification", (notification) => {
    try {
       if (notification.type == "mention" && notification.status.content.toLowerCase().includes("unroll")) {
          const url = "https://mastoreader.io?url=" + encodeURIComponent(notification.status.url);
-         poster.postStatus("@" + notification.status.account.acct + "here's the unrolled thread: " + url, { in_reply_to_id: notification.status.id });
+         poster.postStatus("@" + notification.status.account.acct + " here's the unrolled thread: " + url, { in_reply_to_id: notification.status.id });
          console.log("Unrolled " + url);
       }
    } catch (e) {
