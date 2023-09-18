@@ -145,11 +145,14 @@ export class MastoReader extends LitElement {
                   <span class="${postToView.favourited ? "text-primary" : "text-color/60"}">${addCommasToNumber(postToView.favourites_count)}</span>
                </a>
             </div>
-            <div class="flex flex-col">
+            <div class="posts flex flex-col">
                ${map(this.thread, (post, index) => {
-                  const contentDom = dom(html` <a href="${post.url}" class="content text-color hover:border hover:border-border/50 hover:rounded px-4 py-2">
+                  const contentDom = dom(html` <div
+                     @click="${(event: MouseEvent) => this.postClicked(event, post.url)}"
+                     class="content text-color hover:border hover:border-border/50 hover:rounded px-4 py-2"
+                  >
                      <div class="content-text">${replaceEmojis(post.content, post.emojis)}</div>
-                  </a>`)[0];
+                  </div>`)[0];
                   renderMastodonMedia(post, contentDom, true);
                   setLinkTargetsToBlank(contentDom);
                   return contentDom;
@@ -162,13 +165,33 @@ export class MastoReader extends LitElement {
       return html`
          <div class="flex flex-col gap-4 px-4">
             ${header}
+            <div class="text-center text-xl">Masto Reader helps you read an share Mastodon threads.</div>
             <div class="flex gap-2 mt-4">
-               <input id="url" class="flex-1" placeholder="URL of Mastodon status" />
+               <input id="url" class="flex-1" placeholder="URL of any post in a thread" />
                <button @click=${() => this.unrollClicked()} id="unroll">Unroll</button>
             </div>
             <div id="error-text" class="text-sm" style="color: red;"></div>
+            <div class="text-center text-lg">Paste the URL of any post in a thread into the text field above and click "Unroll"</div>
+            <div class="text-center text-lg">
+               You can also mention <a href="https://mastodon.social/@mastoreaderio">@mastoreaderio@mastodon.social</a> anywhere in the thread with the word "unroll" and it will
+               reply with a link to the unrolled thread.
+            </div>
          </div>
       `;
+   }
+
+   postClicked(event: MouseEvent, url: string) {
+      let target: HTMLElement | null = event.target as HTMLElement;
+      let parent = target;
+      while (parent) {
+         if (parent.tagName == "VIDEO-JS" || parent.tagName == "A") return;
+         parent = parent.parentElement as HTMLElement;
+      }
+      if (target.tagName == "A") return;
+      const link = document.createElement("a");
+      link.target = "_blank";
+      link.href = url;
+      link.click();
    }
 
    unrollClicked() {

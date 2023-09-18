@@ -56,6 +56,7 @@
     "html2pdf.js": "^0.9.3",
     "lit": "^2.8.0",
     "lit-html": "^2.8.0",
+    "megalodon": "^7.0.0",
     "remixicon": "^3.5.0"
   }
 }
