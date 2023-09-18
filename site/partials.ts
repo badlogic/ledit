@@ -149,8 +149,10 @@ export function renderGallery(imageUrls: string[], imageAlts?: string[], expandG
       }
    };
 
-   for (let i = 0; i < imageDoms.length; i++) {
-      imageDoms[i].addEventListener("click", imageClickListener);
+   if (!expandGallery) {
+      for (let i = 0; i < imageDoms.length; i++) {
+         imageDoms[i].addEventListener("click", imageClickListener);
+      }
    }
    return galleryDom;
 }
