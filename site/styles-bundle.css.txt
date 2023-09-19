@@ -1802,14 +1802,6 @@ body {
   border-radius: 0.25rem;
 }
 
-.hover\:border:hover {
-  border-width: 1px;
-}
-
-.hover\:border-border\/50:hover {
-  border-color: rgba(var(--border), 0.5);
-}
-
 .hover\:bg-transparent:hover {
   background-color: transparent;
 }
@@ -1817,6 +1809,14 @@ body {
 .hover\:text-primary:hover {
   --tw-text-opacity: 1;
   color: rgba(var(--primary), var(--tw-text-opacity));
+}
+
+.hover\:outline:hover {
+  outline-style: solid;
+}
+
+.hover\:outline-border\/50:hover {
+  outline-color: rgba(var(--border), 0.5);
 }
 
 .focus\:outline-none:focus {

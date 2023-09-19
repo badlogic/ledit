@@ -134,22 +134,26 @@ export class MastoReader extends LitElement {
             <div class="flex justify-between gap-4 mx-auto !mb-[-0.5em]">
                <a href="${this.url}" class="self-link flex items-center gap-1 h-[2em] cursor-pointer">
                   <i class="icon fill-color/60">${commentIcon}</i>
-                  <span class="text-color/60">${addCommasToNumber(postToView.replies_count)}</span>
+                  <span class="text-color/60" aria-label="${postToView.replies_count} comments">${addCommasToNumber(postToView.replies_count)}</span>
                </a>
                <a href="${this.url}" class="flex items-center gap-1 h-[2em]">
                   <i class="icon ${postToView.reblogged ? "fill-primary" : "fill-color/60"}">${reblogIcon}</i>
-                  <span class="${postToView.reblogged ? "text-primary" : "text-color/60"}">${addCommasToNumber(postToView.reblogs_count)}</span>
+                  <span class="${postToView.reblogged ? "text-primary" : "text-color/60"}" aria-label="${postToView.reblogs_count} reblogs"
+                     >${addCommasToNumber(postToView.reblogs_count)}</span
+                  >
                </a>
                <a href="${this.url}" class="flex items-center gap-1 h-[2em]">
                   <i class="icon ${postToView.favourited ? "fill-primary" : "fill-color/60"}">${starIcon}</i>
-                  <span class="${postToView.favourited ? "text-primary" : "text-color/60"}">${addCommasToNumber(postToView.favourites_count)}</span>
+                  <span class="${postToView.favourited ? "text-primary" : "text-color/60"}" aria-label="${postToView.favourites_count} favourites"
+                     >${addCommasToNumber(postToView.favourites_count)}</span
+                  >
                </a>
             </div>
             <div class="posts flex flex-col">
                ${map(this.thread, (post, index) => {
                   const contentDom = dom(html` <div
                      @click="${(event: MouseEvent) => this.postClicked(event, post.url)}"
-                     class="content text-color hover:border hover:border-border/50 hover:rounded px-4 py-2"
+                     class="content text-color hover:outline hover:outline-border/50 hover:rounded px-4 py-2"
                   >
                      <div class="content-text">${replaceEmojis(post.content, post.emojis)}</div>
                   </div>`)[0];
@@ -165,7 +169,7 @@ export class MastoReader extends LitElement {
       return html`
          <div class="flex flex-col gap-4 px-4">
             ${header}
-            <div class="text-center text-xl">Masto Reader helps you read an share Mastodon threads.</div>
+            <div class="text-center text-xl">Masto Reader helps you read and share Mastodon threads.</div>
             <div class="flex gap-2 mt-4">
                <input id="url" class="flex-1" placeholder="URL of any post in a thread" />
                <button @click=${() => this.unrollClicked()} id="unroll">Unroll</button>
