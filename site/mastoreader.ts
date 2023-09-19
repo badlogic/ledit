@@ -76,15 +76,17 @@ export class MastoReader extends LitElement {
             if (!found) break;
          }
          this.thread = thread;
-         this.loading = false;
       } catch (e) {
          if (e instanceof Error) this.error = e;
          else this.error = new Error("Couldn't fetch thread");
+      } finally {
+         this.loading = false;
       }
    }
 
    protected updated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
       setLinkTargetsToBlank(this);
+      (this.querySelector(".home") as HTMLAnchorElement).target = "";
    }
 
    copyToClipboard(text: string): void {
@@ -95,7 +97,7 @@ export class MastoReader extends LitElement {
 
    render() {
       const baseUrl = location.href.replace(location.search, "");
-      const header = html`<h1 class="m-auto mt-4 flex items-center gap-2"><i class="icon">${mastodonIcon}</i><a href="${baseUrl}" class="text-color">Masto Reader</a></h1>`;
+      const header = html`<h1 class="m-auto mt-4 flex items-center gap-2"><i class="icon">${mastodonIcon}</i><a href="${baseUrl}" class="home text-color">Masto Reader</a></h1>`;
 
       if (this.loading) {
          return html` <div class="flex flex-col gap-4 px-4">
