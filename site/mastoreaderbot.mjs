@@ -60,7 +60,7 @@ stream.on("notification", async (notification) => {
          const targetUrl = isDirect ? parentPost.url : notification.status.url;
          const url = "https://mastoreader.io?url=" + encodeURIComponent(targetUrl);
          const supplement = !isDirect
-            ? "\n\nNext time, kindly set the visibility to 'Mentioned people only' and mention only me (@mastoreader@mastodon.social). This ensures we avoid spamming others' timelines and threads unless you intend for others to see the unrolled thread link as well.\n\n Thank you!"
+            ? "\n\nNext time, kindly set the visibility to 'Mentioned people only' and mention only me (@mastoreaderio@mastodon.social). This ensures we avoid spamming others' timelines and threads unless you intend for others to see the unrolled thread link as well.\n\n Thank you!"
             : "";
          poster.postStatus("@" + notification.status.account.acct + " here's the unrolled thread: " + url + supplement, {
             visibility: isDirect ? "direct" : "unlisted",
