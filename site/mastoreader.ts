@@ -180,7 +180,8 @@ export class MastoReader extends LitElement {
             <div class="text-center text-lg">Paste the URL of any post in a thread into the text field above and click "Unroll"</div>
             <div class="text-center text-lg">
                You can also mention <a href="https://mastodon.social/@mastoreaderio">@mastoreaderio@mastodon.social</a> anywhere in the thread with the word "unroll" and it will
-               reply with a link to the unrolled thread.
+               reply with a link to the unrolled thread. Ideally, you ask for an unroll by setting your request status visibility to "Mentioned people only", so you and the bot
+               keep everyone's threads and timelines clean.""
             </div>
          </div>
       `;
